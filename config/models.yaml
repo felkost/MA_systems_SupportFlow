@@ -20,6 +20,8 @@ docs:
   timeout_seconds: 30
   confidence_threshold: 0.70 # orientation value, task §10 — re-set after
     # the first full golden-dataset run, not before.
+  port: 8801 # docs/decisions.md #26 — this agent runs as its own A2A
+    # server process (Stage 2), unlike router/escalation/supervisor.
 
 web_search:
   model: "deepseek/deepseek-v4-flash"
@@ -27,6 +29,7 @@ web_search:
   max_tokens: 1024
   timeout_seconds: 30
   confidence_threshold: 0.70
+  port: 8802 # docs/decisions.md #26 — separate A2A server process.
 
 escalation:
   model: "openai/gpt-5.6-luna"

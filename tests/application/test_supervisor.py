@@ -1,15 +1,23 @@
 """Graph edge dispatch (docs/decisions.md #16): a test asserts only that
 the router's conditional edge reaches the *expected* node — never that
-that node produces a working result, since Docs/Web Search/Escalation
-raise `NotImplementedError` until their own stages build them. Nothing
-green here can be mistaken for a working end-to-end route.
+that node produces a working result, since Docs/Escalation still raise
+`NotImplementedError` until their own stages build them (Stage 2/3). Web
+Search Agent is real as of Stage 2 (docs/decisions.md #20 Wave 2a) — its
+tests mock only `call_web_search` (the A2A hop), the one boundary a real
+network/LLM call would otherwise cross.
 """
+
+from datetime import datetime, timezone
 
 import pytest
 
 from src.application import supervisor
 from src.application.router_agent import RouterResult
-from src.domain.schemas import ClassificationOutput
+from src.domain.schemas import ClassificationOutput, Source, WebSearchResponse
+from src.infrastructure.web_search_client import (
+    WebSearchCallResult,
+    WebSearchUnavailableError,
+)
 
 
 def _fake_router_result(category: str, urgency: str = "low") -> RouterResult:
@@ -34,16 +42,69 @@ def test_product_classification_dispatches_to_docs_node(
         supervisor.handle_request("Чи є у вас безлактозне молоко?", "r1", "s1", "t1")
 
 
-def test_general_classification_dispatches_to_web_search_node(
+def test_general_classification_with_confident_answer_responds(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(
         supervisor, "run_router", lambda *a, **kw: _fake_router_result("general")
     )
-    with pytest.raises(NotImplementedError, match="Stage 2"):
-        supervisor.handle_request(
-            "Коли у вас відкривається новий магазин?", "r1", "s1", "t1"
-        )
+    fake_result = WebSearchCallResult(
+        response=WebSearchResponse(
+            answer="Новий магазин відкривається у грудні.",
+            sources=[
+                Source(
+                    ref="https://example.com", retrieved_at=datetime.now(timezone.utc)
+                )
+            ],
+            confidence=0.9,
+        ),
+        retrieval_context=["магазин відкривається у грудні"],
+    )
+    monkeypatch.setattr(supervisor, "call_web_search", lambda *a, **kw: fake_result)
+
+    result = supervisor.handle_request(
+        "Коли у вас відкривається новий магазин?", "r1", "s1", "t1"
+    )
+
+    assert result["next_action"] == "respond"
+    assert result["answer"] == "Новий магазин відкривається у грудні."
+    assert result["retrieval_context"] == ["магазин відкривається у грудні"]
+
+
+def test_general_classification_with_low_confidence_escalates(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        supervisor, "run_router", lambda *a, **kw: _fake_router_result("general")
+    )
+    fake_result = WebSearchCallResult(
+        response=WebSearchResponse(answer="Не впевнений.", sources=[], confidence=0.2),
+        retrieval_context=[],
+    )
+    monkeypatch.setattr(supervisor, "call_web_search", lambda *a, **kw: fake_result)
+
+    # Low confidence routes to Escalation (task §7 step 6), which is still
+    # Stage 3 scope (docs/decisions.md #16) — the conditional edge itself
+    # is what this test proves, same pattern as the critical-classification
+    # test below.
+    with pytest.raises(NotImplementedError, match="Stage 3"):
+        supervisor.handle_request("Загальне питання", "r1", "s1", "t1")
+
+
+def test_general_classification_with_unavailable_search_escalates(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        supervisor, "run_router", lambda *a, **kw: _fake_router_result("general")
+    )
+
+    def _raise(*_a, **_kw):
+        raise WebSearchUnavailableError("SearchUnavailableError: both providers down")
+
+    monkeypatch.setattr(supervisor, "call_web_search", _raise)
+
+    with pytest.raises(NotImplementedError, match="Stage 3"):
+        supervisor.handle_request("Загальне питання", "r1", "s1", "t1")
 
 
 def test_critical_classification_dispatches_to_escalate_node(

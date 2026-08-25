@@ -95,3 +95,31 @@ def test_application_never_imports_agent_a2a_servers_directly():
                 if any(f in name for f in forbidden):
                     violations.append(f"{path}: imports {name}")
     assert not violations, "\n".join(violations)
+
+
+def test_supervisor_never_imports_agent_orchestration_modules_directly():
+    """A narrower instance of the same rule as above: `docs_agent.py` and
+    `web_search_agent.py` (docs/decisions.md #20) are `application`-layer
+    modules by file location, but they are only ever meant to run inside
+    their own A2A server process (imported by `interfaces/*_a2a_server.py`
+    alone). `supervisor.py` importing either directly would be the exact
+    "network hop silently degrades to a local call" failure the layer
+    table exists to catch — a plain cross-layer import check can't see
+    this because both files sit in the same `application` layer.
+    """
+    supervisor_path = SRC / "application" / "supervisor.py"
+    if not supervisor_path.exists():
+        return
+    forbidden = {"docs_agent", "web_search_agent"}
+    tree = ast.parse(supervisor_path.read_text(encoding="utf-8"))
+    violations = []
+    for node in ast.walk(tree):
+        names = []
+        if isinstance(node, ast.ImportFrom) and node.module:
+            names.append(node.module)
+        elif isinstance(node, ast.Import):
+            names.extend(alias.name for alias in node.names)
+        for name in names:
+            if any(f == name.rsplit(".", 1)[-1] for f in forbidden):
+                violations.append(f"{supervisor_path}: imports {name}")
+    assert not violations, "\n".join(violations)
