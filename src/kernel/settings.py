@@ -52,6 +52,12 @@ class Settings(BaseSettings):
         Permits an actual Telegram API call. `False` in every automated
         test/eval run; `True` only for the one-off
         `scripts/escalation_agent_smoke.py` live check.
+    tracing_enabled : bool, default=False
+        This project's own switch, not a Langfuse variable
+        (`.env.example`). `True` with either Langfuse key empty is a fatal
+        startup error, checked by `src.infrastructure.observability
+        .configure_tracing` — never a silent no-trace fallback
+        (docs/decisions.md #13's "fails loudly at startup" precedent).
     """
 
     model_config = SettingsConfigDict(
@@ -70,6 +76,7 @@ class Settings(BaseSettings):
     telegram_chat_id: str = ""
     bypass_hitl: bool = False
     allow_real_send: bool = False
+    tracing_enabled: bool = False
 
 
 class AgentModelConfig(BaseModel):

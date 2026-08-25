@@ -57,6 +57,33 @@ def test_call_docs_agent_returns_validated_response(
     assert result.retrieval_context == ["Бонусна картка не має терміну дії."]
 
 
+def test_call_docs_agent_forwards_parent_span_id(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict = {}
+
+    def fake_send_a2a_message(
+        base_url, text, request_id, session_id, trace_id, deadline, **kwargs
+    ):
+        captured.update(kwargs)
+        return '{"response": {"answer": "x", "sources": [], "confidence": 1.0}}'
+
+    monkeypatch.setattr(
+        "src.infrastructure.docs_client.send_a2a_message", fake_send_a2a_message
+    )
+
+    call_docs_agent(
+        "query",
+        request_id="r1",
+        session_id="s1",
+        trace_id="t1",
+        deadline=datetime.now(timezone.utc) + timedelta(seconds=10),
+        parent_span_id="deadbeefdeadbeef",
+    )
+
+    assert captured["parent_span_id"] == "deadbeefdeadbeef"
+
+
 def test_call_docs_agent_raises_when_model_output_invalid(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

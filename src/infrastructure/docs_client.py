@@ -43,6 +43,7 @@ def call_docs_agent(
     trace_id: str,
     deadline: datetime,
     *,
+    parent_span_id: str | None = None,
     httpx_client: httpx.AsyncClient | None = None,
 ) -> DocsCallResult:
     """One A2A call to Docs Agent.
@@ -54,6 +55,10 @@ def call_docs_agent(
     request_id, session_id, trace_id : str
     deadline : datetime
         Enforced by `send_a2a_message`.
+    parent_span_id : str, optional
+        The caller's current Langfuse observation id (Stage 4 decision
+        39), forwarded unchanged to `send_a2a_message`. `None` when
+        tracing is disabled.
     httpx_client : httpx.AsyncClient, optional
         Injected for testing against an in-process ASGI app.
 
@@ -79,6 +84,7 @@ def call_docs_agent(
         trace_id,
         deadline,
         httpx_client=httpx_client,
+        parent_span_id=parent_span_id,
     )
     try:
         payload = json.loads(reply_text)

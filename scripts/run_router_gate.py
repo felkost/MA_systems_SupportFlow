@@ -41,6 +41,7 @@ def _load_env() -> None:
 
 def _run_once(cases: list[dict]) -> dict:
     from src.application.router_agent import run_router
+    from src.infrastructure.observability import new_trace_id
     from src.kernel.settings import load_agent_config
 
     model_id = load_agent_config("router").model
@@ -50,7 +51,10 @@ def _run_once(cases: list[dict]) -> dict:
             case["input"],
             request_id=str(uuid.uuid4()),
             session_id="router-gate",
-            trace_id=str(uuid.uuid4()),
+            # 32-char lowercase hex, not a hyphenated uuid4 — Langfuse's
+            # TraceContext mechanism (Stage 4) requires this exact format
+            # (docs/decisions.md Stage 4 decision 32).
+            trace_id=new_trace_id(),
         )
         correct = (
             result.classification is not None

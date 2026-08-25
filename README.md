@@ -16,7 +16,7 @@ See `docs/task-supportflow.md` for the full task statement and
 | ✅ | 1 — Core | Pydantic schemas, LangGraph StateGraph, Supervisor, Router Agent, input filter, fail-closed retry policy, Router gate ≥10/12 |
 | ✅ | 2 — Data | Docs Agent + RAG (Chroma+BM25), real Silpo MCP client (persistent token, 17-tool allowlist), Web Search Agent (Tavily+ddgs), A2A server/client, launcher |
 | ✅ | 3 — Escalation | Escalation Agent, file report, Telegram notification |
-| ⬜ | 4 — Evaluation & observability | Langfuse tracing, DeepEval, golden dataset, thresholds |
+| 🟨 | 4 — Evaluation & observability | Wave A (Observability) done: Langfuse/OTel tracing across the full path, `CallbackHandler`, per-observation metadata, cross-process trace propagation — code-complete and unit-tested, live end-to-end verification (`scripts/observability_smoke.py`) still to be run. Wave B (DeepEval, golden dataset, thresholds, meta-prompting) not started |
 | ⬜ | 5 — Product & docs | FastAPI, React chat UI, final README, diagrams |
 
 Updated at the close of every stage — see `docs/decisions.md` for the
@@ -80,18 +80,27 @@ Search run as separate A2A server processes
 (`src/interfaces/{docs,web_search}_a2a_server.py`), started together by
 `src/interfaces/launcher.py`; Router and Escalation run in-process with
 the Supervisor. There is no FastAPI app or web UI yet (Stage 5). Langfuse
-tracing of the full call tree, DeepEval, and the golden dataset are Stage
-4 — A2A hops currently carry `request_id`/`session_id`/`trace_id`/
-`deadline` as plumbing only, with no OTel spans or Langfuse exporter yet
-(docs/decisions.md #23). Retrieval/prompt relevance quality (Docs/Web
-Search can lose track of the actual question among noisy retrieved
-content) is unmeasured and unfixed — in scope for Stage 4's
-meta-prompting cycle, not treated as done. Escalation's session-scoped
-send-dedup/cap store is a module-level, single-process dict
-(docs/decisions.md #28) — correct for this project's single-process demo
-topology, not a multi-worker deployment. `docs/decisions.md` #9–30 record
-every Stage 1–3 design decision, including ones this list doesn't repeat
-here (personal-data masking, prompt-fetch failure behaviour, the
-self-reported-confidence gate's unvalidated status, the Silpo MCP
-branch/delivery/timeslot bootstrap chain, the Telegram send-safety
-flags).
+tracing across the full call tree (`CallbackHandler` on `graph.invoke`,
+per-observation metadata for Silpo MCP/ACP/A2A/Telegram/File System/PII
+scrubbing/Supervisor routing, cross-process trace propagation via
+Langfuse's own `TraceContext`) is code-complete and unit-tested
+(Stage 4 Wave A) but not yet live-verified end to end —
+`scripts/observability_smoke.py` is written but has not been run against
+real Langfuse/OpenRouter credentials this session. PII masking at the
+Langfuse export barrier (`mask_otel_spans`) reuses the existing
+email/phone/card-Luhn patterns only — it does not detect OAuth
+tokens, API keys, or free-text addresses by shape; the only control for
+those categories today is code review at each span's `metadata=` call
+site (docs/decisions.md Stage 4 decision 34's Known Risks). DeepEval, the
+golden dataset, thresholds, and the meta-prompting cycle are Stage 4 Wave
+B, not started. Retrieval/prompt relevance quality (Docs/Web Search can
+lose track of the actual question among noisy retrieved content) is
+unmeasured and unfixed — in scope for Wave B, not treated as done.
+Escalation's session-scoped send-dedup/cap store is a module-level,
+single-process dict (docs/decisions.md #28) — correct for this project's
+single-process demo topology, not a multi-worker deployment.
+`docs/decisions.md` #9–39 record every Stage 1–4 design decision,
+including ones this list doesn't repeat here (personal-data masking,
+prompt-fetch failure behaviour, the self-reported-confidence gate's
+unvalidated status, the Silpo MCP branch/delivery/timeslot bootstrap
+chain, the Telegram send-safety flags).

@@ -6,8 +6,11 @@ official Bot API docs, `core.telegram.org/bots/api#sendmessage`), and
 discipline: reuse before adding).
 """
 
+from contextlib import nullcontext
+
 import httpx
 
+from src.infrastructure.observability import get_langfuse_client
 from src.kernel.constants import TELEGRAM_MAX_MESSAGE_CHARS
 
 _API_BASE = "https://api.telegram.org"
@@ -39,19 +42,31 @@ def send_telegram_message(
     TelegramSendError
     """
     truncated = text[:TELEGRAM_MAX_MESSAGE_CHARS]
-    try:
-        response = httpx.post(
-            f"{_API_BASE}/bot{bot_token}/sendMessage",
-            json={"chat_id": chat_id, "text": truncated},
-            timeout=timeout,
+    client = get_langfuse_client()
+    span_cm = (
+        client.start_as_current_observation(
+            name="telegram.send_message", as_type="tool"
         )
-    except httpx.HTTPError as exc:
-        raise TelegramSendError(f"Telegram request failed: {exc}") from exc
+        if client is not None
+        else nullcontext()
+    )
+    # `TelegramSendError` (and any other exception) always propagates
+    # unchanged through this span — never swallowed, since Escalation is
+    # itself the failure-handling path (module docstring above).
+    with span_cm:
+        try:
+            response = httpx.post(
+                f"{_API_BASE}/bot{bot_token}/sendMessage",
+                json={"chat_id": chat_id, "text": truncated},
+                timeout=timeout,
+            )
+        except httpx.HTTPError as exc:
+            raise TelegramSendError(f"Telegram request failed: {exc}") from exc
 
-    if response.status_code >= 400:
-        raise TelegramSendError(
-            f"Telegram API returned {response.status_code}: {response.text}"
-        )
-    body = response.json()
-    if not body.get("ok", False):
-        raise TelegramSendError(f"Telegram API reported failure: {body}")
+        if response.status_code >= 400:
+            raise TelegramSendError(
+                f"Telegram API returned {response.status_code}: {response.text}"
+            )
+        body = response.json()
+        if not body.get("ok", False):
+            raise TelegramSendError(f"Telegram API reported failure: {body}")

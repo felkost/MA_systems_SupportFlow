@@ -8,7 +8,11 @@ from pathlib import Path
 import pytest
 import yaml
 
-from src.kernel.settings import load_agent_config
+from src.kernel.settings import Settings, load_agent_config
+
+
+def test_tracing_enabled_defaults_to_false() -> None:
+    assert Settings().tracing_enabled is False
 
 
 def test_load_agent_config_reads_the_real_models_yaml() -> None:

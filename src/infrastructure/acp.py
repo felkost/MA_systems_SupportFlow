@@ -12,6 +12,7 @@ it fails, only about failing loudly and on time.
 """
 
 import time
+from contextlib import nullcontext
 from datetime import datetime, timezone
 from typing import Literal
 
@@ -19,7 +20,8 @@ from pydantic import BaseModel
 
 from src.domain.schemas import ClassificationOutput
 from src.infrastructure.llm import get_chat_model
-from src.infrastructure.prompts import get_prompt
+from src.infrastructure.observability import get_langfuse_client
+from src.infrastructure.prompts import get_prompt_client
 
 AcpTask = Literal["classify", "escalate"]
 
@@ -92,7 +94,8 @@ def call_router(envelope: AcpEnvelope) -> tuple[ClassificationOutput, int]:
     if datetime.now(timezone.utc) >= envelope.deadline:
         raise TimeoutError(f"AcpEnvelope {envelope.request_id} deadline already passed")
 
-    prompt_text, prompt_version = get_prompt("supportflow/router")
+    prompt_client = get_prompt_client("supportflow/router")
+    prompt_version = prompt_client.version
     remaining = (envelope.deadline - datetime.now(timezone.utc)).total_seconds()
     if remaining <= 0:
         raise TimeoutError(
@@ -101,10 +104,32 @@ def call_router(envelope: AcpEnvelope) -> tuple[ClassificationOutput, int]:
 
     model = get_chat_model("router", timeout_override=remaining)
     start = time.monotonic()
-    structured_model = model.with_structured_output(ClassificationOutput)
-    compiled_prompt = prompt_text.replace("{{customer_message}}", envelope.payload)
+    # include_raw=True: only way to reach the raw AIMessage's usage_metadata
+    # (task §9's "кількість токенів") — with_structured_output's default
+    # returns just the parsed schema, discarding it.
+    structured_model = model.with_structured_output(
+        ClassificationOutput, include_raw=True
+    )
+    compiled_prompt = prompt_client.prompt.replace(
+        "{{customer_message}}", envelope.payload
+    )
+
+    langfuse = get_langfuse_client()
+    span_cm = (
+        langfuse.start_as_current_observation(
+            name="acp.call_router",
+            as_type="generation",
+            prompt=prompt_client,
+        )
+        if langfuse is not None
+        else nullcontext()
+    )
     try:
-        result = structured_model.invoke(compiled_prompt)
+        with span_cm as generation:
+            raw = structured_model.invoke(compiled_prompt)
+            if generation is not None:
+                usage = getattr(raw.get("raw"), "usage_metadata", None) or {}
+                generation.update(usage_details=dict(usage))
     except Exception as exc:  # noqa: BLE001 — re-raised as a typed error below
         if datetime.now(timezone.utc) >= envelope.deadline:
             raise TimeoutError(
@@ -113,8 +138,9 @@ def call_router(envelope: AcpEnvelope) -> tuple[ClassificationOutput, int]:
             ) from exc
         raise RouterInvalidOutputError(str(exc)) from exc
 
+    result = raw.get("parsed")
     if not isinstance(result, ClassificationOutput):
         raise RouterInvalidOutputError(
-            f"model returned {type(result).__name__}, not a dict/schema"
+            f"model returned no valid ClassificationOutput: {raw.get('parsing_error')}"
         )
     return result, prompt_version

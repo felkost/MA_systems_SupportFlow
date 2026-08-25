@@ -10,12 +10,14 @@ directly (it reaches Web Search Agent only through the A2A client,
 `tests/test_layering.py::test_application_never_imports_agent_a2a_servers_directly`.
 """
 
+from contextlib import nullcontext
 from dataclasses import dataclass
 from datetime import datetime, timezone
 
 from src.domain.schemas import WebSearchResponse
 from src.infrastructure.llm import get_chat_model
-from src.infrastructure.prompts import get_prompt
+from src.infrastructure.observability import get_langfuse_client
+from src.infrastructure.prompts import get_prompt, get_prompt_client
 from src.infrastructure.web_search import SearchFn
 from src.infrastructure.web_search import search as _default_search
 
@@ -86,14 +88,29 @@ def run_web_search(
     )
 
     model = get_chat_model("web_search")
-    structured_model = model.with_structured_output(WebSearchResponse)
+    structured_model = model.with_structured_output(WebSearchResponse, include_raw=True)
+    client = get_langfuse_client()
+    span_cm = (
+        client.start_as_current_observation(
+            name="web_search_agent.compose",
+            as_type="generation",
+            prompt=get_prompt_client("supportflow/web_search"),
+        )
+        if client is not None
+        else nullcontext()
+    )
     try:
-        result = structured_model.invoke(compiled_prompt)
+        with span_cm as generation:
+            raw = structured_model.invoke(compiled_prompt)
+            if generation is not None:
+                usage = getattr(raw.get("raw"), "usage_metadata", None) or {}
+                generation.update(usage_details=dict(usage))
     except Exception as exc:  # noqa: BLE001 — provider errors vary
         raise WebSearchInvalidOutputError(str(exc)) from exc
+    result = raw.get("parsed")
     if not isinstance(result, WebSearchResponse):
         raise WebSearchInvalidOutputError(
-            f"model returned {type(result).__name__}, not a dict/schema"
+            f"model returned no valid WebSearchResponse: {raw.get('parsing_error')}"
         )
 
     # docs/decisions.md #15: this call's own fetch time is authoritative,
