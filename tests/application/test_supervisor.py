@@ -1,10 +1,9 @@
 """Graph edge dispatch (docs/decisions.md #16): a test asserts only that
 the router's conditional edge reaches the *expected* node — never that
-that node produces a working result. Docs and Web Search Agent are both
-real as of Stage 2 (docs/decisions.md #20); their tests mock only
-`call_docs_agent`/`call_web_search` (the A2A hop), the one boundary a
-real network/LLM call would otherwise cross. Escalation still raises
-`NotImplementedError` until Stage 3 builds it.
+that node produces a working result. Docs, Web Search, and Escalation
+Agent are all real as of Stage 3 (docs/decisions.md #20); their tests mock
+only `call_docs_agent`/`call_web_search`/`run_escalation_agent` (the
+external boundary each node crosses), never a real network/LLM call.
 """
 
 from datetime import datetime, timezone
@@ -12,10 +11,12 @@ from datetime import datetime, timezone
 import pytest
 
 from src.application import supervisor
+from src.application.escalation_agent import EscalationAgentResult
 from src.application.router_agent import RouterResult
 from src.domain.schemas import (
     ClassificationOutput,
     DocsResponse,
+    EscalationOutput,
     Source,
     WebSearchResponse,
 )
@@ -24,6 +25,21 @@ from src.infrastructure.web_search_client import (
     WebSearchCallResult,
     WebSearchUnavailableError,
 )
+
+
+def _fake_escalation_result() -> EscalationAgentResult:
+    return EscalationAgentResult(
+        output=EscalationOutput(
+            summary="Тестовий випадок",
+            category="critical",
+            customer_message="Оператор зв'яжеться з вами найближчим часом.",
+            attempted_resolution="Класифіковано, передано оператору.",
+        ),
+        written=True,
+        sent=False,
+        deduplicated=False,
+        capped=False,
+    )
 
 
 def _fake_router_result(category: str, urgency: str = "low") -> RouterResult:
@@ -78,9 +94,17 @@ def test_product_classification_with_unavailable_docs_escalates(
         raise DocsUnavailableError("DocsInvalidOutputError: refused to answer")
 
     monkeypatch.setattr(supervisor, "call_docs_agent", _raise)
+    monkeypatch.setattr(
+        supervisor, "run_escalation_agent", lambda *a, **kw: _fake_escalation_result()
+    )
 
-    with pytest.raises(NotImplementedError, match="Stage 3"):
-        supervisor.handle_request("Чи є у вас безлактозне молоко?", "r1", "s1", "t1")
+    result = supervisor.handle_request(
+        "Чи є у вас безлактозне молоко?", "r1", "s1", "t1"
+    )
+
+    assert result["next_action"] == "escalate"
+    assert result["escalation_output"] is not None
+    assert result["answer"] == "Оператор зв'яжеться з вами найближчим часом."
 
 
 def test_general_classification_with_confident_answer_responds(
@@ -123,13 +147,16 @@ def test_general_classification_with_low_confidence_escalates(
         retrieval_context=[],
     )
     monkeypatch.setattr(supervisor, "call_web_search", lambda *a, **kw: fake_result)
+    monkeypatch.setattr(
+        supervisor, "run_escalation_agent", lambda *a, **kw: _fake_escalation_result()
+    )
 
-    # Low confidence routes to Escalation (task §7 step 6), which is still
-    # Stage 3 scope (docs/decisions.md #16) — the conditional edge itself
-    # is what this test proves, same pattern as the critical-classification
-    # test below.
-    with pytest.raises(NotImplementedError, match="Stage 3"):
-        supervisor.handle_request("Загальне питання", "r1", "s1", "t1")
+    # Low confidence routes to Escalation (task §7 step 6) — the
+    # conditional edge dispatches there and the real node now handles it.
+    result = supervisor.handle_request("Загальне питання", "r1", "s1", "t1")
+
+    assert result["next_action"] == "escalate"
+    assert result["escalation_output"] is not None
 
 
 def test_general_classification_with_unavailable_search_escalates(
@@ -143,9 +170,14 @@ def test_general_classification_with_unavailable_search_escalates(
         raise WebSearchUnavailableError("SearchUnavailableError: both providers down")
 
     monkeypatch.setattr(supervisor, "call_web_search", _raise)
+    monkeypatch.setattr(
+        supervisor, "run_escalation_agent", lambda *a, **kw: _fake_escalation_result()
+    )
 
-    with pytest.raises(NotImplementedError, match="Stage 3"):
-        supervisor.handle_request("Загальне питання", "r1", "s1", "t1")
+    result = supervisor.handle_request("Загальне питання", "r1", "s1", "t1")
+
+    assert result["next_action"] == "escalate"
+    assert result["escalation_output"] is not None
 
 
 def test_critical_classification_dispatches_to_escalate_node(
@@ -156,10 +188,16 @@ def test_critical_classification_dispatches_to_escalate_node(
         "run_router",
         lambda *a, **kw: _fake_router_result("critical", "critical"),
     )
-    with pytest.raises(NotImplementedError, match="Stage 3"):
-        supervisor.handle_request(
-            "У мене алергічна реакція на ваш продукт!", "r1", "s1", "t1"
-        )
+    monkeypatch.setattr(
+        supervisor, "run_escalation_agent", lambda *a, **kw: _fake_escalation_result()
+    )
+
+    result = supervisor.handle_request(
+        "У мене алергічна реакція на ваш продукт!", "r1", "s1", "t1"
+    )
+
+    assert result["next_action"] == "escalate"
+    assert result["escalation_output"] is not None
 
 
 def test_router_exhaustion_also_dispatches_to_escalate_node(
@@ -178,8 +216,14 @@ def test_router_exhaustion_also_dispatches_to_escalate_node(
             retry_count=1,
         ),
     )
-    with pytest.raises(NotImplementedError, match="Stage 3"):
-        supervisor.handle_request("Питання про товар", "r1", "s1", "t1")
+    monkeypatch.setattr(
+        supervisor, "run_escalation_agent", lambda *a, **kw: _fake_escalation_result()
+    )
+
+    result = supervisor.handle_request("Питання про товар", "r1", "s1", "t1")
+
+    assert result["next_action"] == "escalate"
+    assert result["escalation_output"] is not None
 
 
 def test_empty_input_is_rejected_before_the_graph_is_invoked(

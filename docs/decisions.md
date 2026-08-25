@@ -641,3 +641,58 @@ on a cold cache (3 bootstrap + 1 search), 1 on a warm one — within the
 seeded Docs prompt's "maximum 5 tool calls per request" budget, but worth
 knowing when Stage 4 measures Docs Agent latency against the 30 s
 end-to-end budget (Decision 11).
+
+## Stage 3 decisions (28-30)
+
+## 28. Session-scoped dedup/cap is a module-level store, not a `SupportFlowState` field
+
+Decision 19 promised two Stage 1 state fields for Escalation's send safety
+— "a per-session escalation counter and a message-hash for deduplication".
+Only `escalation_count` was actually added; no hash field exists.
+
+**Resolution:** this was never fixable by adding the missing field.
+`SupportFlowState` is a `TypedDict` rebuilt fresh by `build_initial_state`
+on every `graph.invoke()` call (one call per request) — it has no memory
+across requests in the same session regardless of what fields it carries.
+The actual per-session memory Decision 19 needs lives outside single-request
+state: `src/application/escalation_agent.py`'s module-level
+`_session_store: dict[session_id, _SessionEscalations]` (a send count plus
+a set of `sha256(masked_text)` hashes), scoped to the process's lifetime.
+`SupportFlowState.escalation_count` still exists and is still set by
+`escalate_node` — it now mirrors the session store's running total for
+observability, rather than being the dedup mechanism itself. Marked
+`# ponytail` in code: single-process only, no shared store — correct for
+this project's single-process demo topology, wrong the moment a second
+worker process exists.
+
+## 29. Escalation send-safety caps are developer-picked constants, not task thresholds
+
+Decision 19 requires "a hard per-process-run send-count cap" and a
+per-session one, but names no number — task §10's own numeric thresholds
+(confidence, DeepEval metric floors) are all this project treats as
+requirements; a send cap protects the real Telegram test channel from an
+automated run's volume, which is an engineering safety concern with no
+task-specified value.
+
+**Resolution:** `MAX_ESCALATION_SENDS_PER_PROCESS = 5`,
+`MAX_ESCALATION_SENDS_PER_SESSION = 2` in `src/kernel/constants.py`, same
+status as `GRAPH_RECURSION_LIMIT`/`MAX_INPUT_CHARS` — a chosen safety
+margin, not a measured or task-derived figure. Revisit only if the golden
+dataset's escalation cases (Stage 4/5) need more sends per run than this
+allows.
+
+## 30. Telegram client is a raw `httpx` POST, no SDK dependency
+
+`sendMessage` is one documented JSON endpoint
+(`core.telegram.org/bots/api#sendmessage`, confirmed directly, not assumed
+from memory): `POST /bot<token>/sendMessage` with `chat_id`/`text`,
+`{"ok": true, ...}` or `{"ok": false, "error_code", "description"}`.
+`python-telegram-bot` or similar would add a dependency across every
+process importing `src.infrastructure` for one call `httpx` (already
+pinned) already makes in a few lines.
+
+**Resolution:** `src/infrastructure/telegram_client.py` wraps `httpx.post`
+directly — same ladder-discipline choice as every other "is a real SDK
+worth it for one endpoint" decision in this project. Revisit only if a
+second Telegram feature (inline keyboards, file uploads, webhooks) needs
+more of the Bot API's surface than one `sendMessage` call.

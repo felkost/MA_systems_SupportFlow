@@ -39,6 +39,19 @@ class Settings(BaseSettings):
     langfuse_base_url : str, default="https://cloud.langfuse.com"
         No self-hosted Langfuse stack in this project (docs/decisions.md
         references the ~5.5 GB self-hosted v3 memory cost as the reason).
+    telegram_bot_token, telegram_chat_id : str, default=""
+        `docs/telegram_bot_setup.md` walks through obtaining both. Empty
+        means Escalation's file-write-only path still works; a real send
+        additionally requires `allow_real_send=True` and this `chat_id`
+        matching the one actually sent to (docs/decisions.md #19, F17).
+    bypass_hitl : bool, default=False
+        Skips Escalation's interactive confirmation prompt. Independent of
+        `allow_real_send` — bypassing the human confirmation does not, by
+        itself, permit a real Telegram call (docs/decisions.md #19).
+    allow_real_send : bool, default=False
+        Permits an actual Telegram API call. `False` in every automated
+        test/eval run; `True` only for the one-off
+        `scripts/escalation_agent_smoke.py` live check.
     """
 
     model_config = SettingsConfigDict(
@@ -53,6 +66,10 @@ class Settings(BaseSettings):
     langfuse_public_key: str = ""
     langfuse_secret_key: str = ""
     langfuse_base_url: str = "https://cloud.langfuse.com"
+    telegram_bot_token: str = ""
+    telegram_chat_id: str = ""
+    bypass_hitl: bool = False
+    allow_real_send: bool = False
 
 
 class AgentModelConfig(BaseModel):

@@ -16,6 +16,7 @@ from typing import Any
 
 from langgraph.graph import END, StateGraph
 
+from src.application.escalation_agent import EscalationContext, run_escalation_agent
 from src.application.router_agent import run_router
 from src.domain.filters import run_input_filter
 from src.domain.routing import decide_route
@@ -160,7 +161,28 @@ def web_search_node(state: SupportFlowState) -> dict[str, Any]:
 
 
 def escalate_node(state: SupportFlowState) -> dict[str, Any]:
-    raise NotImplementedError("Escalation Agent — Stage 3, not built yet")
+    """The last step for a critical request, a request Supervisor could
+    not resolve confidently, or a request where a tool was unavailable
+    (task §7 step 6). Runs in-process (docs/decisions.md #1/#8) — no A2A
+    hop, so this fallback does not itself depend on the network path it
+    exists to catch a failure of.
+    """
+    context = EscalationContext(
+        masked_text=state["original_request_masked"],
+        classification=state["classification"],
+        confidence=state["confidence"],
+        errors=state["errors"],
+        docs_response=state["docs_response"],
+        web_search_response=state["web_search_response"],
+    )
+    result = run_escalation_agent(
+        context, request_id=state["request_id"], session_id=state["session_id"]
+    )
+    return {
+        "escalation_output": result.output,
+        "answer": result.output.customer_message,
+        "escalation_count": state["escalation_count"] + 1,
+    }
 
 
 def route_after_router(state: SupportFlowState) -> NextAction:
