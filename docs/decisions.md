@@ -608,3 +608,36 @@ than in a new file.
 rows that now run as separate OS processes. Router, Escalation, and
 Supervisor stay in-process (Decision 1) and gain no port field, since one
 would be dead configuration nothing reads.
+
+## 27. Silpo MCP product tools need a non-personal branch/delivery/timeslot bootstrap chain
+
+Reading the real `docs/silpo_mcp_tools.json` schemas (not just each
+tool's one-line description, which is what the Stage 1 allowlist split
+was based on) found that `silpo_get_products`, `silpo_find_products_batch`,
+`silpo_get_promotions`, and `silpo_get_product_details` all require
+`branchId`/`deliveryType`/`timeslotStart`/`timeslotEnd` as **required**
+parameters, and each tool's own description says to source them from
+`silpo_get_shopping_cart_by_id` — a personal tool, excluded outright
+(Decision 2). Taken literally, the 17-tool allowlist could not answer a
+single product question: every product-browsing tool needs context only
+the excluded cart tool provides.
+
+**Resolution:** three of the allowlisted tools do not need cart context
+and can bootstrap the same fields legitimately: `silpo_list_branches()`
+(no required params) → `silpo_get_available_delivery_types(latitude,
+longitude)` → `silpo_get_time_slots(branchId, deliveryTypes)`. Docs
+Agent's process calls this chain once, deterministically (no LLM tool
+selection, matching the author's own decision this session — a
+model-driven agentic tool-calling loop was considered and rejected as
+disproportionate complexity for this stage), and caches the resulting
+`BranchContext` for the rest of the process's lifetime
+(`src/infrastructure/silpo_mcp.py`, `# ponytail` marked — no staleness
+TTL yet, upgrade path noted in code). `silpo_find_products_batch` is then
+the actual product-search call, using the cached context plus an
+LLM-translated Ukrainian search term (Decision 6).
+
+**Consequence:** every real product query costs up to 4 Silpo MCP calls
+on a cold cache (3 bootstrap + 1 search), 1 on a warm one — within the
+seeded Docs prompt's "maximum 5 tool calls per request" budget, but worth
+knowing when Stage 4 measures Docs Agent latency against the 30 s
+end-to-end budget (Decision 11).

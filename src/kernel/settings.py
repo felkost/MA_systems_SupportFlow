@@ -29,6 +29,8 @@ class Settings(BaseSettings):
     tavily_api_key : str, default=""
         Web Search Agent's primary provider (task §3); `ddgs` (DuckDuckGo)
         needs no key and is the fallback (docs/decisions.md #20).
+    silpo_mcp_url : str, default="https://mcp.silpo.ua/mcp"
+        Confirmed live endpoint (docs/decisions.md #3).
     langfuse_public_key, langfuse_secret_key : str, default=""
         Empty means tracing/prompt-fetch against Langfuse is not configured.
         `docs/decisions.md` #13 makes a cold-cache Langfuse prompt fetch a
@@ -47,6 +49,7 @@ class Settings(BaseSettings):
 
     openrouter_api_key: str = ""
     tavily_api_key: str = ""
+    silpo_mcp_url: str = "https://mcp.silpo.ua/mcp"
     langfuse_public_key: str = ""
     langfuse_secret_key: str = ""
     langfuse_base_url: str = "https://cloud.langfuse.com"

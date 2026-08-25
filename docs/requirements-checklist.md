@@ -20,9 +20,15 @@ requirement this list does not contain.
       `src/application/router_agent.py` + `src/infrastructure/acp.py`,
       gated at ≥10/12 on a held-out labelled set across 3 runs
       (`output/router_gate_result.json`).
-- [ ] Docs Agent — RAG over internal knowledge base + Silpo MCP for domain
-      queries.
-- [ ] Web Search Agent — Tavily primary, DuckDuckGo fallback.
+- [x] Docs Agent — RAG over internal knowledge base + Silpo MCP for domain
+      queries. `src/application/docs_agent.py` (hybrid Chroma+BM25
+      retriever) + `src/infrastructure/silpo_mcp.py` (persistent-token
+      client, 17-tool allowlist, non-personal branch/delivery/timeslot
+      bootstrap — docs/decisions.md #27), verified live end-to-end
+      (`scripts/docs_agent_smoke.py`).
+- [x] Web Search Agent — Tavily primary, DuckDuckGo fallback.
+      `src/application/web_search_agent.py` + `src/infrastructure/web_search.py`,
+      verified live end-to-end.
 - [ ] Escalation Agent — structured report, file save, real Telegram message
       to a test channel.
 - [x] LangGraph StateGraph — state, agent sequencing, conditional
@@ -47,9 +53,12 @@ requirement this list does not contain.
       also carries `session_id` (docs/decisions.md #19) — task §9's
       observation metadata needs it, beyond §4's own four fields.
 - [x] Router has no tools, returns only structured classification.
-- [ ] Docs Agent returns answer, sources, confidence (0–1).
-- [ ] Web Search Agent gets no personal user data, does not confirm
-      cart/bonus/order state.
+- [x] Docs Agent returns answer, sources, confidence (0–1). `DocsResponse`
+      populated from real KB+MCP retrieval, `Source.retrieved_at` stamped
+      at actual fetch time (docs/decisions.md #15).
+- [x] Web Search Agent gets no personal user data, does not confirm
+      cart/bonus/order state — takes only the already-masked text
+      (docs/decisions.md #14), never calls Silpo MCP.
 - [ ] Escalation Agent produces an operator-readable report, saves to file,
       sends Telegram notification.
 
@@ -58,12 +67,14 @@ requirement this list does not contain.
 - [x] Silpo MCP `tools/list` executed before implementation — 39 tools
       (`docs/silpo_mcp_tools.json`, 2026-08-25), allowlist derived in
       `docs/silpo_mcp_allowlist.md`.
-- [ ] Internal knowledge base: 15–25 FAQ answers, 2–5 pages of service
-      descriptions, 5–10 example dialogues.
-- [ ] Every knowledge-base document has a source, retrieval date, rule
-      version.
-- [ ] Web search used only for current general info absent from internal
-      sources.
+- [x] Internal knowledge base: 15–25 FAQ answers, 2–5 pages of service
+      descriptions, 5–10 example dialogues. `data/knowledge_base/`: 18
+      FAQ, 3 service pages, 6 example dialogues, synthetic, Ukrainian.
+- [x] Every knowledge-base document has a source, retrieval date, rule
+      version. `src/infrastructure/retriever.py`'s `KnowledgeChunk`.
+- [x] Web search used only for current general info absent from internal
+      sources — Router routes `general` category to Web Search Agent,
+      `product`/service queries to Docs Agent (`src/domain/routing.py`).
 - [ ] File system stores escalation reports; Telegram sends to a test
       channel.
 
@@ -93,14 +104,22 @@ requirement this list does not contain.
       decision only — Escalation Agent itself is Stage 3
       (docs/decisions.md #16); the graph edge dispatches correctly and
       raises `NotImplementedError` there until built.
-- [ ] Step 4: product/rules/service request → Docs Agent (knowledge base +
-      Silpo MCP).
-- [ ] Step 5: general request needing current external info → Web Search
-      Agent.
-- [ ] Step 6: low confidence, contradictory sources, or unavailable tool →
-      Escalation Agent.
-- [ ] Step 7: successful route → Supervisor composes a short final answer
-      with sources.
+- [x] Step 4: product/rules/service request → Docs Agent (knowledge base +
+      Silpo MCP). `src/application/supervisor.py`'s `docs_node`, real A2A
+      call to `src/interfaces/docs_a2a_server.py`.
+- [x] Step 5: general request needing current external info → Web Search
+      Agent. `web_search_node`, real A2A call.
+- [x] Step 6: low confidence, contradictory sources, or unavailable tool →
+      Escalation Agent. Routing decision only — `docs_node`/`web_search_node`
+      both route a below-threshold confidence or a tool failure to
+      `escalate`; Escalation Agent itself is Stage 3
+      (docs/decisions.md #16), the edge raises `NotImplementedError` there
+      until built. Contradictory sources: self-reported confidence, no
+      separate detector (docs/decisions.md #25).
+- [x] Step 7: successful route → Supervisor composes a short final answer
+      with sources. `docs_node`/`web_search_node` set `state["answer"]`
+      directly from the agent's own composed `answer` field on a
+      confident response.
 - [ ] Step 8: Langfuse stores the full call tree and auto-eval results.
 
 ## Code organization and web UI (§8)
@@ -135,7 +154,10 @@ requirement this list does not contain.
 - [ ] Synthetic users in the demo, knowledge base, and golden dataset.
 - [ ] Personal data stripped before web search; if impossible without losing
       meaning, web search is not called.
-- [ ] Silpo MCP access limited to an allowed list of read operations.
+- [x] Silpo MCP access limited to an allowed list of read operations.
+      Code-level enforcement, not just a prompt instruction —
+      `src/infrastructure/silpo_mcp.py`'s `SILPO_ALLOWLIST`/
+      `call_mcp_tool` (docs/decisions.md #24), verified live.
 - [ ] LangChain/LangGraph traced via Langfuse `CallbackHandler`; Silpo MCP,
       ACP, Telegram, File System traced via their own Langfuse observations.
 - [ ] `CallbackHandler` passed into every `graph.invoke` run config.
@@ -199,18 +221,26 @@ requirement this list does not contain.
 
 ## Success criteria (§13)
 
-- [ ] Four mandatory agents.
-- [ ] Classification by category, urgency, language.
-- [ ] RAG over internal knowledge base.
-- [ ] DuckDuckGo as fallback for Web Search Agent.
-- [ ] File + real Telegram notification for escalation.
-- [ ] Four mandatory Pydantic models.
-- [ ] LangGraph StateGraph, conditional transitions, low-confidence fallback.
-- [ ] Langfuse across the whole path.
-- [ ] LLM-as-a-Judge and ≥10 Router Agent scenarios.
+- [ ] Four mandatory agents. 3/4 real (Router, Docs, Web Search); Escalation
+      is Stage 3.
+- [x] Classification by category, urgency, language. Stage 1 Router gate.
+- [x] RAG over internal knowledge base. Chroma+BM25 `EnsembleRetriever`
+      (docs/decisions.md #7).
+- [x] DuckDuckGo as fallback for Web Search Agent. `ddgs`, verified live
+      fallback path (`src/infrastructure/web_search.py`).
+- [ ] File + real Telegram notification for escalation. Stage 3.
+- [x] Four mandatory Pydantic models. `src/domain/schemas.py`.
+- [x] LangGraph StateGraph, conditional transitions, low-confidence
+      fallback. `docs_node`/`web_search_node` both escalate below
+      `config/models.yaml`'s `confidence_threshold`.
+- [ ] Langfuse across the whole path. Stage 4.
+- [ ] LLM-as-a-Judge and ≥10 Router Agent scenarios. Router's ≥10/12 gate
+      is done (Stage 1); LLM-as-a-Judge is Stage 4.
 - [ ] Repository, README with instructions, diagram, tests, Langfuse
       dashboard, video/live demo.
-- [ ] Silpo MCP as the primary domain data source.
+- [x] Silpo MCP as the primary domain data source. Real persistent-token
+      client, 17-tool allowlist, verified live against the real account
+      (docs/decisions.md #27).
 
 ## Explicitly out of scope / read-only (§1)
 

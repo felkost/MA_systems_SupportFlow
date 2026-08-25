@@ -7,8 +7,8 @@ Run manually:
 
     .venv/Scripts/python -m src.interfaces.launcher
 
-Wave 2a starts only Web Search Agent; Wave 2b adds Docs Agent
-(docs/decisions.md #20).
+Starts both Web Search Agent and Docs Agent (docs/decisions.md #20's two
+waves both landed).
 """
 
 import subprocess
@@ -22,8 +22,7 @@ import psutil
 
 from src.kernel.settings import AgentRole, load_agent_config
 
-# Wave 2b appends "docs" once its A2A server exists.
-_AGENT_ROLES: list[AgentRole] = ["web_search"]
+_AGENT_ROLES: list[AgentRole] = ["web_search", "docs"]
 
 
 @dataclass
