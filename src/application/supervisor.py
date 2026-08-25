@@ -21,6 +21,11 @@ from src.domain.filters import run_input_filter
 from src.domain.routing import decide_route
 from src.domain.state import ErrorType, NextAction, SupportFlowState
 from src.infrastructure.a2a_transport import A2ATimeoutError
+from src.infrastructure.docs_client import (
+    DocsInvalidResponseError,
+    DocsUnavailableError,
+    call_docs_agent,
+)
 from src.infrastructure.web_search_client import (
     WebSearchInvalidResponseError,
     WebSearchUnavailableError,
@@ -59,7 +64,50 @@ def router_node(state: SupportFlowState) -> dict[str, Any]:
 
 
 def docs_node(state: SupportFlowState) -> dict[str, Any]:
-    raise NotImplementedError("Docs Agent — Stage 2, not built yet")
+    """Calls Docs Agent over A2A (docs/decisions.md #1/#23) and routes on
+    the result: a model failure or a below-threshold confidence both
+    escalate (task §7 step 6). Mirrors `web_search_node` exactly — same
+    no-retry rationale (docs/decisions.md #20's Wave 2a precedent).
+    """
+    config = load_agent_config("docs")
+    deadline = datetime.now(timezone.utc) + timedelta(seconds=config.timeout_seconds)
+    errors: list[ErrorType] = []
+    try:
+        result = call_docs_agent(
+            state["original_request_masked"],
+            state["request_id"],
+            state["session_id"],
+            state["trace_id"],
+            deadline,
+        )
+    except A2ATimeoutError:
+        return {"next_action": "escalate", "errors": ["docs_timeout"]}
+    except DocsUnavailableError:
+        return {"next_action": "escalate", "errors": ["docs_unavailable"]}
+    except DocsInvalidResponseError:
+        return {"next_action": "escalate", "errors": ["docs_invalid_response"]}
+
+    if (
+        config.confidence_threshold is not None
+        and result.response.confidence < config.confidence_threshold
+    ):
+        errors.append("docs_low_confidence")
+        return {
+            "docs_response": result.response,
+            "retrieval_context": result.retrieval_context,
+            "confidence": result.response.confidence,
+            "next_action": "escalate",
+            "errors": errors,
+        }
+
+    return {
+        "docs_response": result.response,
+        "retrieval_context": result.retrieval_context,
+        "answer": result.response.answer,
+        "confidence": result.response.confidence,
+        "next_action": "respond",
+        "errors": errors,
+    }
 
 
 def web_search_node(state: SupportFlowState) -> dict[str, Any]:
@@ -131,6 +179,13 @@ def route_after_web_search(state: SupportFlowState) -> NextAction:
     return state["next_action"]
 
 
+def route_after_docs(state: SupportFlowState) -> NextAction:
+    """`docs_node` always sets `next_action` to `"respond"` or
+    `"escalate"` — same contract as `route_after_web_search`.
+    """
+    return state["next_action"]
+
+
 def build_graph() -> Any:
     """Compile the Stage 1 graph: `router` → conditional edge → one of
     `docs` / `web_search` / `escalate`.
@@ -150,7 +205,11 @@ def build_graph() -> Any:
         route_after_router,
         {"docs": "docs", "web_search": "web_search", "escalate": "escalate"},
     )
-    graph.add_edge("docs", END)
+    graph.add_conditional_edges(
+        "docs",
+        route_after_docs,
+        {"respond": END, "escalate": "escalate"},
+    )
     graph.add_conditional_edges(
         "web_search",
         route_after_web_search,

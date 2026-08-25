@@ -36,6 +36,10 @@ ErrorType = Literal[
     "web_search_timeout",
     "web_search_invalid_response",
     "web_search_low_confidence",
+    "docs_unavailable",
+    "docs_timeout",
+    "docs_invalid_response",
+    "docs_low_confidence",
 ]
 
 
