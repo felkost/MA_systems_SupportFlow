@@ -462,3 +462,149 @@ in observation metadata) alongside `request_id`, `task`, `deadline`, and
 `trace_id`; and `deadline` is actually enforced in `call_router()` rather
 than merely carried — an unenforced field reads as a control during
 review while providing none.
+
+## Stage 2 decisions (20-26)
+
+Stage 2 opened with the plan audited against the repository (kickoff step
+3) rather than checked by fresh adversarial review — the design surface
+this stage adds (two new A2A processes, a hybrid retriever, a real Silpo
+MCP client) is large, but every decision below resolves a gap the Stage 1
+failure-and-abuse table already named (F3/F15/F16/F23/F24) or a plan item
+the audit found unbuilt, not a newly discovered risk.
+
+## 20. Stage 2 is split into two sequential waves, each its own PR
+
+Docs Agent (RAG + real Silpo MCP OAuth client) and Web Search Agent
+together are large enough that one PR would bundle two independently
+reviewable risk surfaces — OAuth/token-persistence/retrieval complexity
+next to a much simpler Tavily/DuckDuckGo call.
+
+**Resolution:** Wave 2a ships Web Search Agent first, proving the A2A
+server/client/launcher plumbing end-to-end without OAuth. Wave 2b reuses
+that infrastructure for Docs Agent. Both remain "Stage 2" for README's
+progress table — the split is a branch/PR sequencing decision, not a new
+stage boundary.
+
+## 21. Silpo MCP OAuth in tests: fully mocked in `pytest`, live-checked by a manual smoke script
+
+Silpo MCP's OAuth is a real phone+OTP login against the author's own
+account (Decision 5) — it cannot run inside an automated gate.
+
+**Resolution:** `pytest --cov=src` never makes a live Silpo MCP call; the
+MCP session is mocked completely in `tests/infrastructure/test_silpo_mcp.py`.
+A separate `scripts/docs_agent_smoke.py`, modeled on the existing
+`scripts/probe_silpo_mcp.py`, is the live-verification path, run manually
+by the author — the same test-vs-gate split this project already uses for
+the Router gate (`scripts/run_router_gate.py`, also outside `pytest`).
+
+## 22. `retrieval_context` lives on `SupportFlowState`, not on `DocsResponse`/`WebSearchResponse`
+
+Decision 15 flagged this gap on purpose: DeepEval's `FaithfulnessMetric`
+(Stage 4) scores against `retrieval_context` (the retrieved text itself),
+which neither mandatory response model carries. Adding a field to either
+model would be the literal fix, but task §6 fixes the shape of the four
+mandatory Pydantic models — `DocsResponse`/`WebSearchResponse` are
+`answer`/`sources`/`confidence` only, and no later decision has reopened
+that.
+
+**Resolution:** `SupportFlowState` gains `retrieval_context: list[str]`,
+populated by `docs_node`/`web_search_node` from the retrieved chunk texts
+each agent actually used. This keeps the mandatory schemas frozen while
+giving Stage 4 a real channel to score against.
+
+## 23. A2A trace-context propagation: plumbing now, span emission at Stage 4
+
+CLAUDE.md's own invariant ("trace context is propagated across every A2A
+hop") and F23 both name this Stage 2's problem, but README's stage table
+puts Langfuse/OTel instrumentation at Stage 4 — building real spans this
+stage would mean building observability infrastructure a full stage early,
+against no golden dataset to validate it with yet.
+
+**Resolution:** the new A2A client and server carry the same four
+identifiers `AcpEnvelope` already carries in-process — `request_id`,
+`session_id`, `trace_id`, `deadline` — across the HTTP hop, via whatever
+mechanism the `a2a-sdk` probe confirms (task metadata field or an explicit
+header, not assumed). No OTel `TracerProvider`, no Langfuse span exporter,
+no `baggage`/`extract` calls exist in either new process yet — that is
+Stage 4's build, attaching to identifiers this stage already carries
+rather than redesigning the envelope then. This narrows F23's literal
+scope for this stage and is recorded here rather than done silently.
+
+**Confirmed mechanism (SDK probe, `a2a-sdk==1.1.2`, direct inspection of
+the installed package, not documentation):** the SDK has zero built-in W3C
+`baggage`/`traceparent` support anywhere in the package. But
+`SendMessageRequest`, `Message`, and `Task` (`a2a.types.a2a_pb2`) each
+carry a `metadata` field that behaves as a plain `dict[str, str]`
+(confirmed by direct assignment: `msg.metadata["trace_id"] = "..."`) —
+this is the channel, not a custom header. Client side: a
+`ClientCallInterceptor.before(args: BeforeArgs)` sets
+`args.input.metadata["request_id"/"session_id"/"trace_id"/"deadline"]`
+before the call goes out. Server side: `RequestContextBuilder.build(context,
+params: SendMessageRequest, ...)` reads them straight from
+`params.metadata` — no raw ASGI/Starlette header access and no custom
+`ServerCallContextBuilder` needed, simpler than the probe's own initial
+speculation. `deadline` is carried as an ISO-8601 string and parsed/enforced
+server-side the same way `call_router()` already enforces it in-process
+(docs/decisions.md #19).
+
+**Other confirmed corrections to this stage's design, from the same probe
+(`a2a-sdk==1.1.2` has no `A2AStarletteApplication`/`A2AFastAPIApplication`
+and no `DefaultRequestHandler` — both names from commonly-seen examples do
+not exist in this installed version):**
+- Server: hand-assemble `FastAPI()` + `add_a2a_routes_to_fastapi(app, ...)`
+  (`a2a.server.routes.fastapi_routes`); route the request handler through
+  `DefaultRequestHandlerV2(agent_executor, task_store, agent_card, ...)`.
+- Agent logic plugs in via `AgentExecutor.execute(context, event_queue)` /
+  `.cancel(...)` (both async, both required — no sync fallback).
+- `AgentCard` is a **protobuf message** (`a2a.types.a2a_pb2.AgentCard`),
+  not a Pydantic model — built with `supported_interfaces: list[AgentInterface]`
+  (each `url, protocol_binding, tenant, protocol_version`), not a single
+  top-level `url` field.
+- Client: `ClientFactory(config).create_from_url(url) -> Client`;
+  `client.send_message(request) -> AsyncIterator[StreamResponse]` — a
+  streaming iterator, not a single awaited result; the caller consumes it
+  to the terminal `Task`/`Message` event.
+
+## 24. Docs Agent's Silpo MCP allowlist is a code-level constant, not a prompt-referenced file path
+
+F24: the seeded Docs prompt referenced `docs/silpo_mcp_allowlist.md` by
+path, which the model cannot open — a dead reference the model could not
+have acted on even if it tried, and a prompt instruction is not an
+enforcement mechanism regardless (Decision 18's same point, applied here).
+
+**Resolution:** the 17 non-personal tool names from that file become a
+Python constant in `src/infrastructure/silpo_mcp.py`, checked before any
+tool call is dispatched — a call to a name outside the constant is
+rejected in code, not merely discouraged in the prompt. The prompt itself
+is corrected to name the categories of tools it may use in prose, dropping
+the file-path reference, and re-seeded to Langfuse as a new version.
+
+## 25. Contradictory sources (F16): resolved via the existing self-reported-confidence gate, no new algorithm
+
+F16 asks how Docs/Web Search Agent detects that its own sources disagree.
+A comparison algorithm (e.g., diffing stated prices across sources) is
+real work with its own failure modes and no task requirement naming a
+method.
+
+**Resolution:** the agent's own prompt is instructed to lower `confidence`
+when its retrieved sources conflict, which trips the confidence-threshold
+escalation path already built (task §7 step 6). This is the same trade-off
+already accepted for the confidence gate generally (Decision 12/19, F19):
+self-reported and unvalidated until Stage 4's golden-dataset run measures
+it against judged correctness. Adding a second, deterministic contradiction
+detector is not ruled out later, but is not this stage's job — ponytail
+discipline: the lazy version is the accepted one until measurement shows
+it insufficient.
+
+## 26. `config/models.yaml` gains a `port` field on the `docs` and `web_search` rows only
+
+Task §8 names OpenRouter model/temperature/max_tokens/timeout/confidence
+threshold as `config/models.yaml`'s content; a port number is this
+project's own addition (the launcher needs somewhere to read it from), not
+a task requirement, and belongs beside the other per-agent knobs rather
+than in a new file.
+
+**Resolution:** `port` is added only to `docs` and `web_search` — the two
+rows that now run as separate OS processes. Router, Escalation, and
+Supervisor stay in-process (Decision 1) and gain no port field, since one
+would be dead configuration nothing reads.

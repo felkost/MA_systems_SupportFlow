@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     openrouter_api_key : str
         Every LLM role routes through OpenRouter; no direct-provider path
         exists (.env.example).
+    tavily_api_key : str, default=""
+        Web Search Agent's primary provider (task §3); `ddgs` (DuckDuckGo)
+        needs no key and is the fallback (docs/decisions.md #20).
     langfuse_public_key, langfuse_secret_key : str, default=""
         Empty means tracing/prompt-fetch against Langfuse is not configured.
         `docs/decisions.md` #13 makes a cold-cache Langfuse prompt fetch a
@@ -43,6 +46,7 @@ class Settings(BaseSettings):
     )
 
     openrouter_api_key: str = ""
+    tavily_api_key: str = ""
     langfuse_public_key: str = ""
     langfuse_secret_key: str = ""
     langfuse_base_url: str = "https://cloud.langfuse.com"
@@ -69,6 +73,10 @@ class AgentModelConfig(BaseModel):
         docs/decisions.md #12: one repair retry before Router fails closed
         to Escalation. Applies uniformly; only Router's failure path is
         built in Stage 1.
+    port : int or None, default=None
+        docs/decisions.md #26: set only for `docs` and `web_search`, the
+        two agents running as separate A2A server processes (Stage 2).
+        `None` for every in-process agent (Router, Escalation, Supervisor).
     """
 
     model: str
@@ -77,6 +85,7 @@ class AgentModelConfig(BaseModel):
     timeout_seconds: float = Field(gt=0)
     confidence_threshold: float | None = Field(default=None, ge=0.0, le=1.0)
     max_retries: int = Field(default=1, ge=0)
+    port: int | None = Field(default=None, gt=0, lt=65536)
 
 
 def load_agent_config(

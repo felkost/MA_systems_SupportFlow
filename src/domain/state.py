@@ -32,6 +32,10 @@ ErrorType = Literal[
     "router_timeout",
     "router_retries_exhausted",
     "prompt_fetch_failed",
+    "web_search_unavailable",
+    "web_search_timeout",
+    "web_search_invalid_response",
+    "web_search_low_confidence",
 ]
 
 
@@ -73,6 +77,11 @@ class SupportFlowState(TypedDict):
         request's Router call (docs/decisions.md #13) — `label="production"`
         is mutable, so this is what makes a later before/after comparison
         attributable to a specific prompt version.
+    retrieval_context : list[str]
+        The retrieved chunk texts Docs/Web Search Agent actually used
+        (docs/decisions.md #22) — state-only, not part of either mandatory
+        response model (task §6 freezes their shape). Stage 4's DeepEval
+        `FaithfulnessMetric` scores against this.
     next_action : NextAction
     """
 
@@ -90,4 +99,5 @@ class SupportFlowState(TypedDict):
     retry_count: int
     escalation_count: int
     router_prompt_version: int | None
+    retrieval_context: list[str]
     next_action: NextAction
