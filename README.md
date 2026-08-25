@@ -5,10 +5,22 @@ classifies an incoming message, routes it to a Docs, Web Search, or
 Escalation agent, and returns a sourced answer or hands the case to a human
 operator via Telegram.
 
-**Status: kickoff only.** No application code exists yet — this repository
-currently holds the scaffold, conventions, and requirement checklist. See
-`docs/task-supportflow.md` for the full task statement and
+See `docs/task-supportflow.md` for the full task statement and
 `docs/requirements-checklist.md` for what "done" means.
+
+## Progress
+
+| | Stage | What it delivers |
+|---|---|---|
+| ✅ | 0 — Kickoff | Conventions, layer table, dependency pins, real Silpo MCP tool list + allowlist, seeded prompts |
+| ⬜ | 1 — Core | Pydantic schemas, LangGraph StateGraph, Supervisor, Router Agent, input filter |
+| ⬜ | 2 — Data | Docs Agent + RAG, real Silpo MCP client, Web Search Agent |
+| ⬜ | 3 — Escalation | Escalation Agent, file report, Telegram notification |
+| ⬜ | 4 — Evaluation & observability | Langfuse tracing, DeepEval, golden dataset, thresholds |
+| ⬜ | 5 — Product & docs | FastAPI, React chat UI, final README, diagrams |
+
+Updated at the close of every stage — see `docs/decisions.md` for the
+reasoning behind each stage's scope.
 
 ## Architecture
 

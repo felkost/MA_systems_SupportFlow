@@ -184,7 +184,42 @@ finishing Stage 2 (Docs Agent's MCP calls):**
   translation only at the two boundaries (customer's message in, final
   answer out).
 
-## 7. Human-in-the-loop scope
+## 7. Memory and startup cost across the multi-process topology
+
+Author's requirement: with several processes talking to each other
+(hybrid transport, Decision 1), each one should use as little memory as
+possible and start fast — a heavy process is a heavy process four times
+over here, not once.
+
+**Where the actual weight is, so it's not spread everywhere by default:**
+`sentence-transformers` (reranker) and the embedding model are the only
+genuinely heavy imports in this project (hundreds of MB to a few GB
+resident, seconds of load time) — and only **Docs Agent's process** needs
+them, because retrieval and reranking are its job alone. Router,
+Supervisor, and Web Search Agent never touch the retriever.
+
+**Concrete rules for Stage 1 onward:**
+- **Import heavy ML libraries inside the function that uses them, not at
+  module top level.** A top-level `import sentence_transformers` in a
+  module the Router or Supervisor process happens to import (even
+  indirectly, e.g. via a shared `schemas.py`) pulls the model-loading cost
+  into every process, not just Docs Agent's. This is the same pitfall
+  `agentic-project-kickoff` warns about for the test suite; it applies
+  equally to production processes here, and matters more since there are
+  four of them.
+- **The retriever (Chroma + BM25 + cross-encoder) loads once per Docs
+  Agent process, lazily on first use, not at every process's startup.**
+- **Router, Supervisor, and Escalation stay light by construction** — no
+  retrieval, no embedding model, no reranker; the hybrid-transport split
+  (Decision 1) already isolates the heavy retrieval work behind a network
+  boundary others don't pay for.
+- **The launcher (Stage 2) measures and reports startup time and peak
+  memory per process** — this is the concrete instrument for the
+  resource-control rule already in the project plan ("check free RAM
+  before a heavy run"), applied specifically to "does this multi-process
+  system actually start up light and fast," not just asserted.
+
+## 8. Human-in-the-loop scope
 
 Escalation's real Telegram send and file write are gated behind
 human-in-the-loop confirmation in interactive/demo mode, and behind an

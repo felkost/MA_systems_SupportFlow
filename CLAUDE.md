@@ -109,6 +109,12 @@ black --check . tests/*.py && flake8 && mypy src && pytest --cov=src
   passed through untranslated for a non-Ukrainian customer message
   silently returns nothing, which looks like a tool failure but is a
   language mismatch. `docs/decisions.md` §6.
+- **Heavy ML imports (`sentence-transformers`, the embedding model,
+  Chroma) live inside the function that uses them, never at module top
+  level**, and only in Docs Agent's own module tree. Router, Supervisor,
+  and Escalation must never load the retriever — with four processes,
+  a top-level heavy import costs memory and startup time four times, not
+  once. `docs/decisions.md` §7.
 - **The Silpo MCP client persists its OAuth token to disk and refreshes it
   on startup**, because the process (and the machine) can restart, and a
   refresh_token grant is how Silpo's own docs say to recover a session
@@ -134,9 +140,14 @@ speculative abstraction), files ≤250 lines preferred (§8 of the task),
 250–320 allowed for a single well-scoped responsibility.
 
 **Never in a tracked file:** a reference to a gitignored file
-(`insights.md`, `handoff.md`, `.claude/`) by name or content, or a mention
-of a build stage/phase/step number. A commit message describes the change,
-not its stage.
+(`insights.md`, `handoff.md`, `.claude/`) by name or content. A commit
+message or code comment describes the change, not its stage number.
+
+**Exception, explicit author request:** `README.md` carries a visible
+progress checklist (stage name, ✅/⬜ status) — this is the one place a
+stage number is allowed in a tracked file, because a reader deciding
+whether to pick this project up needs to know what's actually done without
+reading every commit. Keep it updated at the close of every stage.
 
 ## 6. Forbidden
 
@@ -159,6 +170,10 @@ data-protection code (task §10).
 
 ## 8. Session protocol
 
+**Every session — this one and every future one — is conducted in
+Ukrainian from the first message, no exception and no reminder needed.**
+This applies regardless of what language the request arrives in.
+
 Read order at the start of a session: `handoff.md` (if present — it is
 gitignored, local only), then `git log --oneline -5` and
 `git status --short --branch` to verify `handoff.md`'s snapshot rather than
@@ -166,5 +181,6 @@ trust it, then this file, then `docs/requirements-checklist.md`.
 
 Standing rules: session and plan language is Ukrainian; all other tracked
 documentation, code, comments, and commits are English; stage boundaries
-are visible in `insights.md`/`handoff.md` (both local) and never in a
-tracked file.
+are visible in `insights.md`/`handoff.md` (both local) and, since the
+author's explicit exception, in `README.md`'s progress checklist — never
+elsewhere in a tracked file.
