@@ -29,12 +29,15 @@ requirement this list does not contain.
 - [x] Web Search Agent — Tavily primary, DuckDuckGo fallback.
       `src/application/web_search_agent.py` + `src/infrastructure/web_search.py`,
       verified live end-to-end.
-- [ ] Escalation Agent — structured report, file save, real Telegram message
-      to a test channel.
+- [x] Escalation Agent — structured report, file save, real Telegram message
+      to a test channel. `src/application/escalation_agent.py` (PII mask,
+      HITL gate, session dedup+cap, process cap) +
+      `src/infrastructure/telegram_client.py`/`report_writer.py`, verified
+      live end-to-end (`scripts/escalation_agent_smoke.py`, real message
+      delivered to the test channel, real report file written).
 - [x] LangGraph StateGraph — state, agent sequencing, conditional
-      transitions. `src/application/supervisor.py`: real Router node and
-      real conditional edges; Docs/Web Search/Escalation nodes raise
-      `NotImplementedError` naming their owning stage until built.
+      transitions. `src/application/supervisor.py`: real Router, Docs, Web
+      Search, and Escalation nodes, real conditional edges.
 - [x] Pydantic — validates data agents pass to each other.
       `src/domain/schemas.py`.
 - [ ] Langfuse — traces the full request path, versions system prompts, runs
@@ -59,8 +62,9 @@ requirement this list does not contain.
 - [x] Web Search Agent gets no personal user data, does not confirm
       cart/bonus/order state — takes only the already-masked text
       (docs/decisions.md #14), never calls Silpo MCP.
-- [ ] Escalation Agent produces an operator-readable report, saves to file,
-      sends Telegram notification.
+- [x] Escalation Agent produces an operator-readable report, saves to file,
+      sends Telegram notification. `escalate_node` in
+      `src/application/supervisor.py`.
 
 ## Data sources and tools (§5)
 
@@ -75,8 +79,9 @@ requirement this list does not contain.
 - [x] Web search used only for current general info absent from internal
       sources — Router routes `general` category to Web Search Agent,
       `product`/service queries to Docs Agent (`src/domain/routing.py`).
-- [ ] File system stores escalation reports; Telegram sends to a test
-      channel.
+- [x] File system stores escalation reports; Telegram sends to a test
+      channel. Run-scoped `output/escalations/{session_id}/{request_id}.json`
+      (docs/decisions.md #19), real send verified live.
 
 ## Data contracts (§6) — four mandatory Pydantic models
 
@@ -100,21 +105,18 @@ requirement this list does not contain.
       data. `src/domain/filters.py`, 100% test coverage
       (docs/decisions.md #10).
 - [x] Step 2: Supervisor calls Router Agent via ACP.
-- [x] Step 3: critical request → Escalation Agent immediately. Routing
-      decision only — Escalation Agent itself is Stage 3
-      (docs/decisions.md #16); the graph edge dispatches correctly and
-      raises `NotImplementedError` there until built.
+- [x] Step 3: critical request → Escalation Agent immediately.
+      `escalate_node` in `src/application/supervisor.py`, real Escalation
+      Agent (Stage 3).
 - [x] Step 4: product/rules/service request → Docs Agent (knowledge base +
       Silpo MCP). `src/application/supervisor.py`'s `docs_node`, real A2A
       call to `src/interfaces/docs_a2a_server.py`.
 - [x] Step 5: general request needing current external info → Web Search
       Agent. `web_search_node`, real A2A call.
 - [x] Step 6: low confidence, contradictory sources, or unavailable tool →
-      Escalation Agent. Routing decision only — `docs_node`/`web_search_node`
-      both route a below-threshold confidence or a tool failure to
-      `escalate`; Escalation Agent itself is Stage 3
-      (docs/decisions.md #16), the edge raises `NotImplementedError` there
-      until built. Contradictory sources: self-reported confidence, no
+      Escalation Agent. `docs_node`/`web_search_node` both route a
+      below-threshold confidence or a tool failure to `escalate`, now a
+      real node. Contradictory sources: self-reported confidence, no
       separate detector (docs/decisions.md #25).
 - [x] Step 7: successful route → Supervisor composes a short final answer
       with sources. `docs_node`/`web_search_node` set `state["answer"]`
@@ -190,14 +192,17 @@ requirement this list does not contain.
 - [ ] Docs Agent: answer grounded in knowledge base or Silpo MCP, no
       fabricated facts; out-of-base query → low confidence → escalation.
 - [ ] Web Search Agent: every claim backed by a returned web source.
-- [ ] Escalation Agent: report has enough context, prior attempted steps,
-      and a clear customer message.
-- [ ] Supervisor: all conditional routes, confidence threshold, escalation
-      transitions tested.
-- [ ] Tool-correctness checks: Router calls no tools; Docs calls Silpo MCP
+- [x] Escalation Agent: report has enough context, prior attempted steps,
+      and a clear customer message. `tests/application/test_escalation_agent.py`
+      (`_render_context` covers classification/confidence/errors/prior
+      agent attempts).
+- [x] Supervisor: all conditional routes, confidence threshold, escalation
+      transitions tested. `tests/application/test_supervisor.py`.
+- [x] Tool-correctness checks: Router calls no tools; Docs calls Silpo MCP
       only for domain queries; Web Search calls Tavily/DuckDuckGo only for
       allowed external queries; Escalation writes a file and sends a real
-      test Telegram message.
+      test Telegram message. `scripts/escalation_agent_smoke.py`, live
+      run: file written, real message delivered.
 - [ ] Full golden dataset run via `deepeval test run tests/`.
 - [ ] Core metrics (0–1): Answer Relevancy, Groundedness (⇒ DeepEval
       `FaithfulnessMetric`, no metric literally named "Groundedness").
@@ -221,14 +226,15 @@ requirement this list does not contain.
 
 ## Success criteria (§13)
 
-- [ ] Four mandatory agents. 3/4 real (Router, Docs, Web Search); Escalation
-      is Stage 3.
+- [x] Four mandatory agents. 4/4 real (Router, Docs, Web Search,
+      Escalation — Stage 3).
 - [x] Classification by category, urgency, language. Stage 1 Router gate.
 - [x] RAG over internal knowledge base. Chroma+BM25 `EnsembleRetriever`
       (docs/decisions.md #7).
 - [x] DuckDuckGo as fallback for Web Search Agent. `ddgs`, verified live
       fallback path (`src/infrastructure/web_search.py`).
-- [ ] File + real Telegram notification for escalation. Stage 3.
+- [x] File + real Telegram notification for escalation. Stage 3,
+      `scripts/escalation_agent_smoke.py` — live verified.
 - [x] Four mandatory Pydantic models. `src/domain/schemas.py`.
 - [x] LangGraph StateGraph, conditional transitions, low-confidence
       fallback. `docs_node`/`web_search_node` both escalate below

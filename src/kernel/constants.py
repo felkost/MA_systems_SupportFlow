@@ -18,3 +18,18 @@ GRAPH_RECURSION_LIMIT: int = 25
 # question, and small enough that a request this long is itself a signal
 # worth rejecting before it reaches an LLM call.
 MAX_INPUT_CHARS: int = 4000
+
+# docs/decisions.md #19 (F17): a developer-picked safety cap, not a task
+# threshold — bounds how many real Telegram sends one process lifetime can
+# make, so a runaway loop or a large automated run cannot spam the test
+# channel unboundedly.
+MAX_ESCALATION_SENDS_PER_PROCESS: int = 5
+
+# docs/decisions.md #19 (F2): per-session cap, smaller than the process-wide
+# one above — a single customer session escalating repeatedly is itself a
+# signal, not just aggregate process load.
+MAX_ESCALATION_SENDS_PER_SESSION: int = 2
+
+# Telegram's own documented per-message character limit (sendMessage) —
+# text is truncated to this before a real send, never rejected outright.
+TELEGRAM_MAX_MESSAGE_CHARS: int = 4096
