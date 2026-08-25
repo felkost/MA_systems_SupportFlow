@@ -1,0 +1,34 @@
+# Harness / assistant infrastructure — not part of the product.
+.claude/
+
+# Local-only session-continuity files, per project convention: they may
+# reference build-stage/phase language, which tracked files may not.
+handoff.md
+insights.md
+
+# Secrets — the remote is public, this must never be committed.
+.env
+
+# Environments and caches — kept off the system drive by .env, ignored here
+# so a stray one from before that convention existed never gets added.
+.venv/
+.cache/
+.deepeval/
+__pycache__/
+*.pyc
+.mypy_cache/
+.pytest_cache/
+.coverage
+node_modules/
+
+# Derived artefacts — rebuilt from data/knowledge_base/ by ingest, or
+# produced by running the system; not source.
+index/
+logs/
+runs/
+
+# Output directory: ignore contents, then re-include the ones worth
+# tracking, so a stray crash-run file from a broad `git add` does not
+# silently join a public repo, and the negations stay reachable.
+output/*
+!output/.gitkeep
