@@ -32,3 +32,4 @@ runs/
 # silently join a public repo, and the negations stay reachable.
 output/*
 !output/.gitkeep
+!output/router_gate_result.json

@@ -1,0 +1,547 @@
+{
+  "timestamp_utc": "2026-08-25T16:41:34.855937+00:00",
+  "model": "google/gemini-3.5-flash-lite",
+  "n_cases": 12,
+  "n_runs": 3,
+  "pass_threshold": "10/12",
+  "per_run_correct": [
+    10,
+    10,
+    11
+  ],
+  "per_run_accuracy": [
+    0.8333333333333334,
+    0.8333333333333334,
+    0.9166666666666666
+  ],
+  "accuracy_mean": 0.8611111111111112,
+  "accuracy_range": [
+    0.8333333333333334,
+    0.9166666666666666
+  ],
+  "passed": true,
+  "runs": [
+    {
+      "model": "google/gemini-3.5-flash-lite",
+      "accuracy": 0.8333333333333334,
+      "cases": [
+        {
+          "input": "Чи є у вас безлактозне молоко?",
+          "expected": {
+            "category": "product",
+            "urgency": "low"
+          },
+          "actual": {
+            "category": "product",
+            "urgency": "low",
+            "language": "uk"
+          },
+          "correct": true,
+          "errors": []
+        },
+        {
+          "input": "Коли ви відкриваєтесь у неділю?",
+          "expected": {
+            "category": "general",
+            "urgency": "low"
+          },
+          "actual": {
+            "category": "general",
+            "urgency": "low",
+            "language": "uk"
+          },
+          "correct": true,
+          "errors": []
+        },
+        {
+          "input": "У мене алергічна реакція після вашого продукту, терміново!",
+          "expected": {
+            "category": "critical",
+            "urgency": "critical"
+          },
+          "actual": {
+            "category": "critical",
+            "urgency": "critical",
+            "language": "uk"
+          },
+          "correct": true,
+          "errors": []
+        },
+        {
+          "input": "Скільки коштує хліб бородинський?",
+          "expected": {
+            "category": "product",
+            "urgency": "low"
+          },
+          "actual": {
+            "category": "product",
+            "urgency": "low",
+            "language": "uk"
+          },
+          "correct": true,
+          "errors": []
+        },
+        {
+          "input": "Чи можна повернути товар без чека?",
+          "expected": {
+            "category": "product",
+            "urgency": "medium"
+          },
+          "actual": {
+            "category": "product",
+            "urgency": "low",
+            "language": "uk"
+          },
+          "correct": false,
+          "errors": []
+        },
+        {
+          "input": "Я знайшов скло в консервах, це небезпечно!",
+          "expected": {
+            "category": "critical",
+            "urgency": "critical"
+          },
+          "actual": {
+            "category": "critical",
+            "urgency": "critical",
+            "language": "uk"
+          },
+          "correct": true,
+          "errors": []
+        },
+        {
+          "input": "Які у вас акції цього тижня?",
+          "expected": {
+            "category": "general",
+            "urgency": "low"
+          },
+          "actual": {
+            "category": "product",
+            "urgency": "low",
+            "language": "uk"
+          },
+          "correct": false,
+          "errors": []
+        },
+        {
+          "input": "Де найближчий до мене магазин?",
+          "expected": {
+            "category": "general",
+            "urgency": "low"
+          },
+          "actual": {
+            "category": "general",
+            "urgency": "low",
+            "language": "uk"
+          },
+          "correct": true,
+          "errors": []
+        },
+        {
+          "input": "Is the store open on public holidays?",
+          "expected": {
+            "category": "general",
+            "urgency": "low"
+          },
+          "actual": {
+            "category": "general",
+            "urgency": "low",
+            "language": "en"
+          },
+          "correct": true,
+          "errors": []
+        },
+        {
+          "input": "Мій замовлення не приїхав вчасно, вже 3 дні затримки",
+          "expected": {
+            "category": "product",
+            "urgency": "medium"
+          },
+          "actual": {
+            "category": "product",
+            "urgency": "medium",
+            "language": "uk"
+          },
+          "correct": true,
+          "errors": []
+        },
+        {
+          "input": "Ви продаєте безглютенові продукти?",
+          "expected": {
+            "category": "product",
+            "urgency": "low"
+          },
+          "actual": {
+            "category": "product",
+            "urgency": "low",
+            "language": "uk"
+          },
+          "correct": true,
+          "errors": []
+        },
+        {
+          "input": "Термінова допомога! У дитини алергічна реакція на морепродукти з вашого магазину!",
+          "expected": {
+            "category": "critical",
+            "urgency": "critical"
+          },
+          "actual": {
+            "category": "critical",
+            "urgency": "critical",
+            "language": "uk"
+          },
+          "correct": true,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "model": "google/gemini-3.5-flash-lite",
+      "accuracy": 0.8333333333333334,
+      "cases": [
+        {
+          "input": "Чи є у вас безлактозне молоко?",
+          "expected": {
+            "category": "product",
+            "urgency": "low"
+          },
+          "actual": {
+            "category": "product",
+            "urgency": "low",
+            "language": "uk"
+          },
+          "correct": true,
+          "errors": []
+        },
+        {
+          "input": "Коли ви відкриваєтесь у неділю?",
+          "expected": {
+            "category": "general",
+            "urgency": "low"
+          },
+          "actual": {
+            "category": "general",
+            "urgency": "low",
+            "language": "uk"
+          },
+          "correct": true,
+          "errors": []
+        },
+        {
+          "input": "У мене алергічна реакція після вашого продукту, терміново!",
+          "expected": {
+            "category": "critical",
+            "urgency": "critical"
+          },
+          "actual": {
+            "category": "critical",
+            "urgency": "critical",
+            "language": "uk"
+          },
+          "correct": true,
+          "errors": []
+        },
+        {
+          "input": "Скільки коштує хліб бородинський?",
+          "expected": {
+            "category": "product",
+            "urgency": "low"
+          },
+          "actual": {
+            "category": "product",
+            "urgency": "low",
+            "language": "uk"
+          },
+          "correct": true,
+          "errors": []
+        },
+        {
+          "input": "Чи можна повернути товар без чека?",
+          "expected": {
+            "category": "product",
+            "urgency": "medium"
+          },
+          "actual": {
+            "category": "general",
+            "urgency": "low",
+            "language": "uk"
+          },
+          "correct": false,
+          "errors": []
+        },
+        {
+          "input": "Я знайшов скло в консервах, це небезпечно!",
+          "expected": {
+            "category": "critical",
+            "urgency": "critical"
+          },
+          "actual": {
+            "category": "critical",
+            "urgency": "critical",
+            "language": "uk"
+          },
+          "correct": true,
+          "errors": []
+        },
+        {
+          "input": "Які у вас акції цього тижня?",
+          "expected": {
+            "category": "general",
+            "urgency": "low"
+          },
+          "actual": {
+            "category": "product",
+            "urgency": "low",
+            "language": "uk"
+          },
+          "correct": false,
+          "errors": []
+        },
+        {
+          "input": "Де найближчий до мене магазин?",
+          "expected": {
+            "category": "general",
+            "urgency": "low"
+          },
+          "actual": {
+            "category": "general",
+            "urgency": "low",
+            "language": "uk"
+          },
+          "correct": true,
+          "errors": []
+        },
+        {
+          "input": "Is the store open on public holidays?",
+          "expected": {
+            "category": "general",
+            "urgency": "low"
+          },
+          "actual": {
+            "category": "general",
+            "urgency": "low",
+            "language": "en"
+          },
+          "correct": true,
+          "errors": []
+        },
+        {
+          "input": "Мій замовлення не приїхав вчасно, вже 3 дні затримки",
+          "expected": {
+            "category": "product",
+            "urgency": "medium"
+          },
+          "actual": {
+            "category": "product",
+            "urgency": "medium",
+            "language": "uk"
+          },
+          "correct": true,
+          "errors": []
+        },
+        {
+          "input": "Ви продаєте безглютенові продукти?",
+          "expected": {
+            "category": "product",
+            "urgency": "low"
+          },
+          "actual": {
+            "category": "product",
+            "urgency": "low",
+            "language": "uk"
+          },
+          "correct": true,
+          "errors": []
+        },
+        {
+          "input": "Термінова допомога! У дитини алергічна реакція на морепродукти з вашого магазину!",
+          "expected": {
+            "category": "critical",
+            "urgency": "critical"
+          },
+          "actual": {
+            "category": "critical",
+            "urgency": "critical",
+            "language": "uk"
+          },
+          "correct": true,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "model": "google/gemini-3.5-flash-lite",
+      "accuracy": 0.9166666666666666,
+      "cases": [
+        {
+          "input": "Чи є у вас безлактозне молоко?",
+          "expected": {
+            "category": "product",
+            "urgency": "low"
+          },
+          "actual": {
+            "category": "product",
+            "urgency": "low",
+            "language": "uk"
+          },
+          "correct": true,
+          "errors": []
+        },
+        {
+          "input": "Коли ви відкриваєтесь у неділю?",
+          "expected": {
+            "category": "general",
+            "urgency": "low"
+          },
+          "actual": {
+            "category": "general",
+            "urgency": "low",
+            "language": "uk"
+          },
+          "correct": true,
+          "errors": []
+        },
+        {
+          "input": "У мене алергічна реакція після вашого продукту, терміново!",
+          "expected": {
+            "category": "critical",
+            "urgency": "critical"
+          },
+          "actual": {
+            "category": "critical",
+            "urgency": "critical",
+            "language": "uk"
+          },
+          "correct": true,
+          "errors": []
+        },
+        {
+          "input": "Скільки коштує хліб бородинський?",
+          "expected": {
+            "category": "product",
+            "urgency": "low"
+          },
+          "actual": {
+            "category": "product",
+            "urgency": "low",
+            "language": "uk"
+          },
+          "correct": true,
+          "errors": []
+        },
+        {
+          "input": "Чи можна повернути товар без чека?",
+          "expected": {
+            "category": "product",
+            "urgency": "medium"
+          },
+          "actual": {
+            "category": "general",
+            "urgency": "low",
+            "language": "uk"
+          },
+          "correct": false,
+          "errors": []
+        },
+        {
+          "input": "Я знайшов скло в консервах, це небезпечно!",
+          "expected": {
+            "category": "critical",
+            "urgency": "critical"
+          },
+          "actual": {
+            "category": "critical",
+            "urgency": "critical",
+            "language": "uk"
+          },
+          "correct": true,
+          "errors": []
+        },
+        {
+          "input": "Які у вас акції цього тижня?",
+          "expected": {
+            "category": "general",
+            "urgency": "low"
+          },
+          "actual": {
+            "category": "general",
+            "urgency": "low",
+            "language": "uk"
+          },
+          "correct": true,
+          "errors": []
+        },
+        {
+          "input": "Де найближчий до мене магазин?",
+          "expected": {
+            "category": "general",
+            "urgency": "low"
+          },
+          "actual": {
+            "category": "general",
+            "urgency": "low",
+            "language": "uk"
+          },
+          "correct": true,
+          "errors": []
+        },
+        {
+          "input": "Is the store open on public holidays?",
+          "expected": {
+            "category": "general",
+            "urgency": "low"
+          },
+          "actual": {
+            "category": "general",
+            "urgency": "low",
+            "language": "en"
+          },
+          "correct": true,
+          "errors": []
+        },
+        {
+          "input": "Мій замовлення не приїхав вчасно, вже 3 дні затримки",
+          "expected": {
+            "category": "product",
+            "urgency": "medium"
+          },
+          "actual": {
+            "category": "product",
+            "urgency": "medium",
+            "language": "uk"
+          },
+          "correct": true,
+          "errors": []
+        },
+        {
+          "input": "Ви продаєте безглютенові продукти?",
+          "expected": {
+            "category": "product",
+            "urgency": "low"
+          },
+          "actual": {
+            "category": "product",
+            "urgency": "low",
+            "language": "uk"
+          },
+          "correct": true,
+          "errors": []
+        },
+        {
+          "input": "Термінова допомога! У дитини алергічна реакція на морепродукти з вашого магазину!",
+          "expected": {
+            "category": "critical",
+            "urgency": "critical"
+          },
+          "actual": {
+            "category": "critical",
+            "urgency": "critical",
+            "language": "uk"
+          },
+          "correct": true,
+          "errors": []
+        }
+      ]
+    }
+  ]
+}

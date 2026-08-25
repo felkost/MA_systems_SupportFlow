@@ -16,14 +16,21 @@ requirement this list does not contain.
 
 ## Mandatory components (§3)
 
-- [ ] Router Agent — classifies by category, urgency, language; no tools.
+- [x] Router Agent — classifies by category, urgency, language; no tools.
+      `src/application/router_agent.py` + `src/infrastructure/acp.py`,
+      gated at ≥10/12 on a held-out labelled set across 3 runs
+      (`output/router_gate_result.json`).
 - [ ] Docs Agent — RAG over internal knowledge base + Silpo MCP for domain
       queries.
 - [ ] Web Search Agent — Tavily primary, DuckDuckGo fallback.
 - [ ] Escalation Agent — structured report, file save, real Telegram message
       to a test channel.
-- [ ] LangGraph StateGraph — state, agent sequencing, conditional transitions.
-- [ ] Pydantic — validates data agents pass to each other.
+- [x] LangGraph StateGraph — state, agent sequencing, conditional
+      transitions. `src/application/supervisor.py`: real Router node and
+      real conditional edges; Docs/Web Search/Escalation nodes raise
+      `NotImplementedError` naming their owning stage until built.
+- [x] Pydantic — validates data agents pass to each other.
+      `src/domain/schemas.py`.
 - [ ] Langfuse — traces the full request path, versions system prompts, runs
       automated evaluation.
 - [ ] DeepEval + pytest — component, tool, and end-to-end tests.
@@ -35,9 +42,11 @@ requirement this list does not contain.
 - [ ] Supervisor holds state, calls agents via ACP, compares confidence to a
       threshold, runs conditional transitions, limits retries, handles
       errors/timeouts, does not search itself.
-- [ ] Each ACP call carries: request id, task, deadline, Langfuse trace ids;
-      response validated by the matching Pydantic model.
-- [ ] Router has no tools, returns only structured classification.
+- [x] Each ACP call carries: request id, task, deadline, Langfuse trace ids;
+      response validated by the matching Pydantic model. `AcpEnvelope`
+      also carries `session_id` (docs/decisions.md #19) — task §9's
+      observation metadata needs it, beyond §4's own four fields.
+- [x] Router has no tools, returns only structured classification.
 - [ ] Docs Agent returns answer, sources, confidence (0–1).
 - [ ] Web Search Agent gets no personal user data, does not confirm
       cart/bonus/order state.
@@ -60,21 +69,30 @@ requirement this list does not contain.
 
 ## Data contracts (§6) — four mandatory Pydantic models
 
-- [ ] `ClassificationOutput`: category (Literal: product, general, critical),
+- [x] `ClassificationOutput`: category (Literal: product, general, critical),
       urgency (Literal: low, medium, critical), language.
-- [ ] `DocsResponse`: answer, sources, confidence (0–1).
-- [ ] `WebSearchResponse`: answer, sources, confidence (0–1).
-- [ ] `EscalationOutput`: summary, category, customer_message,
+- [x] `DocsResponse`: answer, sources, confidence (0–1). `sources` is
+      `list[Source]` (ref, retrieved_at, version), not `list[str]` —
+      docs/decisions.md #15.
+- [x] `WebSearchResponse`: answer, sources, confidence (0–1).
+- [x] `EscalationOutput`: summary, category, customer_message,
       attempted_resolution.
-- [ ] LangGraph state carries: original request, classification, search
+- [x] LangGraph state carries: original request, classification, search
       results, answer, confidence, errors, session/trace ids, next action.
+      `src/domain/state.py`'s `SupportFlowState` — carries
+      `original_request_masked`, never the raw request (docs/decisions.md
+      #14).
 
 ## Workflow sequence (§7)
 
-- [ ] Step 1: input filter — language, domain bounds, personal/forbidden
-      data.
-- [ ] Step 2: Supervisor calls Router Agent via ACP.
-- [ ] Step 3: critical request → Escalation Agent immediately.
+- [x] Step 1: input filter — language, domain bounds, personal/forbidden
+      data. `src/domain/filters.py`, 100% test coverage
+      (docs/decisions.md #10).
+- [x] Step 2: Supervisor calls Router Agent via ACP.
+- [x] Step 3: critical request → Escalation Agent immediately. Routing
+      decision only — Escalation Agent itself is Stage 3
+      (docs/decisions.md #16); the graph edge dispatches correctly and
+      raises `NotImplementedError` there until built.
 - [ ] Step 4: product/rules/service request → Docs Agent (knowledge base +
       Silpo MCP).
 - [ ] Step 5: general request needing current external info → Web Search
@@ -142,7 +160,11 @@ requirement this list does not contain.
 - [ ] Explicitly covered: Silpo MCP unavailability, OAuth error, timeout
       exceeded, insufficient evidence, out-of-domain request, critical
       escalation.
-- [ ] Router: ≥10 classification queries with known-correct categories.
+- [x] Router: ≥10 classification queries with known-correct categories.
+      n=12 held-out set, ≥10/12 across 3 runs (10, 10, 11 — mean 0.861),
+      `google/gemini-3.5-flash-lite`, `output/router_gate_result.json`
+      (docs/decisions.md #17). Not the full 18-case golden dataset —
+      that is Stage 4 scope.
 - [ ] Docs Agent: answer grounded in knowledge base or Silpo MCP, no
       fabricated facts; out-of-base query → low confidence → escalation.
 - [ ] Web Search Agent: every claim backed by a returned web source.

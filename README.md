@@ -13,7 +13,7 @@ See `docs/task-supportflow.md` for the full task statement and
 | | Stage | What it delivers |
 |---|---|---|
 | ✅ | 0 — Kickoff | Conventions, layer table, dependency pins, real Silpo MCP tool list + allowlist, seeded prompts |
-| ⬜ | 1 — Core | Pydantic schemas, LangGraph StateGraph, Supervisor, Router Agent, input filter |
+| ✅ | 1 — Core | Pydantic schemas, LangGraph StateGraph, Supervisor, Router Agent, input filter, fail-closed retry policy, Router gate ≥10/12 |
 | ⬜ | 2 — Data | Docs Agent + RAG, real Silpo MCP client, Web Search Agent |
 | ⬜ | 3 — Escalation | Escalation Agent, file report, Telegram notification |
 | ⬜ | 4 — Evaluation & observability | Langfuse tracing, DeepEval, golden dataset, thresholds |
@@ -45,5 +45,12 @@ black --check . tests/*.py && flake8 && mypy src && pytest --cov=src
 
 ## Known limitations
 
-Nothing is implemented yet. `config/models.yaml` carries placeholder model
-names pending a model-scout pass (see `docs/model-prices-2026-08-25.md`).
+Only the Router leg is real. Docs, Web Search, and Escalation agents are
+not built — their graph nodes raise `NotImplementedError` naming their
+owning stage (Stage 2 or 3). There is no FastAPI app or web UI yet
+(Stage 5). Langfuse tracing of the full call tree, DeepEval, and the
+golden dataset are Stage 4. `docs/decisions.md` #9–19 record every
+Stage 1 design decision, including the ones this list doesn't repeat
+here (personal-data masking, prompt-fetch failure behaviour, the
+self-reported-confidence gate's unvalidated status until Stage 4
+measures it).
