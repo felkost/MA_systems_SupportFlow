@@ -10,6 +10,13 @@ warn_unused_ignores = true
 warn_redundant_casts = true
 exclude = '(^\.venv/|^\.cache/|^docs/)'
 
+# Third-party packages this project does not control the type stubs of.
+# Not a project invariant — narrowed to exactly the modules that need it,
+# never a blanket ignore.
+[[tool.mypy.overrides]]
+module = ["yaml", "langfuse.*", "langgraph.*", "langchain_openai.*"]
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
