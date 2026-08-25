@@ -83,13 +83,38 @@ personal (excluded per Decision 2) — full reasoning and the exact list in
 `silpo_get_my_*` name prefix; classification used each tool's own
 description text, not a name-pattern heuristic.
 
-## 4. `project_support.md` — missing input
+## 4. `project_support.md` — found and saved
 
-Task §12.1 asks to preserve a copy of `project_support.md`; the Sources
-section lists it as the course specification. No such file exists on this
-machine (`docs/requirements-checklist.md`, "Open gap"). Recorded as a
-blocker for whatever step needs that file's content specifically — not
-filled with an invented specification.
+Resolved: not missing, just not on this machine. The Google Doc that
+`SupportFlow_task.md` was generated from (found via Drive search,
+"SupportFlow — мультиагентний асистент підтримки: план курсового проєкту",
+byte-identical content) has a "Джерела" section with a live hyperlink the
+plain-text export dropped:
+`https://github.com/robot-dreams-code/MULTI-AGENT-SYSTEMS/blob/main/course-project/project_support.md`.
+Fetched via `gh api` and saved verbatim to `docs/project_support.md`
+(task §12.1: "save an available copy").
+
+**What it actually is:** the course's generic base specification for
+"Система підтримки клієнтів" (customer support system) — the template
+`SupportFlow_task.md` customizes. Differences worth knowing, since a
+requirement in one and not the other is not automatically a conflict —
+`SupportFlow_task.md` is the authoritative, more specific document for
+this project:
+
+- Base spec: Web Search Agent uses **DuckDuckGo only**. Task: **Tavily
+  primary, DuckDuckGo fallback**. Task is the operative requirement.
+- Base spec: Escalation uses **Slack/Telegram** (either). Task: **Telegram
+  only**. Task is the operative requirement.
+- Base spec has no Silpo MCP, no OAuth, no "ACP" terminology — those are
+  entirely this project's addition on top of the generic template.
+- Base spec explicitly lists **optional bonus MCP integrations** (Slack
+  MCP, Notion MCP, Google Drive MCP) — none required here; Silpo MCP
+  replaces that whole bonus section as the project's real, mandatory
+  integration.
+- Base spec's routing table is coarser (`category` alone decides the
+  agent); the task's §7 sequence adds the input filter, immediate critical
+  bypass, and the confidence-threshold-to-Escalation fallback explicitly.
+  No contradiction — the task is a refinement, not a different design.
 
 ## 5. Token persistence across process/machine restarts
 
@@ -117,7 +142,49 @@ expires or is revoked, the system should fail loudly (escalate / alert),
 not silently degrade to "Silpo MCP unavailable" the way a golden-dataset
 failure case (§10: "Silpo MCP unavailability") expects.
 
-## 6. Human-in-the-loop scope
+## 6. Ukrainian-language support end to end
+
+Author's requirement: agents must handle Ukrainian throughout — receive
+the customer's message, pass it to Silpo MCP tools, and return a result
+that supports Ukrainian, not just pass Router's `language` field through
+unused.
+
+**Why this needs a deliberate design, not just "the model speaks
+Ukrainian":** Silpo's product catalogue is itself Ukrainian-language data
+(product names, categories, promotions — confirmed by
+`docs/silpo_mcp_tools.json` tool descriptions, e.g. `silpo_get_products`
+takes a free-text `category`/search term). A customer writing in a
+different language (§6's `language` field is not constrained to Ukrainian)
+needs their query's *domain terms* translated toward Ukrainian before they
+reach a Silpo MCP tool, or a search for "lactose-free milk" silently
+returns nothing against a catalogue indexed in Ukrainian — not a tool
+failure, a language mismatch that looks like one.
+
+**Design, to build starting Stage 1 (Router's `language` field) and
+finishing Stage 2 (Docs Agent's MCP calls):**
+- Router's `ClassificationOutput.language` is not just recorded — it is
+  read by every downstream agent.
+- **Silpo MCP tool arguments are always composed in Ukrainian**,
+  regardless of the customer's detected language — Docs Agent's prompt
+  instructs it to translate the domain term (product name, category) into
+  Ukrainian before calling a tool, since that is what the catalogue is
+  indexed in. This is a tool-call detail, not a user-facing translation.
+- **The final answer is composed in the customer's detected language**,
+  not in Ukrainian by default — Supervisor's prompt (already seeded,
+  `supportflow/supervisor`) composes the final response; each agent's
+  `answer`/`customer_message` field should carry the response in
+  `language`, per the Router's classification.
+- Ukrainian-language golden dataset cases are the default (majority
+  case), but at least one edge case in the 6-edge-case slice should be a
+  non-Ukrainian input, to catch a translation-boundary failure rather than
+  assuming it works because it was never tested.
+- Knowledge-base documents (`data/knowledge_base/`, Stage 2) are written
+  in Ukrainian, matching Silpo's own domain — Docs Agent's RAG retrieval
+  and Silpo MCP calls then share one working language internally, with
+  translation only at the two boundaries (customer's message in, final
+  answer out).
+
+## 7. Human-in-the-loop scope
 
 Escalation's real Telegram send and file write are gated behind
 human-in-the-loop confirmation in interactive/demo mode, and behind an

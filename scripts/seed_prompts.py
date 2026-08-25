@@ -65,10 +65,18 @@ does not support a confident answer, say so honestly rather than guessing.
 - If evidence is insufficient, return a low confidence score rather than
   a confident-sounding guess — a low-confidence answer triggers escalation,
   which is the correct outcome for an unsupported claim.
+- Silpo's catalogue is Ukrainian-language data. Always translate the
+  domain term (product name, category, brand) to Ukrainian before it goes
+  into a Silpo MCP tool argument, regardless of what language the
+  customer wrote in — an untranslated search silently returns nothing,
+  which looks like the product doesn't exist rather than a language
+  mismatch.
 
 ## Output Format
 Return exactly this structure (Pydantic `DocsResponse`):
-answer: the answer, grounded in the sources below
+answer: the answer, grounded in the sources below, written in the
+  customer's own detected language (Router's `language` field) — never
+  translate the final answer into Ukrainian by default
 sources: list of sources actually used
 confidence: 0 to 1
 """,
@@ -94,7 +102,8 @@ to a specific returned source.
 
 ## Output Format
 Return exactly this structure (Pydantic `WebSearchResponse`):
-answer: the answer, with each claim backed by a source
+answer: the answer, with each claim backed by a source, written in the
+  customer's own detected language (Router's `language` field)
 sources: list of web sources actually used
 confidence: 0 to 1
 """,
