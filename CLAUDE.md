@@ -103,6 +103,12 @@ black --check . tests/*.py && flake8 && mypy src && pytest --cov=src
   controllable, while an ungated golden-dataset run (18 cases via
   `deepeval test run tests/`) cannot block on a human click. The flag's
   default and location is a Stage 3 decision — see `docs/decisions.md`.
+- **Silpo MCP tool arguments are always composed in Ukrainian; the final
+  customer-facing answer is composed in the customer's detected
+  language.** Silpo's catalogue is Ukrainian-language data — a query
+  passed through untranslated for a non-Ukrainian customer message
+  silently returns nothing, which looks like a tool failure but is a
+  language mismatch. `docs/decisions.md` §6.
 - **The Silpo MCP client persists its OAuth token to disk and refreshes it
   on startup**, because the process (and the machine) can restart, and a
   refresh_token grant is how Silpo's own docs say to recover a session

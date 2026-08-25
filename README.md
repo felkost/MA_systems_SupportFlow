@@ -35,5 +35,3 @@ black --check . tests/*.py && flake8 && mypy src && pytest --cov=src
 
 Nothing is implemented yet. `config/models.yaml` carries placeholder model
 names pending a model-scout pass (see `docs/model-prices-2026-08-25.md`).
-`project_support.md`, referenced by the task statement, was not found on
-this machine (`docs/decisions.md` §3).

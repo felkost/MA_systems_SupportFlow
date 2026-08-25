@@ -5,16 +5,14 @@ This checklist is the acceptance criterion for the whole project. A plan
 review may reorder, merge, cut, or deepen stages — it may not add a
 requirement this list does not contain.
 
-## Open gap — not a decision, a missing input
+## Resolved gap
 
-- [ ] **`project_support.md` does not exist anywhere on this machine.**
-  Task §12.1 says "Save an available copy of `project_support.md`", and §
-  Sources lists it as "Course specification `project_support.md`". No file
-  by that name was found in `SupportFlow` or any sibling `MA_systems_*`
-  directory. This is recorded as a visible gap, not filled with a guess.
-  Action needed from the author: locate the file, or confirm the task
-  statement (`SupportFlow_task.md`) is itself the specification and the
-  reference is stale.
+- [x] **`project_support.md`** — found via the source Google Doc's dropped
+  hyperlink, fetched from
+  `github.com/robot-dreams-code/MULTI-AGENT-SYSTEMS` and saved to
+  `docs/project_support.md`. It's the course's generic base spec;
+  `SupportFlow_task.md` is the authoritative, Silpo-specific refinement —
+  differences catalogued in `docs/decisions.md` §4.
 
 ## Mandatory components (§3)
 
