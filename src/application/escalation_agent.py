@@ -134,6 +134,7 @@ def _compose_escalation_output(compiled_prompt: str) -> EscalationOutput:
             name="escalation_agent.compose",
             as_type="generation",
             prompt=get_prompt_client("supportflow/escalation"),
+            model=model.model_name,
         )
         if client is not None
         else nullcontext()

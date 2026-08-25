@@ -11,6 +11,8 @@ extraction).
 
 from contextlib import nullcontext
 
+from langfuse.types import TraceContext
+
 from src.application.graph_nodes import build_graph
 from src.domain.filters import run_input_filter
 from src.domain.state import SupportFlowState
@@ -70,13 +72,24 @@ def handle_request(
         built (docs/decisions.md #16). Expected in Stage 1; a later
         stage's build removes this.
     """
+    # `trace_context` seeds Langfuse's actual trace id with our own
+    # `trace_id` (Stage 4 decision 32) — without this, every root span
+    # opened here gets a Langfuse-auto-generated trace id instead, and
+    # the A2A hop's server-side span (which *does* use the metadata
+    # `trace_id`) ends up parented under a trace id nothing else in this
+    # process ever used: two disconnected traces for one request, exactly
+    # what task §9 calls an error. Found live during Stage 4 Wave A's own
+    # observability smoke test — the mechanism existed but was never
+    # actually wired to the root.
+    trace_context: TraceContext = {"trace_id": trace_id}
+
     # docs/decisions.md #36: the guardrail span wraps this call site, not
     # the inside of `src.domain.filters` — that module is `domain`-layer
     # and may not import `infra` (`tests/test_layering.py`).
     client = get_langfuse_client()
     span_cm = (
         client.start_as_current_observation(
-            name="input_filter.run", as_type="guardrail"
+            name="input_filter.run", as_type="guardrail", trace_context=trace_context
         )
         if client is not None
         else nullcontext()
@@ -98,7 +111,11 @@ def handle_request(
     initial_state = build_initial_state(
         filtered.masked_text, request_id, session_id, trace_id
     )
-    callbacks = [build_callback_handler()] if client is not None else []
+    callbacks = (
+        [build_callback_handler(trace_context=trace_context)]
+        if client is not None
+        else []
+    )
     result: SupportFlowState = graph.invoke(
         initial_state,
         config={"recursion_limit": GRAPH_RECURSION_LIMIT, "callbacks": callbacks},

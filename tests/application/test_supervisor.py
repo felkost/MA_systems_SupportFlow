@@ -78,7 +78,7 @@ def test_product_classification_with_confident_answer_responds(
     monkeypatch.setattr(graph_nodes, "call_docs_agent", lambda *a, **kw: fake_result)
 
     result = supervisor.handle_request(
-        "Чи є у вас безлактозне молоко?", "r1", "s1", "t1"
+        "Чи є у вас безлактозне молоко?", "r1", "s1", "0123456789abcdef0123456789abcdef"
     )
 
     assert result["next_action"] == "respond"
@@ -101,7 +101,7 @@ def test_product_classification_with_unavailable_docs_escalates(
     )
 
     result = supervisor.handle_request(
-        "Чи є у вас безлактозне молоко?", "r1", "s1", "t1"
+        "Чи є у вас безлактозне молоко?", "r1", "s1", "0123456789abcdef0123456789abcdef"
     )
 
     assert result["next_action"] == "escalate"
@@ -130,7 +130,10 @@ def test_general_classification_with_confident_answer_responds(
     monkeypatch.setattr(graph_nodes, "call_web_search", lambda *a, **kw: fake_result)
 
     result = supervisor.handle_request(
-        "Коли у вас відкривається новий магазин?", "r1", "s1", "t1"
+        "Коли у вас відкривається новий магазин?",
+        "r1",
+        "s1",
+        "0123456789abcdef0123456789abcdef",
     )
 
     assert result["next_action"] == "respond"
@@ -155,7 +158,9 @@ def test_general_classification_with_low_confidence_escalates(
 
     # Low confidence routes to Escalation (task §7 step 6) — the
     # conditional edge dispatches there and the real node now handles it.
-    result = supervisor.handle_request("Загальне питання", "r1", "s1", "t1")
+    result = supervisor.handle_request(
+        "Загальне питання", "r1", "s1", "0123456789abcdef0123456789abcdef"
+    )
 
     assert result["next_action"] == "escalate"
     assert result["escalation_output"] is not None
@@ -176,7 +181,9 @@ def test_general_classification_with_unavailable_search_escalates(
         graph_nodes, "run_escalation_agent", lambda *a, **kw: _fake_escalation_result()
     )
 
-    result = supervisor.handle_request("Загальне питання", "r1", "s1", "t1")
+    result = supervisor.handle_request(
+        "Загальне питання", "r1", "s1", "0123456789abcdef0123456789abcdef"
+    )
 
     assert result["next_action"] == "escalate"
     assert result["escalation_output"] is not None
@@ -195,7 +202,10 @@ def test_critical_classification_dispatches_to_escalate_node(
     )
 
     result = supervisor.handle_request(
-        "У мене алергічна реакція на ваш продукт!", "r1", "s1", "t1"
+        "У мене алергічна реакція на ваш продукт!",
+        "r1",
+        "s1",
+        "0123456789abcdef0123456789abcdef",
     )
 
     assert result["next_action"] == "escalate"
@@ -222,7 +232,9 @@ def test_router_exhaustion_also_dispatches_to_escalate_node(
         graph_nodes, "run_escalation_agent", lambda *a, **kw: _fake_escalation_result()
     )
 
-    result = supervisor.handle_request("Питання про товар", "r1", "s1", "t1")
+    result = supervisor.handle_request(
+        "Питання про товар", "r1", "s1", "0123456789abcdef0123456789abcdef"
+    )
 
     assert result["next_action"] == "escalate"
     assert result["escalation_output"] is not None
@@ -234,7 +246,9 @@ def test_empty_input_is_rejected_before_the_graph_is_invoked(
     called = {"n": 0}
     monkeypatch.setattr(supervisor, "build_graph", lambda: called.update(n=1))
 
-    result = supervisor.handle_request("   ", "r1", "s1", "t1")
+    result = supervisor.handle_request(
+        "   ", "r1", "s1", "0123456789abcdef0123456789abcdef"
+    )
 
     assert result["next_action"] == "reject"
     assert result["errors"] == ["empty_input"]
@@ -275,7 +289,9 @@ def test_graph_invoke_passes_callbacks_when_tracing_enabled(
     fake_handler = BaseCallbackHandler()
     monkeypatch.setattr(supervisor, "get_langfuse_client", lambda: fake_client)
     monkeypatch.setattr(graph_nodes, "get_langfuse_client", lambda: fake_client)
-    monkeypatch.setattr(supervisor, "build_callback_handler", lambda: fake_handler)
+    monkeypatch.setattr(
+        supervisor, "build_callback_handler", lambda **_kw: fake_handler
+    )
     monkeypatch.setattr(
         graph_nodes,
         "run_router",
@@ -301,7 +317,9 @@ def test_graph_invoke_passes_callbacks_when_tracing_enabled(
 
     monkeypatch.setattr(supervisor, "build_graph", spying_build_graph)
 
-    supervisor.handle_request("Термінова проблема!", "r1", "s1", "t1")
+    supervisor.handle_request(
+        "Термінова проблема!", "r1", "s1", "0123456789abcdef0123456789abcdef"
+    )
 
     assert captured_config["callbacks"] == [fake_handler]
 
@@ -320,7 +338,9 @@ def test_graph_invoke_passes_empty_callbacks_when_tracing_disabled(
         graph_nodes, "run_escalation_agent", lambda *a, **kw: _fake_escalation_result()
     )
 
-    result = supervisor.handle_request("Термінова проблема!", "r1", "s1", "t1")
+    result = supervisor.handle_request(
+        "Термінова проблема!", "r1", "s1", "0123456789abcdef0123456789abcdef"
+    )
 
     assert result["next_action"] == "escalate"  # no crash with tracing disabled
 
@@ -332,7 +352,7 @@ def test_docs_node_passes_parent_span_id_when_tracing_enabled(
     monkeypatch.setattr(supervisor, "get_langfuse_client", lambda: fake_client)
     monkeypatch.setattr(graph_nodes, "get_langfuse_client", lambda: fake_client)
     monkeypatch.setattr(
-        supervisor, "build_callback_handler", lambda: BaseCallbackHandler()
+        supervisor, "build_callback_handler", lambda **_kw: BaseCallbackHandler()
     )
     monkeypatch.setattr(
         graph_nodes, "run_router", lambda *a, **kw: _fake_router_result("product")
@@ -348,7 +368,9 @@ def test_docs_node_passes_parent_span_id_when_tracing_enabled(
 
     monkeypatch.setattr(graph_nodes, "call_docs_agent", fake_call_docs_agent)
 
-    supervisor.handle_request("Питання про товар", "r1", "s1", "t1")
+    supervisor.handle_request(
+        "Питання про товар", "r1", "s1", "0123456789abcdef0123456789abcdef"
+    )
 
     assert captured["parent_span_id"] == "deadbeefdeadbeef"
 
@@ -357,7 +379,9 @@ def test_guardrail_span_records_triggered(monkeypatch: pytest.MonkeyPatch) -> No
     fake_client = _FakeLangfuseClient()
     monkeypatch.setattr(supervisor, "get_langfuse_client", lambda: fake_client)
 
-    supervisor.handle_request("   ", "r1", "s1", "t1")  # empty input -> rejected
+    supervisor.handle_request(
+        "   ", "r1", "s1", "0123456789abcdef0123456789abcdef"
+    )  # empty input -> rejected
 
     assert ("input_filter.run", "guardrail") in fake_client.opened_spans
     assert fake_client.last_span.updates[-1] == {"metadata": {"triggered": True}}
@@ -369,7 +393,9 @@ def test_unsupported_language_is_rejected_before_the_graph_is_invoked(
     called = {"n": 0}
     monkeypatch.setattr(supervisor, "build_graph", lambda: called.update(n=1))
 
-    result = supervisor.handle_request("这个牛奶不含乳糖吗？", "r1", "s1", "t1")
+    result = supervisor.handle_request(
+        "这个牛奶不含乳糖吗？", "r1", "s1", "0123456789abcdef0123456789abcdef"
+    )
 
     assert result["next_action"] == "reject"
     assert result["errors"] == ["unsupported_language"]

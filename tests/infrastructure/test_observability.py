@@ -10,15 +10,10 @@ import pytest
 
 from src.infrastructure import observability
 
-
-@pytest.fixture(autouse=True)
-def _reset_client_singleton(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Every test gets a fresh, unconfigured module state — the real
-    singleton is process-lifetime, which would otherwise leak between
-    tests.
-    """
-    monkeypatch.setattr(observability, "_client", None)
-    monkeypatch.setattr(observability, "_configured", False)
+# `tests/conftest.py`'s autouse `_tracing_disabled_by_default` fixture
+# already resets `observability._client`/`_configured` and forces
+# `tracing_enabled=False` before every test in the suite — no local
+# fixture needed here.
 
 
 def test_configure_tracing_noops_when_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -84,6 +79,20 @@ def test_should_export_span_true_for_own_named_span() -> None:
 def test_should_export_span_false_for_unrelated_span() -> None:
     span = SimpleNamespace(
         name="GET /health", instrumentation_scope=None, attributes=None
+    )
+    assert observability.should_export_span(span) is False
+
+
+def test_should_export_span_false_for_a2a_sdk_internal_instrumentation() -> None:
+    """Regression: an earlier prefix-based predicate (`name.startswith("a2a.")`)
+    was confirmed live to also match a2a-sdk's own auto-instrumented
+    internal spans, exporting ~1400 of them in one smoke-test session.
+    `should_export_span` must reject these by exact name, not prefix.
+    """
+    span = SimpleNamespace(
+        name="a2a.server.events.event_queue_v2.EventQueueSource.dequeue_event",
+        instrumentation_scope=None,
+        attributes=None,
     )
     assert observability.should_export_span(span) is False
 

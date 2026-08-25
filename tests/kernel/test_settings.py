@@ -12,7 +12,12 @@ from src.kernel.settings import Settings, load_agent_config
 
 
 def test_tracing_enabled_defaults_to_false() -> None:
-    assert Settings().tracing_enabled is False
+    # Checks the field's declared default, not `Settings()`'s live value —
+    # `Settings()` always reads the real `.env`, which legitimately sets
+    # `TRACING_ENABLED=true` during a live observability smoke test
+    # (scripts/observability_smoke.py); this test's own point is the
+    # class-level default, not whatever the real file currently says.
+    assert Settings.model_fields["tracing_enabled"].default is False
 
 
 def test_load_agent_config_reads_the_real_models_yaml() -> None:

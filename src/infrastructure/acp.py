@@ -120,6 +120,7 @@ def call_router(envelope: AcpEnvelope) -> tuple[ClassificationOutput, int]:
             name="acp.call_router",
             as_type="generation",
             prompt=prompt_client,
+            model=model.model_name,
         )
         if langfuse is not None
         else nullcontext()

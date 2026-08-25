@@ -124,7 +124,7 @@ def test_deadline_already_passed_raises_timeout_before_model_call() -> None:
         session_id="s",
         task="classify",
         deadline=datetime(2020, 1, 1, tzinfo=timezone.utc),
-        trace_id="t",
+        trace_id="0123456789abcdef0123456789abcdef",
         payload="text",
     )
     with pytest.raises(TimeoutError):

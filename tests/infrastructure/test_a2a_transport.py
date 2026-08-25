@@ -63,7 +63,7 @@ def test_send_a2a_message_round_trips_text_and_metadata() -> None:
         "Чи є у вас акції на хліб?",
         request_id="r1",
         session_id="s1",
-        trace_id="t1",
+        trace_id="0123456789abcdef0123456789abcdef",
         deadline=datetime.now(timezone.utc) + timedelta(seconds=10),
         httpx_client=_asgi_client(app),
     )
@@ -72,7 +72,7 @@ def test_send_a2a_message_round_trips_text_and_metadata() -> None:
     assert payload["text"] == "Чи є у вас акції на хліб?"
     assert payload["metadata"]["request_id"] == "r1"
     assert payload["metadata"]["session_id"] == "s1"
-    assert payload["metadata"]["trace_id"] == "t1"
+    assert payload["metadata"]["trace_id"] == "0123456789abcdef0123456789abcdef"
 
 
 def test_send_a2a_message_carries_parent_span_id_when_given() -> None:
@@ -84,7 +84,7 @@ def test_send_a2a_message_carries_parent_span_id_when_given() -> None:
         "text",
         request_id="r1",
         session_id="s1",
-        trace_id="t1",
+        trace_id="0123456789abcdef0123456789abcdef",
         deadline=datetime.now(timezone.utc) + timedelta(seconds=10),
         httpx_client=_asgi_client(app),
         parent_span_id="deadbeefdeadbeef",
@@ -103,7 +103,7 @@ def test_send_a2a_message_omits_parent_span_id_when_not_given() -> None:
         "text",
         request_id="r1",
         session_id="s1",
-        trace_id="t1",
+        trace_id="0123456789abcdef0123456789abcdef",
         deadline=datetime.now(timezone.utc) + timedelta(seconds=10),
         httpx_client=_asgi_client(app),
     )
@@ -129,7 +129,7 @@ def test_send_a2a_message_client_side_span_does_not_swallow_connection_failure()
             "text",
             request_id="r1",
             session_id="s1",
-            trace_id="t1",
+            trace_id="0123456789abcdef0123456789abcdef",
             deadline=datetime.now(timezone.utc) + timedelta(seconds=10),
             httpx_client=unreachable_client,
         )
@@ -145,7 +145,7 @@ def test_send_a2a_message_raises_when_deadline_already_passed() -> None:
             "text",
             request_id="r1",
             session_id="s1",
-            trace_id="t1",
+            trace_id="0123456789abcdef0123456789abcdef",
             deadline=datetime.now(timezone.utc) - timedelta(seconds=1),
             httpx_client=_asgi_client(app),
         )

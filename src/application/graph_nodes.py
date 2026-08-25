@@ -19,6 +19,7 @@ from contextlib import nullcontext
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
+from a2a.client.errors import A2AClientTimeoutError
 from langgraph.graph import END, StateGraph
 
 from src.application.escalation_agent import EscalationContext, run_escalation_agent
@@ -113,7 +114,13 @@ def docs_node(state: SupportFlowState) -> dict[str, Any]:
             deadline,
             parent_span_id=_current_observation_id(),
         )
-    except A2ATimeoutError:
+    except (A2ATimeoutError, A2AClientTimeoutError):
+        # A2ATimeoutError: this project's own pre-flight deadline check.
+        # A2AClientTimeoutError: the a2a-sdk's own runtime network
+        # read-timeout — found live during Stage 4 Wave A's own smoke
+        # test (Docs Agent's first-request retriever cold-start exceeded
+        # config/models.yaml's docs.timeout_seconds), never triggered
+        # before because no prior live run hit a slow-enough first call.
         return {"next_action": "escalate", "errors": ["docs_timeout"]}
     except DocsUnavailableError:
         return {"next_action": "escalate", "errors": ["docs_unavailable"]}
@@ -163,7 +170,7 @@ def web_search_node(state: SupportFlowState) -> dict[str, Any]:
             deadline,
             parent_span_id=_current_observation_id(),
         )
-    except A2ATimeoutError:
+    except (A2ATimeoutError, A2AClientTimeoutError):
         return {"next_action": "escalate", "errors": ["web_search_timeout"]}
     except WebSearchUnavailableError:
         return {"next_action": "escalate", "errors": ["web_search_unavailable"]}

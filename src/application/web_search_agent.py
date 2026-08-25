@@ -95,6 +95,7 @@ def run_web_search(
             name="web_search_agent.compose",
             as_type="generation",
             prompt=get_prompt_client("supportflow/web_search"),
+            model=model.model_name,
         )
         if client is not None
         else nullcontext()

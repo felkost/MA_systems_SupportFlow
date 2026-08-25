@@ -16,7 +16,7 @@ See `docs/task-supportflow.md` for the full task statement and
 | ✅ | 1 — Core | Pydantic schemas, LangGraph StateGraph, Supervisor, Router Agent, input filter, fail-closed retry policy, Router gate ≥10/12 |
 | ✅ | 2 — Data | Docs Agent + RAG (Chroma+BM25), real Silpo MCP client (persistent token, 17-tool allowlist), Web Search Agent (Tavily+ddgs), A2A server/client, launcher |
 | ✅ | 3 — Escalation | Escalation Agent, file report, Telegram notification |
-| 🟨 | 4 — Evaluation & observability | Wave A (Observability) done: Langfuse/OTel tracing across the full path, `CallbackHandler`, per-observation metadata, cross-process trace propagation — code-complete and unit-tested, live end-to-end verification (`scripts/observability_smoke.py`) still to be run. Wave B (DeepEval, golden dataset, thresholds, meta-prompting) not started |
+| 🟨 | 4 — Evaluation & observability | Wave A (Observability) done and live-verified (`TRACE_ID=5fea69410fb04a45b0cc6c081b39af73`, 2026-08-26): Langfuse/OTel tracing across the full path, `CallbackHandler`, per-observation metadata, cross-process trace propagation via Langfuse's own `TraceContext`. Known gap: Telegram's own observation unconfirmed (needs an `ALLOW_REAL_SEND=true` run). Wave B (DeepEval, golden dataset, thresholds, meta-prompting) not started |
 | ⬜ | 5 — Product & docs | FastAPI, React chat UI, final README, diagrams |
 
 Updated at the close of every stage — see `docs/decisions.md` for the
@@ -81,17 +81,24 @@ Search run as separate A2A server processes
 `src/interfaces/launcher.py`; Router and Escalation run in-process with
 the Supervisor. There is no FastAPI app or web UI yet (Stage 5). Langfuse
 tracing across the full call tree (`CallbackHandler` on `graph.invoke`,
-per-observation metadata for Silpo MCP/ACP/A2A/Telegram/File System/PII
+per-observation metadata for Silpo MCP/ACP/A2A/File System/PII
 scrubbing/Supervisor routing, cross-process trace propagation via
-Langfuse's own `TraceContext`) is code-complete and unit-tested
-(Stage 4 Wave A) but not yet live-verified end to end —
-`scripts/observability_smoke.py` is written but has not been run against
-real Langfuse/OpenRouter credentials this session. PII masking at the
-Langfuse export barrier (`mask_otel_spans`) reuses the existing
-email/phone/card-Luhn patterns only — it does not detect OAuth
-tokens, API keys, or free-text addresses by shape; the only control for
-those categories today is code review at each span's `metadata=` call
-site (docs/decisions.md Stage 4 decision 34's Known Risks). DeepEval, the
+Langfuse's own `TraceContext`) is live-verified end to end
+(`TRACE_ID=5fea69410fb04a45b0cc6c081b39af73`, 2026-08-26,
+`scripts/observability_smoke.py`) — Telegram's own observation is the one
+sink not yet confirmed, since both live runs had `ALLOW_REAL_SEND=false`.
+Cost is never populated on generation spans — Langfuse doesn't recognise
+the OpenRouter-routed model id for its own automatic cost calculation;
+token counts are real. PII masking at the Langfuse export barrier
+(`mask_otel_spans`) reuses the existing email/phone/card-Luhn patterns
+only — it does not detect OAuth tokens, API keys, or free-text addresses
+by shape; the only control for those categories today is code review at
+each span's `metadata=` call site (docs/decisions.md Stage 4 decision
+34's Known Risks). `pytest --cov=src` forces `TRACING_ENABLED=false`
+regardless of the real `.env` (`tests/conftest.py`) — found necessary
+live, since the test suite was otherwise silently sending real spans to
+the real Langfuse project whenever a developer's local `.env` had tracing
+on. DeepEval, the
 golden dataset, thresholds, and the meta-prompting cycle are Stage 4 Wave
 B, not started. Retrieval/prompt relevance quality (Docs/Web Search can
 lose track of the actual question among noisy retrieved content) is

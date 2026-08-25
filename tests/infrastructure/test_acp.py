@@ -17,7 +17,7 @@ def test_call_router_raises_timeout_when_deadline_already_passed() -> None:
         session_id="s1",
         task="classify",
         deadline=datetime.now(timezone.utc) - timedelta(seconds=1),
-        trace_id="t1",
+        trace_id="0123456789abcdef0123456789abcdef",
         payload="Чи є у вас акції на хліб?",
     )
     with pytest.raises(TimeoutError):
@@ -30,7 +30,7 @@ def test_call_router_rejects_wrong_task() -> None:
         session_id="s1",
         task="escalate",
         deadline=datetime.now(timezone.utc) + timedelta(seconds=10),
-        trace_id="t1",
+        trace_id="0123456789abcdef0123456789abcdef",
         payload="text",
     )
     with pytest.raises(ValueError, match="classify"):
@@ -63,7 +63,7 @@ def test_call_router_langfuse_client_failure_is_not_relabeled_as_invalid_output(
         session_id="s1",
         task="classify",
         deadline=datetime.now(timezone.utc) + timedelta(seconds=10),
-        trace_id="t1",
+        trace_id="0123456789abcdef0123456789abcdef",
         payload="text",
     )
     with pytest.raises(RuntimeError, match="TRACING_ENABLED"):

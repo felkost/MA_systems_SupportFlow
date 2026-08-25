@@ -42,34 +42,45 @@ def new_trace_id() -> str:
     return uuid.uuid4().hex
 
 
-_OWN_SPAN_NAME_PREFIXES = (
-    "silpo_mcp.",
-    "acp.",
-    "a2a.",
-    "telegram.",
-    "report_writer.",
-    "supervisor.",
-    "docs_agent.",
-    "web_search_agent.",
-    "escalation_agent.",
-    "input_filter.",
+# Every literal `name=` this project passes to `start_as_current_observation`
+# (grep-verified against src/, 2026-08-26 live-trace audit). An *exact* set,
+# not a prefix — a prefix like `"a2a."` was tried first and confirmed live to
+# also match a2a-sdk's own auto-instrumented internal spans
+# (`a2a.client.transports.jsonrpc.JsonRpcTransport.send_message`,
+# `a2a.server.events.event_queue_v2.EventQueueSource.dequeue_event`, ~1400
+# of them across one short smoke-test session), none of which this project
+# asked to trace.
+_OWN_SPAN_NAMES = frozenset(
+    {
+        "input_filter.run",
+        "supervisor.routing",
+        "acp.call_router",
+        "silpo_mcp.call_tool",
+        "docs_agent.compose",
+        "docs_agent.a2a_request",
+        "web_search_agent.compose",
+        "web_search_agent.a2a_request",
+        "escalation_agent.compose",
+        "a2a.send_message",
+        "telegram.send_message",
+        "report_writer.write",
+    }
 )
 
 
 def should_export_span(span: Any) -> bool:
     """Compose onto Langfuse's own default filter, never replace it
-    (CLAUDE.md invariant). Every span this wave opens manually via
-    `client.start_as_current_observation(...)` is already `is_langfuse_span`
-    (an attribute the SDK itself stamps), so `is_default_export_span`
-    alone already keeps them — this predicate's own name-prefix clause is
-    a deliberately narrow, explicit extension (not `True`, which would
-    also let unrelated third-party spans through, e.g. the pinned
-    `opentelemetry-instrumentation-httpx`/`-asgi` auto-instrumentation
-    this project never asked to trace) kept as a documented, harmless
-    no-op today and a real extension point if a future span is ever
-    created outside the SDK's own observation API.
+    (CLAUDE.md invariant). Confirmed live (Stage 4 Wave A's own
+    observability smoke test) that every span this project opens manually
+    via `client.start_as_current_observation(...)` already carries
+    `is_langfuse_span`'s `scope.name == "langfuse-sdk"` stamp, so
+    `is_default_export_span` alone already keeps every one of them —
+    `_OWN_SPAN_NAMES` is a closed, exact-match set kept only as a
+    documented, provably-harmless extension point (never a prefix, which
+    a live run proved lets unrelated third-party instrumentation through
+    too).
     """
-    return is_default_export_span(span) or span.name.startswith(_OWN_SPAN_NAME_PREFIXES)
+    return is_default_export_span(span) or span.name in _OWN_SPAN_NAMES
 
 
 def mask_otel_spans(*, params: MaskOtelSpansParams) -> MaskOtelSpansResult | None:

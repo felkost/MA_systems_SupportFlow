@@ -105,6 +105,7 @@ def _compose_docs_response(compiled_prompt: str) -> DocsResponse:
             name="docs_agent.compose",
             as_type="generation",
             prompt=get_prompt_client("supportflow/docs"),
+            model=model.model_name,
         )
         if client is not None
         else nullcontext()

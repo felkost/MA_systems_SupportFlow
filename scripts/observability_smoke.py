@@ -13,9 +13,11 @@ this script is the counterpart. Requires:
   in `.env`.
 - Docs Agent's A2A server actually running (`python -m src.interfaces.launcher`
   in a separate terminal, or just `python -m src.interfaces.docs_a2a_server`).
-- A short wait after the run before reading back, since Langfuse's
-  ingestion is asynchronous — this script polls, it does not assume
-  immediate consistency.
+- Langfuse ingestion is asynchronous — `flush()` only guarantees delivery
+  to the API, not read visibility. `api.trace.get(trace_id)` can raise
+  `NotFoundError` for up to ~30s after flush (confirmed from the
+  installed SDK's own `Langfuse.api` property docstring). This script
+  retries with a deadline instead of a fixed sleep.
 
     TRACING_ENABLED=true .venv/Scripts/python scripts/observability_smoke.py
 
@@ -30,6 +32,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from langfuse import Langfuse  # noqa: E402
+from langfuse.api import NotFoundError  # noqa: E402
+from langfuse.api import TraceWithFullDetails  # noqa: E402
+
 from src.application.supervisor import handle_request  # noqa: E402
 from src.infrastructure.observability import (  # noqa: E402
     flush_and_shutdown,
@@ -37,6 +43,20 @@ from src.infrastructure.observability import (  # noqa: E402
     new_trace_id,
 )
 from src.kernel.settings import settings  # noqa: E402
+
+_READBACK_TIMEOUT_SECONDS = 45.0
+_READBACK_POLL_SECONDS = 3.0
+
+
+def _wait_for_trace(client: Langfuse, trace_id: str) -> TraceWithFullDetails:
+    deadline = time.monotonic() + _READBACK_TIMEOUT_SECONDS
+    while True:
+        try:
+            return client.api.trace.get(trace_id)
+        except NotFoundError:
+            if time.monotonic() >= deadline:
+                raise
+            time.sleep(_READBACK_POLL_SECONDS)
 
 
 def main() -> None:
@@ -55,24 +75,34 @@ def main() -> None:
     print("ANSWER:", result.get("answer"))
     print("TRACE_ID:", trace_id)
 
-    flush_and_shutdown()
-
     client = get_langfuse_client()
     if client is None:
         print("No Langfuse client — cannot read back the trace.")
         return
 
-    print("Waiting for Langfuse ingestion...")
-    time.sleep(5)
-    trace = client.api.trace.get(trace_id)
+    client.flush()  # delivery guarantee only, not read visibility
+    print(f"Waiting up to {_READBACK_TIMEOUT_SECONDS:.0f}s for Langfuse ingestion...")
+    try:
+        trace = _wait_for_trace(client, trace_id)
+    except NotFoundError:
+        print(
+            f"FAIL: trace {trace_id} still not readable after "
+            f"{_READBACK_TIMEOUT_SECONDS:.0f}s — check LANGFUSE_BASE_URL/keys "
+            "and that Docs Agent's A2A server is actually running."
+        )
+        flush_and_shutdown()
+        return
+
     observation_count = len(trace.observations)
     print(f"OBSERVATIONS_IN_TRACE: {observation_count}")
+    print(f"TRACE_URL: {settings.langfuse_base_url}/trace/{trace_id}")
     print(
-        "Manually verify in the Langfuse UI: one connected tree spanning "
-        "both the Supervisor process and the Docs Agent A2A server "
-        "process, no orphaned records, and no raw PII/tokens in any "
-        "span's metadata."
+        "Manually verify at that URL: one connected tree spanning both the "
+        "Supervisor process and the Docs Agent A2A server process, no "
+        "orphaned records, a final answer present, and no raw PII/tokens "
+        "in any span's metadata."
     )
+    flush_and_shutdown()
 
 
 if __name__ == "__main__":

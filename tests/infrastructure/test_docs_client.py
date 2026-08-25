@@ -48,7 +48,7 @@ def test_call_docs_agent_returns_validated_response(
         "Скільки діє бонусна картка?",
         request_id="r1",
         session_id="s1",
-        trace_id="t1",
+        trace_id="0123456789abcdef0123456789abcdef",
         deadline=datetime.now(timezone.utc) + timedelta(seconds=10),
         httpx_client=_asgi_client(build_app()),
     )
@@ -76,7 +76,7 @@ def test_call_docs_agent_forwards_parent_span_id(
         "query",
         request_id="r1",
         session_id="s1",
-        trace_id="t1",
+        trace_id="0123456789abcdef0123456789abcdef",
         deadline=datetime.now(timezone.utc) + timedelta(seconds=10),
         parent_span_id="deadbeefdeadbeef",
     )
@@ -99,7 +99,7 @@ def test_call_docs_agent_raises_when_model_output_invalid(
             "query",
             request_id="r1",
             session_id="s1",
-            trace_id="t1",
+            trace_id="0123456789abcdef0123456789abcdef",
             deadline=datetime.now(timezone.utc) + timedelta(seconds=10),
             httpx_client=_asgi_client(build_app()),
         )
