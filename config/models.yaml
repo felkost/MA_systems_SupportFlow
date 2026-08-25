@@ -1,0 +1,50 @@
+# Per-agent OpenRouter model, temperature, max tokens, timeout, and
+# confidence threshold (task §8). All chat-model values below are «…» —
+# a visible gap, not a guess: docs/model-prices-2026-08-25.md found that
+# the two model names carried over from the donor projects
+# (openai/gpt-4.1-mini, google/gemini-2.5-pro) were not present in a live
+# OpenRouter catalogue query. Filling this in is Stage 1's job, via the
+# model-scout agent (agentic-model-selection), not a value picked here.
+
+router:
+  model: "«model-scout: cheap, fast, strict structured output»"
+  temperature: 0
+  max_tokens: 256
+  timeout_seconds: 10
+  confidence_threshold: null # Router has no confidence output — no tools.
+
+docs:
+  model: "«model-scout»"
+  temperature: 0
+  max_tokens: 1024
+  timeout_seconds: 30
+  confidence_threshold: 0.70 # orientation value, task §10 — re-set after
+    # the first full golden-dataset run, not before.
+
+web_search:
+  model: "«model-scout»"
+  temperature: 0
+  max_tokens: 1024
+  timeout_seconds: 30
+  confidence_threshold: 0.70
+
+escalation:
+  model: "«model-scout»"
+  temperature: 0.2
+  max_tokens: 512
+  timeout_seconds: 15
+  confidence_threshold: null
+
+supervisor:
+  model: "«model-scout»"
+  temperature: 0
+  max_tokens: 512
+  timeout_seconds: 10
+  confidence_threshold: null
+
+judge:
+  # Deliberately no default carried from a donor project (see CLAUDE.md
+  # invariant on judge-family independence). Must come from a different
+  # model family than whichever chat model wins for the agents above, and
+  # must support strict structured output or GEval returns no score.
+  model: "«model-scout: different family from the agent models»"

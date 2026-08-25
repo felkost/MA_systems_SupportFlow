@@ -1,0 +1,50 @@
+# Pinned to versions measured working together (see docs/decisions.md and
+# the kickoff plan review, 2026-08-25): base is MA_systems_hl12's pin set
+# (verified byte-identical to hl11's), plus the A2A protocol package from
+# MA_systems_hl10. `fastmcp` is intentionally NOT included — it is for
+# hosting an MCP server, and this project is only an MCP client to Silpo.
+
+# --- LangChain / LangGraph ---------------------------------------------
+langchain==1.3.16
+langchain-core==1.6.0
+langchain-openai==1.6.0
+langgraph==1.2.11
+langchain-classic==1.0.8
+langchain-community==0.4.2
+langchain-chroma==1.1.0
+langchain-huggingface==1.2.2
+langchain-mcp-adapters==0.3.2
+# Pinned explicitly, not left to resolve transitively: a bare `pip install
+# mcp` resolves to the 2.x line, which langchain-mcp-adapters==0.3.2 cannot
+# use (it requires mcp>=1.24.0,<2) and which has a different client API.
+mcp==1.29.0
+
+# --- Protocol ---------------------------------------------------------
+a2a-sdk[http-server]==1.1.2
+
+# --- Data / schemas -----------------------------------------------------
+pydantic==2.13.4
+pydantic-settings==2.15.0
+
+# --- Retrieval ----------------------------------------------------------
+chromadb==1.5.9
+rank-bm25==0.2.2
+sentence-transformers==6.0.0
+pypdf==6.16.1
+
+# --- Observability --------------------------------------------------------
+langfuse==4.14.4
+opentelemetry-sdk==1.44.0
+opentelemetry-exporter-otlp-proto-http==1.44.0
+opentelemetry-instrumentation-httpx==0.65b0
+opentelemetry-instrumentation-asgi==0.65b0
+
+# --- Web / API ------------------------------------------------------------
+fastapi
+uvicorn
+httpx==0.28.1
+
+# --- Web search fallback ----------------------------------------------------
+tavily-python
+ddgs==9.15.0
+trafilatura==2.2.0

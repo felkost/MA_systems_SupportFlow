@@ -1,0 +1,22 @@
+# Gate tooling only — never imported by application code.
+
+# Used by scripts/probe_silpo_mcp.py only (a one-off manual OAuth probe,
+# ported from a working Colab notebook that used plain requests, not the
+# mcp SDK — see the script's docstring). Never imported from src/.
+requests
+
+black>=24.0
+flake8>=7.0
+mypy>=1.10
+pytest>=8.0
+pytest-cov>=5.0
+pytest-asyncio==1.4.0
+pytest-randomly>=3.15
+pytest-timeout>=2.3
+portalocker[win32]>=3.0
+
+# Pinned below 4.2.0 deliberately: 4.2.0 inverted score polarity for
+# several metrics (BiasMetric, HallucinationMetric, MisuseMetric,
+# ToxicityMetric) on 2026-08-24 — staying on 4.1.10 avoids every threshold
+# flipping meaning.
+deepeval==4.1.10
