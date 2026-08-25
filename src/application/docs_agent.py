@@ -13,6 +13,7 @@ same trade-off Web Search Agent already accepts (docs/decisions.md #20)
 and not revisited here.
 """
 
+from contextlib import nullcontext
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any
@@ -21,7 +22,8 @@ from pydantic import BaseModel
 
 from src.domain.schemas import DocsResponse, Source
 from src.infrastructure.llm import get_chat_model
-from src.infrastructure.prompts import get_prompt
+from src.infrastructure.observability import get_langfuse_client
+from src.infrastructure.prompts import get_prompt, get_prompt_client
 from src.infrastructure.retriever import build_retriever, load_knowledge_base
 from src.infrastructure.silpo_mcp import search_products as _default_search_products
 
@@ -96,14 +98,30 @@ def _kb_chunk_to_source(chunk_metadata: dict[str, Any]) -> Source:
 
 def _compose_docs_response(compiled_prompt: str) -> DocsResponse:
     model = get_chat_model("docs")
-    structured_model = model.with_structured_output(DocsResponse)
+    structured_model = model.with_structured_output(DocsResponse, include_raw=True)
+    client = get_langfuse_client()
+    span_cm = (
+        client.start_as_current_observation(
+            name="docs_agent.compose",
+            as_type="generation",
+            prompt=get_prompt_client("supportflow/docs"),
+            model=model.model_name,
+        )
+        if client is not None
+        else nullcontext()
+    )
     try:
-        result = structured_model.invoke(compiled_prompt)
+        with span_cm as generation:
+            raw = structured_model.invoke(compiled_prompt)
+            if generation is not None:
+                usage = getattr(raw.get("raw"), "usage_metadata", None) or {}
+                generation.update(usage_details=dict(usage))
     except Exception as exc:  # noqa: BLE001 — provider errors vary
         raise DocsInvalidOutputError(str(exc)) from exc
+    result = raw.get("parsed")
     if not isinstance(result, DocsResponse):
         raise DocsInvalidOutputError(
-            f"model returned {type(result).__name__}, not a dict/schema"
+            f"model returned no valid DocsResponse: {raw.get('parsing_error')}"
         )
     return result
 

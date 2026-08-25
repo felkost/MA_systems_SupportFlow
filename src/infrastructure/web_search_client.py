@@ -46,6 +46,7 @@ def call_web_search(
     trace_id: str,
     deadline: datetime,
     *,
+    parent_span_id: str | None = None,
     httpx_client: httpx.AsyncClient | None = None,
 ) -> WebSearchCallResult:
     """One A2A call to Web Search Agent.
@@ -57,6 +58,10 @@ def call_web_search(
     request_id, session_id, trace_id : str
     deadline : datetime
         Enforced by `send_a2a_message` (docs/decisions.md #19's pattern).
+    parent_span_id : str, optional
+        The caller's current Langfuse observation id (Stage 4 decision
+        39), forwarded unchanged to `send_a2a_message`. `None` when
+        tracing is disabled.
     httpx_client : httpx.AsyncClient, optional
         Injected for testing against an in-process ASGI app — production
         callers use the default (a real network client).
@@ -83,6 +88,7 @@ def call_web_search(
         trace_id,
         deadline,
         httpx_client=httpx_client,
+        parent_span_id=parent_span_id,
     )
     try:
         payload = json.loads(reply_text)

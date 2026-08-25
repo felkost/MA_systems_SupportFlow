@@ -15,6 +15,7 @@ message), read back server-side from `RequestContext.request.metadata`.
 
 import asyncio
 import uuid
+from contextlib import nullcontext
 from datetime import datetime, timezone
 
 import httpx
@@ -38,6 +39,8 @@ from a2a.types.a2a_pb2 import (
     SendMessageRequest,
 )
 from fastapi import FastAPI
+
+from src.infrastructure.observability import get_langfuse_client
 
 # docs/decisions.md #23: only "1.0" is negotiated by this SDK version.
 _PROTOCOL_VERSION = "1.0"
@@ -132,7 +135,12 @@ def read_request_text(context: RequestContext) -> str:
 
 
 def _build_request(
-    text: str, request_id: str, session_id: str, trace_id: str, deadline: datetime
+    text: str,
+    request_id: str,
+    session_id: str,
+    trace_id: str,
+    deadline: datetime,
+    parent_span_id: str | None = None,
 ) -> SendMessageRequest:
     message = Message(
         message_id=str(uuid.uuid4()), role=Role.ROLE_USER, parts=[Part(text=text)]
@@ -142,6 +150,8 @@ def _build_request(
     request.metadata["session_id"] = session_id
     request.metadata["trace_id"] = trace_id
     request.metadata["deadline"] = deadline.isoformat()
+    if parent_span_id is not None:
+        request.metadata["parent_span_id"] = parent_span_id
     return request
 
 
@@ -153,6 +163,7 @@ async def _send_async(
     trace_id: str,
     deadline: datetime,
     httpx_client: httpx.AsyncClient | None,
+    parent_span_id: str | None,
 ) -> str:
     remaining = (deadline - datetime.now(timezone.utc)).total_seconds()
     if remaining <= 0:
@@ -169,7 +180,9 @@ async def _send_async(
     # never emit (confirmed by a hang during this module's own testing).
     config = ClientConfig(streaming=False, httpx_client=client_for_call)
     client = await ClientFactory(config).create_from_url(base_url)
-    request = _build_request(text, request_id, session_id, trace_id, deadline)
+    request = _build_request(
+        text, request_id, session_id, trace_id, deadline, parent_span_id
+    )
     async for event in client.send_message(request):
         if event.WhichOneof("payload") == "message":
             for part in event.message.parts:
@@ -187,6 +200,7 @@ def send_a2a_message(
     deadline: datetime,
     *,
     httpx_client: httpx.AsyncClient | None = None,
+    parent_span_id: str | None = None,
 ) -> str:
     """One A2A call: enforce `deadline`, send `text`, return the remote
     agent's reply text.
@@ -205,6 +219,11 @@ def send_a2a_message(
     httpx_client : httpx.AsyncClient, optional
         Injected for testing (an ASGI-transport client against an in-process
         app, no real socket) — defaults to a real network client.
+    parent_span_id : str, optional
+        The caller's current Langfuse observation id (Stage 4 decision 39)
+        — carried in `SendMessageRequest.metadata` alongside `trace_id` so
+        the callee's own root span parents onto this trace. `None` when
+        tracing is disabled.
 
     Returns
     -------
@@ -217,9 +236,36 @@ def send_a2a_message(
     ------
     A2ATimeoutError
     A2AInvalidResponseError
+
+    Notes
+    -----
+    Opens its own client-side Langfuse span around the network call
+    (Stage 4 decision 39) — a connection failure before the callee ever
+    opens its own root span (refused connection, timeout, DNS failure —
+    precisely task §7's escalation trigger) would otherwise leave no trace
+    record at all. The exception always propagates unchanged; Langfuse's
+    own span context manager records it as an error observation.
     """
-    return asyncio.run(
-        _send_async(
-            base_url, text, request_id, session_id, trace_id, deadline, httpx_client
+    client = get_langfuse_client()
+    span_cm = (
+        client.start_as_current_observation(
+            name="a2a.send_message",
+            as_type="span",
+            metadata={"base_url": base_url, "request_id": request_id},
         )
+        if client is not None
+        else nullcontext()
     )
+    with span_cm:
+        return asyncio.run(
+            _send_async(
+                base_url,
+                text,
+                request_id,
+                session_id,
+                trace_id,
+                deadline,
+                httpx_client,
+                parent_span_id,
+            )
+        )

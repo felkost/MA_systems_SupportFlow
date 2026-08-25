@@ -47,7 +47,7 @@ def test_call_web_search_returns_validated_response(
         "Чи є у вас акції на хліб?",
         request_id="r1",
         session_id="s1",
-        trace_id="t1",
+        trace_id="0123456789abcdef0123456789abcdef",
         deadline=datetime.now(timezone.utc) + timedelta(seconds=10),
         httpx_client=_asgi_client(build_app()),
     )
@@ -55,6 +55,33 @@ def test_call_web_search_returns_validated_response(
     assert result.response.answer == "Так, є акція на хліб."
     assert result.response.confidence == 0.9
     assert result.retrieval_context == ["хліб зі знижкою 20%"]
+
+
+def test_call_web_search_forwards_parent_span_id(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict = {}
+
+    def fake_send_a2a_message(
+        base_url, text, request_id, session_id, trace_id, deadline, **kwargs
+    ):
+        captured.update(kwargs)
+        return '{"response": {"answer": "x", "sources": [], "confidence": 1.0}}'
+
+    monkeypatch.setattr(
+        "src.infrastructure.web_search_client.send_a2a_message", fake_send_a2a_message
+    )
+
+    call_web_search(
+        "query",
+        request_id="r1",
+        session_id="s1",
+        trace_id="0123456789abcdef0123456789abcdef",
+        deadline=datetime.now(timezone.utc) + timedelta(seconds=10),
+        parent_span_id="deadbeefdeadbeef",
+    )
+
+    assert captured["parent_span_id"] == "deadbeefdeadbeef"
 
 
 def test_call_web_search_raises_when_tool_unavailable(
@@ -72,7 +99,7 @@ def test_call_web_search_raises_when_tool_unavailable(
             "query",
             request_id="r1",
             session_id="s1",
-            trace_id="t1",
+            trace_id="0123456789abcdef0123456789abcdef",
             deadline=datetime.now(timezone.utc) + timedelta(seconds=10),
             httpx_client=_asgi_client(build_app()),
         )

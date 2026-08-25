@@ -63,7 +63,7 @@ def test_send_a2a_message_round_trips_text_and_metadata() -> None:
         "Чи є у вас акції на хліб?",
         request_id="r1",
         session_id="s1",
-        trace_id="t1",
+        trace_id="0123456789abcdef0123456789abcdef",
         deadline=datetime.now(timezone.utc) + timedelta(seconds=10),
         httpx_client=_asgi_client(app),
     )
@@ -72,7 +72,67 @@ def test_send_a2a_message_round_trips_text_and_metadata() -> None:
     assert payload["text"] == "Чи є у вас акції на хліб?"
     assert payload["metadata"]["request_id"] == "r1"
     assert payload["metadata"]["session_id"] == "s1"
-    assert payload["metadata"]["trace_id"] == "t1"
+    assert payload["metadata"]["trace_id"] == "0123456789abcdef0123456789abcdef"
+
+
+def test_send_a2a_message_carries_parent_span_id_when_given() -> None:
+    agent_card = build_agent_card("echo", "test agent", "http://testserver")
+    app = build_server_app(_EchoExecutor(), agent_card)
+
+    reply = send_a2a_message(
+        "http://testserver",
+        "text",
+        request_id="r1",
+        session_id="s1",
+        trace_id="0123456789abcdef0123456789abcdef",
+        deadline=datetime.now(timezone.utc) + timedelta(seconds=10),
+        httpx_client=_asgi_client(app),
+        parent_span_id="deadbeefdeadbeef",
+    )
+
+    payload = json.loads(reply)
+    assert payload["metadata"]["parent_span_id"] == "deadbeefdeadbeef"
+
+
+def test_send_a2a_message_omits_parent_span_id_when_not_given() -> None:
+    agent_card = build_agent_card("echo", "test agent", "http://testserver")
+    app = build_server_app(_EchoExecutor(), agent_card)
+
+    reply = send_a2a_message(
+        "http://testserver",
+        "text",
+        request_id="r1",
+        session_id="s1",
+        trace_id="0123456789abcdef0123456789abcdef",
+        deadline=datetime.now(timezone.utc) + timedelta(seconds=10),
+        httpx_client=_asgi_client(app),
+    )
+
+    payload = json.loads(reply)
+    assert "parent_span_id" not in payload["metadata"]
+
+
+def test_send_a2a_message_client_side_span_does_not_swallow_connection_failure() -> (
+    None
+):
+    """A refused connection (task §7's escalation trigger) must still
+    raise, not be absorbed by the new client-side span wrapper.
+    """
+    unreachable_client = httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=lambda *a, **kw: None),
+        base_url="http://testserver",
+    )
+
+    with pytest.raises(Exception):
+        send_a2a_message(
+            "http://testserver",
+            "text",
+            request_id="r1",
+            session_id="s1",
+            trace_id="0123456789abcdef0123456789abcdef",
+            deadline=datetime.now(timezone.utc) + timedelta(seconds=10),
+            httpx_client=unreachable_client,
+        )
 
 
 def test_send_a2a_message_raises_when_deadline_already_passed() -> None:
@@ -85,7 +145,7 @@ def test_send_a2a_message_raises_when_deadline_already_passed() -> None:
             "text",
             request_id="r1",
             session_id="s1",
-            trace_id="t1",
+            trace_id="0123456789abcdef0123456789abcdef",
             deadline=datetime.now(timezone.utc) - timedelta(seconds=1),
             httpx_client=_asgi_client(app),
         )

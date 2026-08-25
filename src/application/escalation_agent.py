@@ -9,6 +9,7 @@ unavailable" must not itself depend on a network call to reach.
 """
 
 import hashlib
+from contextlib import nullcontext
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -21,7 +22,8 @@ from src.domain.schemas import (
 )
 from src.domain.state import ErrorType
 from src.infrastructure.llm import get_chat_model
-from src.infrastructure.prompts import get_prompt
+from src.infrastructure.observability import get_langfuse_client
+from src.infrastructure.prompts import get_prompt, get_prompt_client
 from src.infrastructure.report_writer import write_escalation_report
 from src.infrastructure.telegram_client import send_telegram_message
 from src.kernel.constants import (
@@ -125,14 +127,30 @@ def _render_context(context: EscalationContext) -> str:
 
 def _compose_escalation_output(compiled_prompt: str) -> EscalationOutput:
     model = get_chat_model("escalation")
-    structured_model = model.with_structured_output(EscalationOutput)
+    structured_model = model.with_structured_output(EscalationOutput, include_raw=True)
+    client = get_langfuse_client()
+    span_cm = (
+        client.start_as_current_observation(
+            name="escalation_agent.compose",
+            as_type="generation",
+            prompt=get_prompt_client("supportflow/escalation"),
+            model=model.model_name,
+        )
+        if client is not None
+        else nullcontext()
+    )
     try:
-        result = structured_model.invoke(compiled_prompt)
+        with span_cm as generation:
+            raw = structured_model.invoke(compiled_prompt)
+            if generation is not None:
+                usage = getattr(raw.get("raw"), "usage_metadata", None) or {}
+                generation.update(usage_details=dict(usage))
     except Exception as exc:  # noqa: BLE001 — provider errors vary
         raise EscalationInvalidOutputError(str(exc)) from exc
+    result = raw.get("parsed")
     if not isinstance(result, EscalationOutput):
         raise EscalationInvalidOutputError(
-            f"model returned {type(result).__name__}, not a dict/schema"
+            f"model returned no valid EscalationOutput: {raw.get('parsing_error')}"
         )
     return result
 

@@ -10,19 +10,24 @@ Run standalone for manual testing:
 
 import json
 import uuid
+from contextlib import nullcontext
+from typing import Any
 
 import uvicorn
 from a2a.server.agent_execution import AgentExecutor, RequestContext
 from a2a.server.events import EventQueue
 from a2a.types.a2a_pb2 import Message, Part, Role
 from fastapi import FastAPI
+from langfuse.types import TraceContext
 
 from src.application.docs_agent import DocsInvalidOutputError, run_docs_agent
 from src.infrastructure.a2a_transport import (
     build_agent_card,
     build_server_app,
+    read_request_metadata,
     read_request_text,
 )
+from src.infrastructure.observability import configure_tracing, get_langfuse_client
 from src.kernel.settings import load_agent_config
 
 
@@ -37,18 +42,33 @@ class DocsExecutor(AgentExecutor):
 
     async def execute(self, context: RequestContext, event_queue: EventQueue) -> None:
         query = read_request_text(context)
-        try:
-            result = await run_docs_agent(query)
-            reply_text = json.dumps(
-                {
-                    "response": json.loads(result.response.model_dump_json()),
-                    "retrieval_context": result.retrieval_context,
-                }
+        metadata = read_request_metadata(context)
+        client = get_langfuse_client()
+        trace_id = metadata.get("trace_id")
+        span_cm: Any = nullcontext()
+        if client is not None and trace_id:
+            trace_context: TraceContext = {"trace_id": trace_id}
+            parent_span_id = metadata.get("parent_span_id")
+            if parent_span_id:
+                trace_context["parent_span_id"] = parent_span_id
+            span_cm = client.start_as_current_observation(
+                name="docs_agent.a2a_request",
+                as_type="span",
+                trace_context=trace_context,
             )
-        except DocsInvalidOutputError as exc:
-            reply_text = json.dumps(
-                {"error_type": type(exc).__name__, "error": str(exc)}
-            )
+        with span_cm:
+            try:
+                result = await run_docs_agent(query)
+                reply_text = json.dumps(
+                    {
+                        "response": json.loads(result.response.model_dump_json()),
+                        "retrieval_context": result.retrieval_context,
+                    }
+                )
+            except DocsInvalidOutputError as exc:
+                reply_text = json.dumps(
+                    {"error_type": type(exc).__name__, "error": str(exc)}
+                )
         await event_queue.enqueue_event(
             Message(
                 role=Role.ROLE_AGENT,
@@ -77,6 +97,11 @@ def build_app() -> FastAPI:
 
 
 def main() -> None:
+    # Eagerly configured here, not in launcher.py — launcher.py spawns
+    # this module as a real subprocess (`subprocess.Popen`), so a call in
+    # launcher.py's own body would never reach this process
+    # (docs/decisions.md Stage 4 decision 33's second-round correction).
+    configure_tracing()
     config = load_agent_config("docs")
     if config.port is None:
         raise KeyError("config/models.yaml's 'docs' row has no 'port'")
