@@ -1,5 +1,8 @@
 # Harness / assistant infrastructure — not part of the product.
 .claude/
+AGENTS.md
+CLAUDE.md
+CONTRIBUTING.md
 
 # Local-only session-continuity files, per project convention: they may
 # reference build-stage/phase language, which tracked files may not.
