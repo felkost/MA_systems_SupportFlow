@@ -1,0 +1,45 @@
+{
+  "_comment": "Stage 4 Wave B decision #49/D-B10's own meta-prompting set for Docs Agent. Separate from evals/golden_dataset.json (FB6 — a prompt must not be tuned against the same cases it is graded on, same held-out discipline as decision #17's Router gate set). 8 cases, all questions data/knowledge_base/faq.json genuinely and directly covers, topically disjoint from golden_dataset.json's docs-route cases (milk, no-receipt returns, bonus-card duration, installment payment, gluten-free bread, one-word bonuses) so this set isolates Support Resolution Quality's own 'vague next step' pattern (decision #48's judge reasoning) from any retrieval-coverage gap. No product/price questions here — those depend on live Silpo MCP data (decisions #52/#53) and would couple this prompt-only exercise to a second variable.",
+  "cases": [
+    {
+      "id": "opt-01-expired-product",
+      "input": "Що робити, якщо товар виявився простроченим?",
+      "kb_reference": "faq-04"
+    },
+    {
+      "id": "opt-02-promo-code",
+      "input": "Як активувати промокод на знижку?",
+      "kb_reference": "faq-06"
+    },
+    {
+      "id": "opt-03-missing-delivery-item",
+      "input": "У моєму замовленні з доставки бракує одного товару, що робити?",
+      "kb_reference": "faq-08"
+    },
+    {
+      "id": "opt-04-discount-plus-bonus",
+      "input": "Чи можна одночасно скористатися знижкою за акцією і списати бонуси?",
+      "kb_reference": "faq-09"
+    },
+    {
+      "id": "opt-05-refund-after-cancel",
+      "input": "Я скасував замовлення — коли повернуться гроші на картку?",
+      "kb_reference": "faq-11"
+    },
+    {
+      "id": "opt-06-defective-product",
+      "input": "Купив бракований товар, як його повернути чи обміняти?",
+      "kb_reference": "faq-13"
+    },
+    {
+      "id": "opt-07-gift-certificate",
+      "input": "Чи продаються у вас подарункові сертифікати і скільки вони діють?",
+      "kb_reference": "faq-14"
+    },
+    {
+      "id": "opt-08-change-delivery-time",
+      "input": "Чи можна перенести час доставки вже після оформлення замовлення?",
+      "kb_reference": "faq-18"
+    }
+  ]
+}

@@ -116,14 +116,33 @@ def test_parse_tool_result_raises_on_unrecognised_shape() -> None:
         _parse_tool_result(42)
 
 
+def test_parse_tool_result_raises_typed_error_on_malformed_json() -> None:
+    # Live-observed 2026-08-26: the MCP server returned an empty text
+    # body for a genuinely-called tool, and a raw json.JSONDecodeError
+    # would defeat search_products' own degrade-gracefully handling.
+    with pytest.raises(SilpoMcpResultParseError):
+        _parse_tool_result([{"type": "text", "text": ""}])
+
+
 async def _fake_call_tool(name: str, args: dict) -> dict:
     if name == "silpo_list_branches":
+        # Live-confirmed 2026-08-26: the real MCP server returns these as
+        # strings, not numbers (docs/decisions.md #51) — kept as strings
+        # here too so a regression that drops get_branch_context's own
+        # float() cast fails this fake exactly like the real server did.
         return {
             "branches": [
-                {"branchId": "b1", "latitude": 50.4, "longitude": 30.5, "open": True}
+                {
+                    "branchId": "b1",
+                    "latitude": "50.4",
+                    "longitude": "30.5",
+                    "open": True,
+                }
             ]
         }
     if name == "silpo_get_available_delivery_types":
+        assert isinstance(args["latitude"], float)
+        assert isinstance(args["longitude"], float)
         return {"options": [{"branchId": "b1", "deliveryType": "SelfPickup"}]}
     if name == "silpo_get_time_slots":
         return {
@@ -136,10 +155,16 @@ async def _fake_call_tool(name: str, args: dict) -> dict:
             ]
         }
     if name == "silpo_find_products_batch":
+        # Live-confirmed 2026-08-26 (docs/decisions.md #52): "batch" is
+        # literal — the tool requires an array of queries, not a bare
+        # string; a caller passing a string gets a -32602 validation
+        # error the server returns as unparseable text, not a clean
+        # error, so a regression here fails loudly.
+        assert isinstance(args["products"], list)
         return {
             "queries": [
                 {
-                    "query": args["products"],
+                    "query": args["products"][0],
                     "totalFound": 1,
                     "products": [{"id": "p1", "name": "Молоко безлактозне"}],
                 }
@@ -152,11 +177,29 @@ async def _fake_call_tool(name: str, args: dict) -> dict:
 async def test_get_branch_context_bootstraps_from_non_personal_tools_only() -> None:
     silpo_mcp._branch_context_cache = None
 
-    ctx = await get_branch_context(call_tool=_fake_call_tool)
+    ctx, tool_names = await get_branch_context(call_tool=_fake_call_tool)
 
     assert ctx.branch_id == "b1"
     assert ctx.delivery_type == "SelfPickup"
     assert ctx.timeslot_start == "2026-08-26T10:00:00Z"
+    assert tool_names == [
+        "silpo_list_branches",
+        "silpo_get_available_delivery_types",
+        "silpo_get_time_slots",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_get_branch_context_reports_no_tool_names_when_cached() -> None:
+    """Stage 4 Wave B decision D-B7.2: a golden-dataset `expected_tools`
+    entry must not depend on whether the cache happened to be warm.
+    """
+    silpo_mcp._branch_context_cache = None
+    await get_branch_context(call_tool=_fake_call_tool)
+
+    _ctx, tool_names = await get_branch_context(call_tool=_fake_call_tool)
+
+    assert tool_names == []
 
 
 @pytest.mark.asyncio
@@ -182,6 +225,26 @@ async def test_get_branch_context_is_cached_across_calls() -> None:
 async def test_search_products_returns_products_from_the_batch_query() -> None:
     silpo_mcp._branch_context_cache = None
 
-    products = await search_products("безлактозне молоко", call_tool=_fake_call_tool)
+    products, tool_names = await search_products(
+        "безлактозне молоко", call_tool=_fake_call_tool
+    )
 
     assert products == [{"id": "p1", "name": "Молоко безлактозне"}]
+    assert tool_names[-1] == "silpo_find_products_batch"
+
+
+@pytest.mark.asyncio
+async def test_search_products_keeps_tool_name_when_result_is_malformed() -> None:
+    silpo_mcp._branch_context_cache = None
+
+    async def malformed_call_tool(name: str, args: dict) -> dict:
+        if name == "silpo_find_products_batch":
+            raise SilpoMcpResultParseError("empty MCP response body")
+        return await _fake_call_tool(name, args)
+
+    products, tool_names = await search_products(
+        "безлактозне молоко", call_tool=malformed_call_tool
+    )
+
+    assert products == []
+    assert tool_names[-1] == "silpo_find_products_batch"

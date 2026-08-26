@@ -14,13 +14,13 @@ def test_search_uses_tavily_result_without_calling_ddgs_fallback() -> None:
     tavily_result = [SearchResult(title="t", url="https://example.com", content="c")]
     ddgs_calls: list[str] = []
 
-    result = search(
+    outcome = search(
         "query",
         tavily_fn=lambda q: tavily_result,
         ddgs_fn=lambda q: ddgs_calls.append(q) or [],
     )
 
-    assert result == tavily_result
+    assert outcome.results == tavily_result
     assert ddgs_calls == []
 
 
@@ -30,9 +30,31 @@ def test_search_falls_back_to_ddgs_when_tavily_raises() -> None:
     def failing_tavily(_query: str) -> list[SearchResult]:
         raise RuntimeError("tavily quota exceeded")
 
-    result = search("query", tavily_fn=failing_tavily, ddgs_fn=lambda q: ddgs_result)
+    outcome = search("query", tavily_fn=failing_tavily, ddgs_fn=lambda q: ddgs_result)
 
-    assert result == ddgs_result
+    assert outcome.results == ddgs_result
+
+
+def test_search_reports_which_provider_served_the_result() -> None:
+    """Stage 4 Wave B decision D-B7.4: `SupportFlowState.tools_called`
+    needs to know which provider actually answered — there is no other
+    signal to infer it from (`Source.ref` is free-form LLM text, not a
+    provider tag).
+    """
+    tavily_result = [SearchResult(title="t", url="https://example.com", content="c")]
+    tavily_outcome = search(
+        "query", tavily_fn=lambda q: tavily_result, ddgs_fn=lambda q: []
+    )
+    assert tavily_outcome.provider == "tavily"
+
+    def failing_tavily(_query: str) -> list[SearchResult]:
+        raise RuntimeError("tavily quota exceeded")
+
+    ddgs_result = [SearchResult(title="d", url="https://example.com", content="c")]
+    ddgs_outcome = search(
+        "query", tavily_fn=failing_tavily, ddgs_fn=lambda q: ddgs_result
+    )
+    assert ddgs_outcome.provider == "duckduckgo"
 
 
 def test_search_raises_when_both_providers_fail() -> None:

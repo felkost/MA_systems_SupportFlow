@@ -35,6 +35,7 @@ def test_call_docs_agent_returns_validated_response(
             confidence=0.9,
         ),
         retrieval_context=["Бонусна картка не має терміну дії."],
+        tools_called=["silpo_find_products_batch"],
     )
 
     async def fake_run_docs_agent(_query: str) -> DocsAgentResult:
@@ -55,6 +56,7 @@ def test_call_docs_agent_returns_validated_response(
 
     assert result.response.answer == "Бонусна картка не має терміну дії."
     assert result.retrieval_context == ["Бонусна картка не має терміну дії."]
+    assert result.tools_called == ["silpo_find_products_batch"]  # Stage 4 Wave B D-B7
 
 
 def test_call_docs_agent_forwards_parent_span_id(

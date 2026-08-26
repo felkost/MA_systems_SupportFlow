@@ -40,6 +40,7 @@ def build_initial_state(
         escalation_count=0,
         router_prompt_version=None,
         retrieval_context=[],
+        tools_called=[],
         next_action="router",
     )
 

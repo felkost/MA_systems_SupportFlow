@@ -4,7 +4,7 @@ path to it (docs/decisions.md #1/#23). Mirrors
 """
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 
 import httpx
@@ -30,10 +30,12 @@ class DocsInvalidResponseError(Exception):
 
 @dataclass(frozen=True)
 class DocsCallResult:
-    """`response` plus `retrieval_context` (docs/decisions.md #22)."""
+    """`response` plus `retrieval_context` (docs/decisions.md #22) and
+    `tools_called` (Stage 4 Wave B decision D-B7)."""
 
     response: DocsResponse
     retrieval_context: list[str]
+    tools_called: list[str] = field(default_factory=list)
 
 
 def call_docs_agent(
@@ -99,5 +101,7 @@ def call_docs_agent(
     except (ValidationError, KeyError, TypeError) as exc:
         raise DocsInvalidResponseError(str(exc)) from exc
     return DocsCallResult(
-        response=response, retrieval_context=payload.get("retrieval_context", [])
+        response=response,
+        retrieval_context=payload.get("retrieval_context", []),
+        tools_called=payload.get("tools_called", []),
     )

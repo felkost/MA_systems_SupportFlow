@@ -144,7 +144,12 @@ def _compose_escalation_output(compiled_prompt: str) -> EscalationOutput:
             raw = structured_model.invoke(compiled_prompt)
             if generation is not None:
                 usage = getattr(raw.get("raw"), "usage_metadata", None) or {}
-                generation.update(usage_details=dict(usage))
+                # See docs_agent.py's identical fix, Stage 4 Wave B D-B2.
+                generation.update(
+                    usage_details=dict(usage),
+                    input=compiled_prompt,
+                    output=str(raw.get("parsed")),
+                )
     except Exception as exc:  # noqa: BLE001 — provider errors vary
         raise EscalationInvalidOutputError(str(exc)) from exc
     result = raw.get("parsed")

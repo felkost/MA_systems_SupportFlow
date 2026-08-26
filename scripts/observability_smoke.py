@@ -32,6 +32,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+import httpx  # noqa: E402
 from langfuse import Langfuse  # noqa: E402
 from langfuse.api import NotFoundError  # noqa: E402
 from langfuse.api import TraceWithFullDetails  # noqa: E402
@@ -49,11 +50,18 @@ _READBACK_POLL_SECONDS = 3.0
 
 
 def _wait_for_trace(client: Langfuse, trace_id: str) -> TraceWithFullDetails:
+    """Retries on both "not indexed yet" (`NotFoundError`) and a transient
+    network hiccup (`httpx.TimeoutException`/`ConnectError`) — confirmed
+    live 2026-08-26 that the latter is a real, recurring failure mode of
+    this exact call, not hypothetical, and previously crashed the whole
+    script with an unhandled traceback instead of retrying within the
+    same deadline budget.
+    """
     deadline = time.monotonic() + _READBACK_TIMEOUT_SECONDS
     while True:
         try:
             return client.api.trace.get(trace_id)
-        except NotFoundError:
+        except (NotFoundError, httpx.TimeoutException, httpx.ConnectError):
             if time.monotonic() >= deadline:
                 raise
             time.sleep(_READBACK_POLL_SECONDS)

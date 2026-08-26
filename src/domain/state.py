@@ -86,6 +86,12 @@ class SupportFlowState(TypedDict):
         (docs/decisions.md #22) — state-only, not part of either mandatory
         response model (task §6 freezes their shape). Stage 4's DeepEval
         `FaithfulnessMetric` scores against this.
+    tools_called : list[str]
+        Names of the tools Docs/Web Search Agent actually invoked
+        successfully (Stage 4 Wave B decision D-B7) — same sibling-field
+        pattern as `retrieval_context`. A name is appended only once its
+        call has returned; a mid-call timeout or a swallowed exception
+        never adds one. Scores DeepEval's `ToolCorrectnessMetric`.
     next_action : NextAction
     """
 
@@ -104,4 +110,5 @@ class SupportFlowState(TypedDict):
     escalation_count: int
     router_prompt_version: int | None
     retrieval_context: list[str]
+    tools_called: list[str]
     next_action: NextAction
