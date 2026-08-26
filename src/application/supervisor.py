@@ -41,6 +41,8 @@ def build_initial_state(
         router_prompt_version=None,
         retrieval_context=[],
         tools_called=[],
+        report_written=False,
+        telegram_sent=False,
         next_action="router",
     )
 

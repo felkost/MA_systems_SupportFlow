@@ -1,0 +1,69 @@
+/* Silpo-like palette, sampled from silpo.ua's own surfaces: orange
+   wordmark, dark-green top banner, blue cart pill, yellow promo blocks,
+   white cards on a light blue-grey page. Light is the default; the dark
+   set is the same roles re-valued, never a second set of role names. */
+:root {
+  --brand-orange: #ff7a00;
+  --brand-orange-dark: #e56a00;
+  --brand-orange-soft: #fff1e3;
+  --brand-green: #2d5a4a;
+  --brand-blue: #1b5cff;
+  --brand-yellow: #ffd400;
+
+  --bg: #f4f6fa;
+  --surface: #ffffff;
+  --surface-alt: #f7f8fb;
+  --text: #1f2430;
+  --text-muted: #6b7280;
+  --border: #e3e7ee;
+  --shadow: 0 2px 10px rgba(31, 36, 48, 0.07);
+
+  --ok: #1a7f37;
+  --warn: #b45309;
+  --danger: #d92d20;
+
+  --radius: 16px;
+  --radius-pill: 999px;
+
+  font-family: 'Nunito', system-ui, 'Segoe UI', Roboto, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  --brand-orange: #ff9433;
+  --brand-orange-dark: #ff7a00;
+  --brand-orange-soft: #33251a;
+  --brand-green: #4a9d7f;
+  --brand-blue: #5b8bff;
+
+  --bg: #14161c;
+  --surface: #1c1f27;
+  --surface-alt: #232732;
+  --text: #e8ebf0;
+  --text-muted: #9aa2b1;
+  --border: #2d323d;
+  --shadow: 0 2px 12px rgba(0, 0, 0, 0.45);
+
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --danger: #f87171;
+
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: inherit;
+}

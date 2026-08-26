@@ -19,7 +19,7 @@ from contextlib import nullcontext
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from a2a.client.errors import A2AClientTimeoutError
+from a2a.client.errors import A2AClientTimeoutError, AgentCardResolutionError
 from langgraph.graph import END, StateGraph
 
 from src.application.escalation_agent import EscalationContext, run_escalation_agent
@@ -122,7 +122,14 @@ def docs_node(state: SupportFlowState) -> dict[str, Any]:
         # config/models.yaml's docs.timeout_seconds), never triggered
         # before because no prior live run hit a slow-enough first call.
         return {"next_action": "escalate", "errors": ["docs_timeout"]}
-    except DocsUnavailableError:
+    except (DocsUnavailableError, AgentCardResolutionError):
+        # AgentCardResolutionError: the agent's process never answered the
+        # `/.well-known/agent-card.json` probe — literally "agent
+        # unavailable", the same escalation task §7 step 6 already
+        # prescribes. Found live 2026-08-26: uncaught, it propagated out of
+        # the graph and surfaced as an HTTP 500 from `/chat` (a browser-
+        # visible crash) instead of the graceful escalation every other
+        # transport failure on this path already produces.
         return {"next_action": "escalate", "errors": ["docs_unavailable"]}
     except DocsInvalidResponseError:
         return {"next_action": "escalate", "errors": ["docs_invalid_response"]}
@@ -174,7 +181,8 @@ def web_search_node(state: SupportFlowState) -> dict[str, Any]:
         )
     except (A2ATimeoutError, A2AClientTimeoutError):
         return {"next_action": "escalate", "errors": ["web_search_timeout"]}
-    except WebSearchUnavailableError:
+    except (WebSearchUnavailableError, AgentCardResolutionError):
+        # See `docs_node`'s own note — same live-found HTTP-500 path.
         return {"next_action": "escalate", "errors": ["web_search_unavailable"]}
     except WebSearchInvalidResponseError:
         return {"next_action": "escalate", "errors": ["web_search_invalid_response"]}
@@ -226,6 +234,8 @@ def escalate_node(state: SupportFlowState) -> dict[str, Any]:
         "escalation_output": result.output,
         "answer": result.output.customer_message,
         "escalation_count": state["escalation_count"] + 1,
+        "report_written": result.written,
+        "telegram_sent": result.sent,
     }
 
 

@@ -202,7 +202,11 @@ async def run_docs_agent(
         f"{p.get('name', '')}: {p.get('price', '?')} грн" for p in mcp_products
     ]
     mcp_sources = [
-        Source(ref=f"silpo_mcp:{p.get('id', '?')}", retrieved_at=fetched_at)
+        # Stage 5: an opaque product id (`silpo_mcp:<uuid>`) is unreadable
+        # in the chat UI's own "Джерела" list — the product's own name,
+        # already fetched for `mcp_texts` above, is the readable identity
+        # a customer actually recognises.
+        Source(ref=f"Сільпо: {p.get('name', 'товар')}", retrieved_at=fetched_at)
         for p in mcp_products
     ]
 

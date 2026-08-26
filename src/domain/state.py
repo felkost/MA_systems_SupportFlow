@@ -92,6 +92,14 @@ class SupportFlowState(TypedDict):
         pattern as `retrieval_context`. A name is appended only once its
         call has returned; a mid-call timeout or a swallowed exception
         never adds one. Scores DeepEval's `ToolCorrectnessMetric`.
+    report_written, telegram_sent : bool
+        Stage 5: `escalate_node`'s own `EscalationAgentResult.written`/
+        `.sent`, surfaced so a caller (the API's `ChatResponse`) can show
+        whether the operator report/Telegram send actually happened,
+        rather than only that the case escalated. `False` on every
+        non-escalated request — never inferred from `next_action` alone,
+        since a deduplicated or capped escalation still sets
+        `next_action="escalate"` without writing or sending anything.
     next_action : NextAction
     """
 
@@ -111,4 +119,6 @@ class SupportFlowState(TypedDict):
     router_prompt_version: int | None
     retrieval_context: list[str]
     tools_called: list[str]
+    report_written: bool
+    telegram_sent: bool
     next_action: NextAction
