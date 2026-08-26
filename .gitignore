@@ -36,6 +36,11 @@ index/
 logs/
 runs/
 
+# Diagram set under review — not yet decided which of these are final;
+# ignored for now so the working tree can keep iterating without every
+# draft becoming a tracked file.
+report/
+
 # Output directory: ignore contents, then re-include the ones worth
 # tracking, so a stray crash-run file from a broad `git add` does not
 # silently join a public repo, and the negations stay reachable.
