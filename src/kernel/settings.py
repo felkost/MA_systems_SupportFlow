@@ -58,6 +58,9 @@ class Settings(BaseSettings):
         startup error, checked by `src.infrastructure.observability
         .configure_tracing` — never a silent no-trace fallback
         (docs/decisions.md #13's "fails loudly at startup" precedent).
+    frontend_origin : str, default="http://localhost:5173"
+        Task §8: CORS on `src.interfaces.api` is open only to this one
+        origin. Vite's own default dev port.
     """
 
     model_config = SettingsConfigDict(
@@ -77,6 +80,7 @@ class Settings(BaseSettings):
     bypass_hitl: bool = False
     allow_real_send: bool = False
     tracing_enabled: bool = False
+    frontend_origin: str = "http://localhost:5173"
 
 
 class AgentModelConfig(BaseModel):

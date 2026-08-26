@@ -42,8 +42,8 @@ opentelemetry-instrumentation-httpx==0.65b0
 opentelemetry-instrumentation-asgi==0.65b0
 
 # --- Web / API ------------------------------------------------------------
-fastapi
-uvicorn
+fastapi==0.141.1
+uvicorn==0.52.4
 httpx==0.28.1
 # Launcher's per-process peak-memory measurement (docs/decisions.md #7) —
 # no stdlib cross-platform equivalent (`resource` is POSIX-only).
