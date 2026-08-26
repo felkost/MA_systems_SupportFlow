@@ -73,41 +73,18 @@ Escalation Agent sends a real Telegram message only with
 `ALLOW_REAL_SEND=true` — see `docs/telegram_bot_setup.md` for the one-time
 bot/test-channel setup needed before that flag means anything.
 
-## Known limitations
+## Known risks
 
-Router, Docs, Web Search, and Escalation are all real. Docs and Web
-Search run as separate A2A server processes
-(`src/interfaces/{docs,web_search}_a2a_server.py`), started together by
-`src/interfaces/launcher.py`; Router and Escalation run in-process with
-the Supervisor. There is no FastAPI app or web UI yet (Stage 5). Langfuse
-tracing across the full call tree (`CallbackHandler` on `graph.invoke`,
-per-observation metadata for Silpo MCP/ACP/A2A/File System/PII
-scrubbing/Supervisor routing, cross-process trace propagation via
-Langfuse's own `TraceContext`) is live-verified end to end
-(`TRACE_ID=5fea69410fb04a45b0cc6c081b39af73`, 2026-08-26,
-`scripts/observability_smoke.py`) — Telegram's own observation is the one
-sink not yet confirmed, since both live runs had `ALLOW_REAL_SEND=false`.
-Cost is never populated on generation spans — Langfuse doesn't recognise
-the OpenRouter-routed model id for its own automatic cost calculation;
-token counts are real. PII masking at the Langfuse export barrier
-(`mask_otel_spans`) reuses the existing email/phone/card-Luhn patterns
-only — it does not detect OAuth tokens, API keys, or free-text addresses
-by shape; the only control for those categories today is code review at
-each span's `metadata=` call site (docs/decisions.md Stage 4 decision
-34's Known Risks). `pytest --cov=src` forces `TRACING_ENABLED=false`
-regardless of the real `.env` (`tests/conftest.py`) — found necessary
-live, since the test suite was otherwise silently sending real spans to
-the real Langfuse project whenever a developer's local `.env` had tracing
-on. DeepEval, the
-golden dataset, thresholds, and the meta-prompting cycle are Stage 4 Wave
-B, not started. Retrieval/prompt relevance quality (Docs/Web Search can
-lose track of the actual question among noisy retrieved content) is
-unmeasured and unfixed — in scope for Wave B, not treated as done.
-Escalation's session-scoped send-dedup/cap store is a module-level,
-single-process dict (docs/decisions.md #28) — correct for this project's
-single-process demo topology, not a multi-worker deployment.
-`docs/decisions.md` #9–39 record every Stage 1–4 design decision,
-including ones this list doesn't repeat here (personal-data masking,
-prompt-fetch failure behaviour, the self-reported-confidence gate's
-unvalidated status, the Silpo MCP branch/delivery/timeslot bootstrap
-chain, the Telegram send-safety flags).
+- Telegram's own Langfuse observation is unconfirmed — no live run has
+  set `ALLOW_REAL_SEND=true` yet.
+- Generation-span cost is never populated — Langfuse doesn't recognise
+  the OpenRouter-routed model id for its automatic cost calculation;
+  token counts are real.
+- PII masking at the Langfuse export barrier covers email/phone/card
+  shapes only, not OAuth tokens, API keys, or free-text addresses.
+- Escalation's send-dedup/cap store is a single-process, in-memory
+  dict — correct for this project's single-process demo topology, not a
+  multi-worker deployment.
+- The final golden-dataset gate is not fully green yet (Stage 4 Wave
+  B): known route-boundary flakiness and two below-floor answer-quality
+  findings remain, tracked and not silently dropped.
