@@ -155,12 +155,23 @@ def _parse_tool_result(result: Any) -> dict[str, Any]:
     """
     if isinstance(result, dict):
         return result
-    if isinstance(result, str):
-        return dict(json.loads(result))
-    if isinstance(result, list):
-        for block in result:
-            if isinstance(block, dict) and block.get("type") == "text":
-                return dict(json.loads(block["text"]))
+    try:
+        if isinstance(result, str):
+            return dict(json.loads(result))
+        if isinstance(result, list):
+            for block in result:
+                if isinstance(block, dict) and block.get("type") == "text":
+                    return dict(json.loads(block["text"]))
+    except json.JSONDecodeError as exc:
+        # Live-observed 2026-08-26: the MCP server occasionally returns an
+        # empty text body for a tool that was genuinely called (the
+        # Langfuse `silpo_mcp.call_tool` span still records the attempt).
+        # Re-raised as this module's own typed error so callers like
+        # `search_products` can degrade gracefully without losing the
+        # fact that the call happened (Stage 4 Wave B decision D-B7).
+        raise SilpoMcpResultParseError(
+            f"malformed MCP tool result JSON: {exc}"
+        ) from exc
     raise SilpoMcpResultParseError(f"unrecognised MCP tool result shape: {result!r}")
 
 
@@ -191,7 +202,7 @@ _branch_context_cache: BranchContext | None = None
 
 async def get_branch_context(
     call_tool: CallToolFn = call_mcp_tool, force_refresh: bool = False
-) -> BranchContext:
+) -> tuple[BranchContext, list[str]]:
     """Bootstrap `BranchContext` from three allowlisted, non-personal
     tools, caching the result for the rest of this process's lifetime.
 
@@ -204,11 +215,16 @@ async def get_branch_context(
 
     Returns
     -------
-    BranchContext
+    tuple[BranchContext, list[str]]
+        The context, plus the names of the tools actually called to build
+        it this call — `[]` when served from cache (Stage 4 Wave B
+        decision D-B7.2: a golden-dataset case's `expected_tools` names
+        only the terminal product tool, never these, precisely because
+        whether they fire is cache-timing-dependent).
     """
     global _branch_context_cache
     if _branch_context_cache is not None and not force_refresh:
-        return _branch_context_cache
+        return _branch_context_cache, []
 
     branches = await call_tool("silpo_list_branches", {"hasPickup": True, "limit": 5})
     branch_list = branches["branches"]
@@ -216,7 +232,16 @@ async def get_branch_context(
 
     delivery = await call_tool(
         "silpo_get_available_delivery_types",
-        {"latitude": branch["latitude"], "longitude": branch["longitude"]},
+        # Live-confirmed 2026-08-26: silpo_list_branches returns
+        # latitude/longitude as strings, but this tool's own schema
+        # requires numbers — an uncast string previously made the server
+        # reject the call with an MCP -32602 input-validation error,
+        # which _parse_tool_result then tried (and failed) to read as
+        # JSON. docs/decisions.md #51.
+        {
+            "latitude": float(branch["latitude"]),
+            "longitude": float(branch["longitude"]),
+        },
     )
     option = delivery["options"][0]
 
@@ -233,12 +258,16 @@ async def get_branch_context(
         timeslot_start=slot["start"],
         timeslot_end=slot["end"],
     )
-    return _branch_context_cache
+    return _branch_context_cache, [
+        "silpo_list_branches",
+        "silpo_get_available_delivery_types",
+        "silpo_get_time_slots",
+    ]
 
 
 async def search_products(
     query: str, *, limit: int = 5, call_tool: CallToolFn = call_mcp_tool
-) -> list[dict[str, Any]]:
+) -> tuple[list[dict[str, Any]], list[str]]:
     """Search the Silpo catalogue for `query` via `silpo_find_products_batch`.
 
     Parameters
@@ -252,24 +281,39 @@ async def search_products(
 
     Returns
     -------
-    list[dict[str, Any]]
-        Raw product dicts from the tool's `queries[0].products`, or `[]`
-        if nothing matched.
+    tuple[list[dict[str, Any]], list[str]]
+        Raw product dicts from the tool's `queries[0].products` (`[]` if
+        nothing matched), plus the tool names actually called this call
+        (Stage 4 Wave B decision D-B7) — appended only after
+        `silpo_find_products_batch` itself returns, mirroring
+        `retrieval_context`'s "actually retrieved" semantics.
     """
-    context = await get_branch_context(call_tool=call_tool)
-    result = await call_tool(
-        "silpo_find_products_batch",
-        {
-            "branchId": context.branch_id,
-            "deliveryType": context.delivery_type,
-            "timeslotStart": context.timeslot_start,
-            "timeslotEnd": context.timeslot_end,
-            "products": query,
-            "limit": limit,
-        },
-    )
+    context, tool_names = await get_branch_context(call_tool=call_tool)
+    tool_names = tool_names + ["silpo_find_products_batch"]
+    try:
+        result = await call_tool(
+            "silpo_find_products_batch",
+            {
+                "branchId": context.branch_id,
+                "deliveryType": context.delivery_type,
+                "timeslotStart": context.timeslot_start,
+                "timeslotEnd": context.timeslot_end,
+                # Live-confirmed 2026-08-26: "batch" is literal — the tool
+                # takes an array of queries (its own response echoes back
+                # one `queries[i]` entry per input), not a bare string.
+                # docs/decisions.md #52.
+                "products": [query],
+                "limit": limit,
+            },
+        )
+    except SilpoMcpResultParseError:
+        # The tool was called (recorded above) but returned an unusable
+        # body — degrade to "no products", same as any other MCP hiccup,
+        # without discarding the record that the call was attempted.
+        return [], tool_names
     queries = result.get("queries", [])
-    return list(queries[0]["products"]) if queries else []
+    products = list(queries[0].get("products", [])) if queries else []
+    return products, tool_names
 
 
 def filter_allowed_tools(tools: list) -> list:

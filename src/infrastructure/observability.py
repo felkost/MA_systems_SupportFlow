@@ -42,6 +42,27 @@ def new_trace_id() -> str:
     return uuid.uuid4().hex
 
 
+def tag_trace(trace_id: str, tags: list[str]) -> None:
+    """Attach `tags` to an already-created trace, so separate runs over
+    the same golden dataset (a baseline before/after a fix, a
+    production/candidate prompt comparison) show up as distinct, visually
+    comparable groups in Langfuse's own Trace Tags filter (Scores >
+    Analytics) instead of one undifferentiated pool — the author's own
+    request, 2026-08-26.
+
+    A thin wrapper over `Langfuse._create_trace_tags_via_ingestion`
+    (private in the installed `langfuse==4.14.4` SDK, confirmed by
+    reading its source: it enqueues a partial `trace-create` ingestion
+    event carrying only `id`+`tags`, which Langfuse merges into the
+    existing trace rather than overwriting it) — no public equivalent
+    exists in this SDK version. A no-op when tracing is disabled.
+    """
+    client = get_langfuse_client()
+    if client is None:
+        return
+    client._create_trace_tags_via_ingestion(trace_id=trace_id, tags=tags)
+
+
 # Every literal `name=` this project passes to `start_as_current_observation`
 # (grep-verified against src/, 2026-08-26 live-trace audit). An *exact* set,
 # not a prefix — a prefix like `"a2a."` was tried first and confirmed live to

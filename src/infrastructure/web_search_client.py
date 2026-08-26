@@ -5,7 +5,7 @@ enforced, typed failure" shape, but over the network instead of in-process.
 """
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 
 import httpx
@@ -31,12 +31,14 @@ class WebSearchInvalidResponseError(Exception):
 
 @dataclass(frozen=True)
 class WebSearchCallResult:
-    """`response` plus `retrieval_context` (docs/decisions.md #22) — both
-    cross the A2A hop in the same reply payload.
+    """`response` plus `retrieval_context` (docs/decisions.md #22) and
+    `tools_called` (Stage 4 Wave B decision D-B7) — all cross the A2A hop
+    in the same reply payload.
     """
 
     response: WebSearchResponse
     retrieval_context: list[str]
+    tools_called: list[str] = field(default_factory=list)
 
 
 def call_web_search(
@@ -103,5 +105,7 @@ def call_web_search(
     except (ValidationError, KeyError, TypeError) as exc:
         raise WebSearchInvalidResponseError(str(exc)) from exc
     return WebSearchCallResult(
-        response=response, retrieval_context=payload.get("retrieval_context", [])
+        response=response,
+        retrieval_context=payload.get("retrieval_context", []),
+        tools_called=payload.get("tools_called", []),
     )

@@ -42,10 +42,15 @@ class WebSearchAgentResult:
         Agent runs in its own process (docs/decisions.md #1) — without
         this, Stage 4's `FaithfulnessMetric` would have nothing to score
         the Web Search route against.
+    tools_called : list[str]
+        Which provider actually served the result (Stage 4 Wave B
+        decision D-B7) — `["tavily"]` or `["duckduckgo"]`, populated only
+        once `search()` has actually returned.
     """
 
     response: WebSearchResponse
     retrieval_context: list[str]
+    tools_called: list[str]
 
 
 def run_web_search(
@@ -77,10 +82,12 @@ def run_web_search(
     WebSearchInvalidOutputError
         The model's output failed `WebSearchResponse` validation.
     """
-    results = search_fn(masked_query)
+    outcome = search_fn(masked_query)
     fetched_at = datetime.now(timezone.utc)
-    retrieval_context = [r.content for r in results]
-    retrieved_block = "\n\n".join(f"[{r.title}]({r.url})\n{r.content}" for r in results)
+    retrieval_context = [r.content for r in outcome.results]
+    retrieved_block = "\n\n".join(
+        f"[{r.title}]({r.url})\n{r.content}" for r in outcome.results
+    )
 
     prompt_text, _prompt_version = get_prompt("supportflow/web_search")
     compiled_prompt = prompt_text.replace("{{customer_message}}", masked_query).replace(
@@ -105,7 +112,12 @@ def run_web_search(
             raw = structured_model.invoke(compiled_prompt)
             if generation is not None:
                 usage = getattr(raw.get("raw"), "usage_metadata", None) or {}
-                generation.update(usage_details=dict(usage))
+                # See docs_agent.py's identical fix, Stage 4 Wave B D-B2.
+                generation.update(
+                    usage_details=dict(usage),
+                    input=compiled_prompt,
+                    output=str(raw.get("parsed")),
+                )
     except Exception as exc:  # noqa: BLE001 — provider errors vary
         raise WebSearchInvalidOutputError(str(exc)) from exc
     result = raw.get("parsed")
@@ -120,4 +132,8 @@ def run_web_search(
         source.model_copy(update={"retrieved_at": fetched_at})
         for source in result.sources
     ]
-    return WebSearchAgentResult(response=result, retrieval_context=retrieval_context)
+    return WebSearchAgentResult(
+        response=result,
+        retrieval_context=retrieval_context,
+        tools_called=[outcome.provider],
+    )

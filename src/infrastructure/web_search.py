@@ -10,6 +10,8 @@ packages (`TavilyClient.search`, `DDGS.text`), not assumed from docs —
 """
 
 from collections.abc import Callable
+from dataclasses import dataclass
+from typing import Literal
 
 from pydantic import BaseModel
 
@@ -39,7 +41,21 @@ class SearchUnavailableError(Exception):
     """
 
 
-SearchFn = Callable[[str], list[SearchResult]]
+@dataclass(frozen=True)
+class SearchOutcome:
+    """`search()`'s result plus which provider actually served it.
+
+    Stage 4 Wave B decision D-B7.4: `Source.ref` (the mandatory response
+    model's own field) carries no provider tag — it is free-form,
+    LLM-generated text — so `SupportFlowState.tools_called` needs this
+    signal from `search()` itself, not inferred after the fact.
+    """
+
+    results: list[SearchResult]
+    provider: Literal["tavily", "duckduckgo"]
+
+
+SearchFn = Callable[[str], SearchOutcome]
 
 
 def _tavily_search(query: str) -> list[SearchResult]:
@@ -74,12 +90,15 @@ def _ddgs_search(query: str) -> list[SearchResult]:
     ]
 
 
+_ProviderFn = Callable[[str], list[SearchResult]]
+
+
 def search(
     query: str,
     *,
-    tavily_fn: SearchFn | None = None,
-    ddgs_fn: SearchFn | None = None,
-) -> list[SearchResult]:
+    tavily_fn: _ProviderFn | None = None,
+    ddgs_fn: _ProviderFn | None = None,
+) -> SearchOutcome:
     """Tavily first; `ddgs` only if Tavily raises.
 
     Parameters
@@ -87,12 +106,14 @@ def search(
     query : str
         Already masked/PII-stripped text (task §9) — this function has no
         opinion on masking, it only searches.
-    tavily_fn, ddgs_fn : SearchFn, optional
-        Injected for testing; default to the real providers.
+    tavily_fn, ddgs_fn : callable, optional
+        Injected for testing; default to the real providers. Each returns
+        a bare `list[SearchResult]` — `search()` itself is what tags the
+        outcome with which provider actually served it.
 
     Returns
     -------
-    list[SearchResult]
+    SearchOutcome
 
     Raises
     ------
@@ -102,10 +123,10 @@ def search(
     tavily_fn = tavily_fn or _tavily_search
     ddgs_fn = ddgs_fn or _ddgs_search
     try:
-        return tavily_fn(query)
+        return SearchOutcome(results=tavily_fn(query), provider="tavily")
     except Exception as tavily_exc:  # noqa: BLE001 — provider errors vary
         try:
-            return ddgs_fn(query)
+            return SearchOutcome(results=ddgs_fn(query), provider="duckduckgo")
         except Exception as ddgs_exc:  # noqa: BLE001
             raise SearchUnavailableError(
                 f"Tavily failed ({tavily_exc}); ddgs fallback failed ({ddgs_exc})"

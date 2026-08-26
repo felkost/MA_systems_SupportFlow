@@ -135,6 +135,7 @@ def docs_node(state: SupportFlowState) -> dict[str, Any]:
         return {
             "docs_response": result.response,
             "retrieval_context": result.retrieval_context,
+            "tools_called": result.tools_called,
             "confidence": result.response.confidence,
             "next_action": "escalate",
             "errors": errors,
@@ -143,6 +144,7 @@ def docs_node(state: SupportFlowState) -> dict[str, Any]:
     return {
         "docs_response": result.response,
         "retrieval_context": result.retrieval_context,
+        "tools_called": result.tools_called,
         "answer": result.response.answer,
         "confidence": result.response.confidence,
         "next_action": "respond",
@@ -185,6 +187,7 @@ def web_search_node(state: SupportFlowState) -> dict[str, Any]:
         return {
             "web_search_response": result.response,
             "retrieval_context": result.retrieval_context,
+            "tools_called": result.tools_called,
             "confidence": result.response.confidence,
             "next_action": "escalate",
             "errors": errors,
@@ -193,6 +196,7 @@ def web_search_node(state: SupportFlowState) -> dict[str, Any]:
     return {
         "web_search_response": result.response,
         "retrieval_context": result.retrieval_context,
+        "tools_called": result.tools_called,
         "answer": result.response.answer,
         "confidence": result.response.confidence,
         "next_action": "respond",

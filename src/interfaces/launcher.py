@@ -36,14 +36,22 @@ class LaunchedAgent:
 
 
 def _wait_for_ready(
-    probe: Callable[[], bool], timeout: float = 20.0, poll_interval: float = 0.2
+    probe: Callable[[], bool], timeout: float = 60.0, poll_interval: float = 0.2
 ) -> None:
     """Poll `probe` until it returns `True` or `timeout` seconds pass.
 
     Parameters
     ----------
     probe : Callable[[], bool]
-    timeout : float, default=20.0
+    timeout : float, default=60.0
+        Live-confirmed 2026-08-26 (Stage 4 Wave B verification session):
+        the original 20.0s default was too tight under real machine load —
+        `docs_a2a_server`'s own agent-card endpoint (a static response,
+        not dependent on the lazily-loaded retriever, docs/decisions.md
+        #7) still failed to answer within 20s during a busy session,
+        raising here and crashing `launcher.py` before either subprocess
+        had a chance to be cleaned up. Widened to match this project's
+        own observed real-world startup variance rather than a guess.
     poll_interval : float, default=0.2
 
     Raises
@@ -114,7 +122,20 @@ def _print_table(agents: list[LaunchedAgent]) -> None:
 
 
 def main() -> None:
-    agents = [launch_agent(role) for role in _AGENT_ROLES]
+    # Live-confirmed 2026-08-26: if a later agent's readiness probe times
+    # out, an earlier already-started agent was previously left running as
+    # an orphaned, un-terminated subprocess (observed directly — web_search
+    # stayed up after docs's probe raised and crashed this function before
+    # any cleanup ran). Each partially-started agent is now terminated on
+    # any failure, not just on a clean Ctrl+C.
+    agents: list[LaunchedAgent] = []
+    try:
+        for role in _AGENT_ROLES:
+            agents.append(launch_agent(role))
+    except Exception:
+        for agent in agents:
+            agent.process.terminate()
+        raise
     _print_table(agents)
     print("Press Ctrl+C to stop all agents.")
     try:

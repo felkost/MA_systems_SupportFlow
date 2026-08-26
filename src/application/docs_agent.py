@@ -26,6 +26,7 @@ from src.infrastructure.observability import get_langfuse_client
 from src.infrastructure.prompts import get_prompt, get_prompt_client
 from src.infrastructure.retriever import build_retriever, load_knowledge_base
 from src.infrastructure.silpo_mcp import search_products as _default_search_products
+from src.infrastructure.silpo_mcp_auth import SilpoMcpAuthRequiredError
 
 
 class DocsInvalidOutputError(Exception):
@@ -45,10 +46,15 @@ class DocsAgentResult:
         actually retrieved — populates `SupportFlowState.retrieval_context`
         (docs/decisions.md #22) across the A2A hop, the same pattern Web
         Search Agent already uses.
+    tools_called : list[str]
+        Silpo MCP tool names actually invoked, in call order (Stage 4
+        Wave B decision D-B7) — `[]` when the MCP call was never attempted
+        or failed before any tool returned.
     """
 
     response: DocsResponse
     retrieval_context: list[str]
+    tools_called: list[str]
 
 
 class _SearchTerm(BaseModel):
@@ -115,7 +121,18 @@ def _compose_docs_response(compiled_prompt: str) -> DocsResponse:
             raw = structured_model.invoke(compiled_prompt)
             if generation is not None:
                 usage = getattr(raw.get("raw"), "usage_metadata", None) or {}
-                generation.update(usage_details=dict(usage))
+                # Live-confirmed 2026-08-26 (Stage 4 Wave B, D-B2's go/no-go
+                # check): without this, `input`/`output` stay `null` on
+                # every one of this project's own 8 named generation spans
+                # — harmless for Wave A's own tracing goal, but it means
+                # Langfuse's own LLM-as-a-Judge evaluator (task §9) scores
+                # nothing but "both empty" every time, since its mapping
+                # reads exactly these two fields.
+                generation.update(
+                    usage_details=dict(usage),
+                    input=compiled_prompt,
+                    output=str(raw.get("parsed")),
+                )
     except Exception as exc:  # noqa: BLE001 — provider errors vary
         raise DocsInvalidOutputError(str(exc)) from exc
     result = raw.get("parsed")
@@ -166,10 +183,17 @@ async def run_docs_agent(
     kb_sources = [_kb_chunk_to_source(doc.metadata) for doc in kb_docs]
 
     mcp_products: list[dict[str, Any]] = []
+    tools_called: list[str] = []
     try:
         search_term = translate_fn(masked_query)
         if search_term:
-            mcp_products = await search_products(search_term)
+            mcp_products, tools_called = await search_products(search_term)
+    except SilpoMcpAuthRequiredError:
+        # docs/decisions.md Stage 4 Wave B D-B3: this one fails loudly
+        # (CLAUDE.md §4 invariant) instead of degrading like every other
+        # MCP failure below — a revoked/expired token needs a human to
+        # re-authenticate, which silent KB-only degradation would hide.
+        raise
     except Exception:  # noqa: BLE001 — MCP unavailability degrades, not fails
         mcp_products = []
 
@@ -193,4 +217,8 @@ async def run_docs_agent(
     # docs/decisions.md #15: authoritative source metadata is what this
     # call actually retrieved, not whatever the model guessed.
     result.sources = kb_sources + mcp_sources
-    return DocsAgentResult(response=result, retrieval_context=kb_texts + mcp_texts)
+    return DocsAgentResult(
+        response=result,
+        retrieval_context=kb_texts + mcp_texts,
+        tools_called=tools_called,
+    )

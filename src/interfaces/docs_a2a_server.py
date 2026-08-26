@@ -21,6 +21,7 @@ from fastapi import FastAPI
 from langfuse.types import TraceContext
 
 from src.application.docs_agent import DocsInvalidOutputError, run_docs_agent
+from src.infrastructure.silpo_mcp_auth import SilpoMcpAuthRequiredError
 from src.infrastructure.a2a_transport import (
     build_agent_card,
     build_server_app,
@@ -63,9 +64,15 @@ class DocsExecutor(AgentExecutor):
                     {
                         "response": json.loads(result.response.model_dump_json()),
                         "retrieval_context": result.retrieval_context,
+                        "tools_called": result.tools_called,
                     }
                 )
-            except DocsInvalidOutputError as exc:
+            except (DocsInvalidOutputError, SilpoMcpAuthRequiredError) as exc:
+                # docs/decisions.md Stage 4 Wave B D-B3: an uncaught
+                # SilpoMcpAuthRequiredError here crashes the request-
+                # handling task instead of reaching docs_client.py as a
+                # readable error — this is the layer round 1 of that
+                # wave's kickoff review missed.
                 reply_text = json.dumps(
                     {"error_type": type(exc).__name__, "error": str(exc)}
                 )

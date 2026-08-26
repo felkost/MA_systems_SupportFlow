@@ -14,6 +14,15 @@ hermeticity never again depends on remembering to flip a `.env` flag back.
 Individual tests (e.g. `tests/infrastructure/test_observability.py`) that
 need to exercise the `True` path still can — they monkeypatch it
 themselves, after this fixture's own baseline runs.
+
+`@pytest.mark.eval` tests are exempt (added 2026-08-26, Stage 4 Wave B
+Step 4 prerequisite): they are never collected by the default
+`pytest --cov=src` gate (`pyproject.toml`'s own `addopts = "-m 'not eval'"`
+already excludes them), so this exemption cannot affect that promise —
+but forcing tracing off unconditionally here also silently disabled it
+for the one deliberate run that most needs it, the full golden-dataset
+gate (`deepeval test run tests/test_golden_dataset.py -m eval`), which
+task §9 requires to be traced end-to-end like every other live run.
 """
 
 import pytest
@@ -22,7 +31,11 @@ from src.infrastructure import observability
 
 
 @pytest.fixture(autouse=True)
-def _tracing_disabled_by_default(monkeypatch: pytest.MonkeyPatch) -> None:
+def _tracing_disabled_by_default(
+    request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    if request.node.get_closest_marker("eval") is not None:
+        return
     monkeypatch.setattr(observability.settings, "tracing_enabled", False)
     monkeypatch.setattr(observability, "_client", None)
     monkeypatch.setattr(observability, "_configured", False)

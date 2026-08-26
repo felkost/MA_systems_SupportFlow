@@ -13,6 +13,7 @@ docs/
 # reference build-stage/phase language, which tracked files may not.
 handoff.md
 insights.md
+docs/*-plan.md
 
 # Secrets — the remote is public, this must never be committed.
 .env
@@ -41,3 +42,4 @@ runs/
 output/*
 !output/.gitkeep
 !output/router_gate_result.json
+!output/deepeval_baseline.json
