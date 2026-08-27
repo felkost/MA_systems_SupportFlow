@@ -39,7 +39,7 @@ class DocsAgentResult:
     """Parameters
     ----------
     response : DocsResponse
-        The mandatory schema (task §6).
+        The mandatory schema.
     retrieval_context : list[str]
         KB chunk texts plus a text rendering of any Silpo product results
         actually retrieved — populates `SupportFlowState.retrieval_context`
@@ -139,8 +139,8 @@ def _compose_docs_response(compiled_prompt: str) -> DocsResponse:
                 # Live-confirmed 2026-08-26: without this, `input`/`output`
                 # stay `null` on every one of this project's own 8 named
                 # generation spans — harmless for tracing on its own, but
-                # it means Langfuse's own LLM-as-a-Judge evaluator (task
-                # §9) scores nothing but "both empty" every time, since its
+                # it means Langfuse's own LLM-as-a-Judge evaluator
+                # scores nothing but "both empty" every time, since its
                 # mapping reads exactly these two fields.
                 generation.update(
                     usage_details=dict(usage),

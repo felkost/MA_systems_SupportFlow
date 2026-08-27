@@ -54,7 +54,7 @@ def build_initial_state(
 def handle_request(
     raw_text: str, request_id: str, session_id: str, trace_id: str
 ) -> SupportFlowState:
-    """Task §7's full entry point: input filter (step 1), then the graph.
+    """The full request entry point: input filter first, then the graph.
 
     Parameters
     ----------
@@ -82,8 +82,8 @@ def handle_request(
     # Langfuse-auto-generated trace id instead, and the A2A hop's
     # server-side span (which *does* use the metadata `trace_id`) ends up
     # parented under a trace id nothing else in this process ever used:
-    # two disconnected traces for one request, exactly what task §9 calls
-    # an error. Found live during an observability smoke test — the
+    # two disconnected traces for one request, which defeats the point
+    # of tracing it. Found live during an observability smoke test — the
     # mechanism existed but was never actually wired to the root.
     trace_context: TraceContext = {"trace_id": trace_id}
 

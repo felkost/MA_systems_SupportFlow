@@ -19,7 +19,7 @@ def test_critical_category_routes_to_escalation_regardless_of_urgency() -> None:
 
 
 def test_critical_urgency_routes_to_escalation_regardless_of_category() -> None:
-    # task §7 step 3 fires on urgency too, not only category — a "product"
+    # The critical check fires on urgency too, not only category — a "product"
     # request with critical urgency must not fall through to Docs.
     assert decide_route(_classification("product", "critical")) == "escalate"
     assert decide_route(_classification("general", "critical")) == "escalate"

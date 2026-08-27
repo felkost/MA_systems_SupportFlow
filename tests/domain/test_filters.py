@@ -1,6 +1,6 @@
-"""Input filter tests (task §7 step 1). This is a
-data-protection code path — task §10 requires 100% coverage here, not the
-general 80% target.
+"""Input filter tests. This is a
+data-protection code path, so it carries a 100% coverage requirement,
+not the general 80% target.
 
 The fixture tables are the measured-recall artefact this test suite
 commits to: `test_pii_fixture_recall` asserts every positive fixture is

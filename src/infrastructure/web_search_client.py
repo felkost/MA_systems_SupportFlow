@@ -17,8 +17,8 @@ from src.kernel.settings import load_agent_config
 
 
 class WebSearchUnavailableError(Exception):
-    """The remote agent reported its search tool as unavailable (task §7
-    step 6) — carries the remote `error_type`/`error` for `errors`
+    """The remote agent reported its search tool as unavailable, which
+    escalates — carries the remote `error_type`/`error` for `errors`
     logging, never the raw exception text.
     """
 

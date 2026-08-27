@@ -36,7 +36,8 @@ def test_load_knowledge_base_returns_faq_service_and_dialogue_chunks() -> None:
 
 
 def test_load_knowledge_base_covers_task_size_ranges() -> None:
-    # task §5: 15-25 FAQ, 2-5 service pages, 5-10 example dialogues.
+    # Required knowledge-base sizes: 15-25 FAQ, 2-5 service pages,
+    # 5-10 example dialogues.
     chunks = load_knowledge_base()
     faq = [c for c in chunks if c.id.startswith("faq-")]
     svc = [c for c in chunks if c.id.startswith("svc-")]

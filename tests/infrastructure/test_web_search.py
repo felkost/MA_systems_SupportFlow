@@ -1,5 +1,5 @@
-"""Web Search Agent's tool client: Tavily primary, `ddgs` fallback
-(task §3/§13). The fallback control flow is tested via dependency
+"""Web Search Agent's tool client: Tavily primary, `ddgs` fallback.
+The fallback control flow is tested via dependency
 injection so it needs no real Tavily/DuckDuckGo call and no network —
 `_tavily_search`/`_ddgs_search` (the real provider calls) are exercised
 only by the manual smoke path, not here.

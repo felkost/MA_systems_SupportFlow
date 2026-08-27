@@ -43,7 +43,8 @@ class EscalationInvalidOutputError(Exception):
 class EscalationContext:
     """Everything `escalate_node` already has in `SupportFlowState` at the
     point Escalation is reached — enough for the report to say what was
-    already tried (task §6/§10's "attempted_resolution"/"enough context").
+    already tried, which is what `attempted_resolution` must carry so an
+    operator never re-derives it.
 
     Parameters
     ----------

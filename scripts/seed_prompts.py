@@ -1,7 +1,7 @@
 """Seed the five zero-shot system prompts into Langfuse Prompt Management
 with the `production` label, so the system runs on managed, versioned
 prompts from the first request instead of a hardcoded string "extracted
-later" (task §9).
+later".
 
 Zero-shot is the deliberate starting point: few-shot, CoT, or
 self-consistency are added as new versions only after a measured

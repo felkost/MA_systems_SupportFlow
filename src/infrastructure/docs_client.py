@@ -16,8 +16,8 @@ from src.kernel.settings import load_agent_config
 
 
 class DocsUnavailableError(Exception):
-    """The remote Docs Agent reported an invalid-output failure (task §7
-    step 6) — carries the remote `error_type`/`error`, never the raw
+    """The remote Docs Agent reported an invalid-output failure, which
+    escalates — carries the remote `error_type`/`error`, never the raw
     exception text.
     """
 

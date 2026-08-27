@@ -1,6 +1,6 @@
-"""Create Langfuse LLM-as-a-Judge evaluators (task §9: "Langfuse
-automatically evaluates new traces using LLM-as-a-Judge") and bind each to
-its own observations, via direct REST calls against Langfuse's own
+"""Create Langfuse LLM-as-a-Judge evaluators, so new traces are scored
+automatically rather than by hand, and bind each to its own
+observations, via direct REST calls against Langfuse's own
 `unstable` API — not the installed `langfuse==4.14.4` SDK's typed client.
 
 Two evaluators, scoped to disjoint spans: answer relevance on the two

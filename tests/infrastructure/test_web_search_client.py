@@ -1,6 +1,6 @@
 """`call_web_search` against the real Web Search A2A server app, in-process
 (ASGI transport, no socket) — proves the full client → server → agent
-round trip, including the tool-unavailable error path (task §7 step 6).
+round trip, including the tool-unavailable error path.
 """
 
 from datetime import datetime, timedelta, timezone

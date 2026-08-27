@@ -1,6 +1,6 @@
-"""FastAPI API for the React chat frontend (task §8) — the only public HTTP
+"""FastAPI API for the React chat frontend — the only public HTTP
 entry point in this project. CORS is restricted to `settings.frontend_origin`
-(task §8: "CORS open only to the local frontend").
+so only the local frontend may call it.
 
 Every `/chat` call runs `handle_request` inside `_bypass_hitl()`: Escalation's
 confirmation step (`escalation_agent.py::_default_confirm`) blocks on
@@ -96,8 +96,8 @@ def health() -> dict[str, bool]:
 
 @app.post("/admin/real-send")
 def set_real_send(payload: RealSendToggleRequest) -> dict[str, bool]:
-    """Task §8's own optional "Settings page" extension: a runtime toggle
-    for `ALLOW_REAL_SEND`, so a demo can turn a real Telegram send on and
+    """A settings-page runtime toggle for `ALLOW_REAL_SEND`, so a demo
+    can turn a real Telegram send on and
     off from the UI without restarting the process. Mutates the shared
     `settings` singleton directly (unlike `_bypass_hitl`'s per-request
     scoping) — the whole point here is that the state persists until

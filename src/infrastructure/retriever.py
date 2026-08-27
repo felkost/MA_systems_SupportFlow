@@ -22,9 +22,8 @@ KNOWLEDGE_BASE_DIR = PROJECT_ROOT / "data" / "knowledge_base"
 
 @dataclass(frozen=True)
 class KnowledgeChunk:
-    """One retrievable unit of the internal knowledge base (task §5:
-    "every knowledge-base document has a source, retrieval date, rule
-    version").
+    """One retrievable unit of the internal knowledge base. Every
+    document carries a source, a retrieval date and a rule version.
     """
 
     id: str
@@ -84,7 +83,7 @@ def _load_dialogues() -> list[KnowledgeChunk]:
 
 def load_knowledge_base() -> list[KnowledgeChunk]:
     """All chunks from `data/knowledge_base/` — FAQ, service descriptions,
-    example dialogues (task §5).
+    example dialogues.
     """
     return _load_faq() + _load_services() + _load_dialogues()
 

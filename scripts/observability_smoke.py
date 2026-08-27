@@ -1,7 +1,7 @@
 """Manual, live smoke check: one full customer request through
 Supervisor -> Router (in-process) -> Docs Agent (A2A hop, a second OS
 process) -> model -> tool, with real Langfuse tracing, then a read-back
-via Langfuse's own REST API confirming task §9's readiness criterion:
+via Langfuse's own REST API confirming the readiness criterion:
 exactly one trace for this request, spanning both processes, with no
 orphaned records and a final answer.
 

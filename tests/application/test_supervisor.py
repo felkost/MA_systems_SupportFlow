@@ -155,7 +155,7 @@ def test_general_classification_with_low_confidence_escalates(
         graph_nodes, "run_escalation_agent", lambda *a, **kw: _fake_escalation_result()
     )
 
-    # Low confidence routes to Escalation (task §7 step 6) — the
+    # Low confidence routes to Escalation — the
     # conditional edge dispatches there and the real node now handles it.
     result = supervisor.handle_request(
         "Загальне питання", "r1", "s1", "0123456789abcdef0123456789abcdef"

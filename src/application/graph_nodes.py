@@ -99,7 +99,7 @@ def router_node(state: SupportFlowState) -> dict[str, Any]:
 
 def docs_node(state: SupportFlowState) -> dict[str, Any]:
     """Calls Docs Agent over A2A and routes on the result: a model failure
-    or a below-threshold confidence both escalate (task §7 step 6).
+    or a below-threshold confidence both escalate.
     Mirrors `web_search_node` exactly — same no-retry rationale.
     """
     config = load_agent_config("docs")
@@ -127,8 +127,8 @@ def docs_node(state: SupportFlowState) -> dict[str, Any]:
         logger.warning("docs_unavailable: %s", exc)
         # AgentCardResolutionError: the agent's process never answered the
         # `/.well-known/agent-card.json` probe — literally "agent
-        # unavailable", the same escalation task §7 step 6 already
-        # prescribes. Found live 2026-08-26: uncaught, it propagated out of
+        # unavailable", the same escalation a tool failure already
+        # takes. Found live 2026-08-26: uncaught, it propagated out of
         # the graph and surfaced as an HTTP 500 from `/chat` (a browser-
         # visible crash) instead of the graceful escalation every other
         # transport failure on this path already produces.
@@ -164,8 +164,8 @@ def docs_node(state: SupportFlowState) -> dict[str, Any]:
 
 def web_search_node(state: SupportFlowState) -> dict[str, Any]:
     """Calls Web Search Agent over A2A and routes on the result: a tool
-    failure or a below-threshold confidence both escalate (task §7 step
-    6). No retry loop here — unlike Router, Web Search does not sit on
+    failure or a below-threshold confidence both escalate. No retry
+    loop here — unlike Router, Web Search does not sit on
     every request, so one failed attempt escalating directly is the lazy,
     sufficient default until measurement says otherwise.
     """
@@ -219,10 +219,9 @@ def web_search_node(state: SupportFlowState) -> dict[str, Any]:
 
 def escalate_node(state: SupportFlowState) -> dict[str, Any]:
     """The last step for a critical request, a request Supervisor could
-    not resolve confidently, or a request where a tool was unavailable
-    (task §7 step 6). Runs in-process — no A2A hop, so this fallback does
-    not itself depend on the network path it exists to catch a failure
-    of.
+    not resolve confidently, or a request where a tool was unavailable.
+    Runs in-process — no A2A hop, so this fallback does not itself depend
+    on the network path it exists to catch a failure of.
     """
     context = EscalationContext(
         masked_text=state["original_request_masked"],
@@ -254,8 +253,9 @@ def route_after_router(state: SupportFlowState) -> NextAction:
 
 def route_after_web_search(state: SupportFlowState) -> NextAction:
     """`web_search_node` always sets `next_action` to `"respond"` or
-    `"escalate"` — never leaves it at `"web_search"` (task §7 step 6's
-    below-threshold/tool-failure fallback).
+    `"escalate"` — never leaves it at `"web_search"`, since a
+    below-threshold confidence or a tool failure both fall back to
+    escalation.
     """
     return state["next_action"]
 

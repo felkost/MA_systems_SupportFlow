@@ -1,4 +1,4 @@
-"""Schema bounds and shape (task §6)."""
+"""Schema bounds and shape."""
 
 from datetime import datetime, timezone
 

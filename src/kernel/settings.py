@@ -26,7 +26,7 @@ class Settings(BaseSettings):
         Every LLM role routes through OpenRouter; no direct-provider path
         exists (.env.example).
     tavily_api_key : str, default=""
-        Web Search Agent's primary provider (task §3); `ddgs` (DuckDuckGo)
+        Web Search Agent's primary provider; `ddgs` (DuckDuckGo)
         needs no key and is the fallback.
     silpo_mcp_url : str, default="https://mcp.silpo.ua/mcp"
         Confirmed live endpoint.
@@ -63,8 +63,8 @@ class Settings(BaseSettings):
         of blending into the pool it is meant to be measured against. Empty
         (the default) means untagged traffic — the pre-experiment baseline.
     frontend_origin : str, default="http://localhost:5173"
-        Task §8: CORS on `src.interfaces.api` is open only to this one
-        origin. Vite's own default dev port.
+        CORS on `src.interfaces.api` is open only to this one origin.
+        Vite's own default dev port.
     """
 
     model_config = SettingsConfigDict(
@@ -90,7 +90,7 @@ class Settings(BaseSettings):
 
 
 class AgentModelConfig(BaseModel):
-    """One agent's row from `config/models.yaml` (task §8).
+    """One agent's row from `config/models.yaml`.
 
     Parameters
     ----------
@@ -103,7 +103,7 @@ class AgentModelConfig(BaseModel):
         `deadline` field nothing checks is worse than no field at all.
     confidence_threshold : float or None
         `None` for agents with no confidence output (Router, Escalation,
-        Supervisor) — task §6 defines `confidence` only on `DocsResponse`
+        Supervisor) — `confidence` is defined only on `DocsResponse`
         and `WebSearchResponse`.
     max_retries : int, default=1
         One repair retry before Router fails closed to Escalation. Applies

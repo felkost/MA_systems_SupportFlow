@@ -25,7 +25,7 @@ a2a-sdk[http-server]==1.1.2
 # --- Data / schemas -----------------------------------------------------
 pydantic==2.13.4
 pydantic-settings==2.15.0
-# config/models.yaml (task §8) has no other declared parser.
+# config/models.yaml has no other declared parser.
 PyYAML==6.0.3
 
 # --- Retrieval ----------------------------------------------------------
