@@ -38,22 +38,32 @@ def _load_env() -> None:
                 os.environ[key.strip()] = value.strip()
 
 
-def _run_once(cases: list[dict]) -> dict:
+def _run_once(cases: list[dict], prompt_label: str = "production") -> dict:
     from src.application.router_agent import run_router
-    from src.infrastructure.observability import new_trace_id
+    from src.infrastructure.observability import (
+        experiment_tags,
+        new_trace_id,
+        tag_trace,
+    )
     from src.kernel.settings import load_agent_config
 
     model_id = load_agent_config("router").model
     results = []
     for case in cases:
+        trace_id = new_trace_id()
         result = run_router(
             case["input"],
             request_id=str(uuid.uuid4()),
             session_id="router-gate",
             # 32-char lowercase hex, not a hyphenated uuid4 — Langfuse's
             # TraceContext mechanism requires this exact format.
-            trace_id=new_trace_id(),
+            trace_id=trace_id,
+            prompt_label=prompt_label,
         )
+        # Tagged so a comparison run's two arms (production vs candidate)
+        # are separable in the Langfuse UI by tag, not by remembering
+        # which run happened when.
+        tag_trace(trace_id, [*experiment_tags(), f"prompt-label:{prompt_label}"])
         correct = (
             result.classification is not None
             and result.classification.category == case["category"]
@@ -77,7 +87,12 @@ def _run_once(cases: list[dict]) -> dict:
             }
         )
     accuracy = sum(r["correct"] for r in results) / len(results)
-    return {"model": model_id, "accuracy": accuracy, "cases": results}
+    return {
+        "model": model_id,
+        "prompt_label": prompt_label,
+        "accuracy": accuracy,
+        "cases": results,
+    }
 
 
 def main() -> None:

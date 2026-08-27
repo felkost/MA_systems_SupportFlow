@@ -26,6 +26,7 @@ for you.
 
 import asyncio
 import json
+from contextlib import nullcontext
 import statistics
 import sys
 from pathlib import Path
@@ -38,6 +39,12 @@ from deepeval.test_case import LLMTestCase  # noqa: E402
 from langfuse import Langfuse  # noqa: E402
 
 from src.application.docs_agent import run_docs_agent  # noqa: E402
+from src.infrastructure.observability import (  # noqa: E402
+    experiment_tags,
+    get_langfuse_client,
+    new_trace_id,
+    tag_trace,
+)
 from src.infrastructure.prompts import get_prompt  # noqa: E402
 from src.kernel.settings import PROJECT_ROOT, settings  # noqa: E402
 from tests.evaluation.harness import (  # noqa: E402
@@ -69,9 +76,28 @@ def _prompt_fn_for_label(label: str) -> Callable[[str], tuple[str, int]]:
 
 
 def _score_case(case: dict[str, Any], label: str) -> dict[str, Any]:
-    result = asyncio.run(
-        run_docs_agent(case["input"], prompt_fn=_prompt_fn_for_label(label))
+    # Mirrors `src.interfaces.docs_a2a_server.DocsExecutor`'s own ambient
+    # trace pattern rather than threading a trace_id through
+    # `run_docs_agent` — this is the only caller that needs one outside
+    # the real A2A path, and it stays out of that module entirely this
+    # way. Without an explicit root here, each call gets its own
+    # auto-generated trace with no shared identity and no tag.
+    trace_id = new_trace_id()
+    client = get_langfuse_client()
+    span_cm = (
+        client.start_as_current_observation(
+            name="meta_prompt_docs.score_case",
+            as_type="span",
+            trace_context={"trace_id": trace_id},
+        )
+        if client is not None
+        else nullcontext()
     )
+    with span_cm:
+        result = asyncio.run(
+            run_docs_agent(case["input"], prompt_fn=_prompt_fn_for_label(label))
+        )
+    tag_trace(trace_id, [*experiment_tags(), f"prompt-label:{label}"])
     test_case = LLMTestCase(
         input=case["input"],
         actual_output=result.response.answer,

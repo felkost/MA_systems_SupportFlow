@@ -58,13 +58,21 @@ class RouterInvalidOutputError(Exception):
     """
 
 
-def call_router(envelope: AcpEnvelope) -> tuple[ClassificationOutput, int]:
+def call_router(
+    envelope: AcpEnvelope, *, prompt_label: str = "production"
+) -> tuple[ClassificationOutput, int]:
     """One attempt to classify `envelope.payload` via the Router Agent.
 
     Parameters
     ----------
     envelope : AcpEnvelope
         `envelope.task` must be `"classify"`.
+    prompt_label : str, default="production"
+        Which Langfuse label to resolve the Router prompt from. Only a
+        prompt-comparison run passes anything else: without this the
+        label was fixed at `production`, so a `candidate` prompt could be
+        seeded but never actually measured — a comparison would have run
+        production against itself and reported "no difference".
 
     Returns
     -------
@@ -92,7 +100,7 @@ def call_router(envelope: AcpEnvelope) -> tuple[ClassificationOutput, int]:
     if datetime.now(timezone.utc) >= envelope.deadline:
         raise TimeoutError(f"AcpEnvelope {envelope.request_id} deadline already passed")
 
-    prompt_client = get_prompt_client("supportflow/router")
+    prompt_client = get_prompt_client("supportflow/router", prompt_label)
     prompt_version = prompt_client.version
     remaining = (envelope.deadline - datetime.now(timezone.utc)).total_seconds()
     if remaining <= 0:
