@@ -102,3 +102,27 @@ the manual, live-verification paths.
 
 Escalation Agent sends a real Telegram message only with
 `ALLOW_REAL_SEND=true`.
+
+## Diagrams
+
+`report/` carries the project's diagram documentation — each `.html` is a
+self-contained page (inline SVG plus a prose walkthrough) with a matching
+standalone `.svg` export:
+
+- `architecture.html` — the full system: React UI → FastAPI → Supervisor →
+  A2A to Docs/Web Search, or direct Escalation; Langfuse from all three
+  processes.
+- `supervisor-graph.html` — the LangGraph inside Supervisor: Router and
+  Escalation as real nodes, Docs and Web Search as thin A2A call-outs.
+- `router-sequence.html` — Router's single classification call and its
+  retry-then-fail-closed policy.
+- `escalation-sequence.html` — Escalation's compose → mask → confirm →
+  dedup → write → send pipeline.
+- `docs-agent-sequence.html` — Docs Agent's hybrid retrieval (Chroma+BM25)
+  and Silpo MCP call sequence.
+- `web-search-agent-sequence.html` — Web Search Agent's Tavily-then-
+  DuckDuckGo fallback sequence.
+- `langfuse-observability.html` — what reaches Langfuse and how one
+  customer request becomes a single trace across three processes.
+- `prompt-architecture.html` (+ `prompt-*.svg`) — the structure of each of
+  the five system prompts (Router/Docs/Web Search/Escalation/Supervisor).

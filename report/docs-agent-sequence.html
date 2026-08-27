@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SupportFlow · Docs Agent sequence</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:  #f5f5f5;
+      --color-ink:    #333A05;
+      --color-accent: #FCA600;
+      --font-sans: Arial, "Helvetica Neue", Helvetica, sans-serif;
+    }
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+    .frame { max-width: 1300px; width: 100%; }
+    .eyebrow {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #527C23;
+      margin-bottom: 0.5rem;
+    }
+    h1 {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      line-height: 1.2;
+      margin-bottom: 0.4rem;
+    }
+    .subtitle {
+      font-size: 14px;
+      color: #527C23;
+      margin-bottom: 1.5rem;
+      max-width: 980px;
+    }
+    svg { width: 100%; min-width: 1150px; display: block; }
+    .walkthrough { margin-top: 2.5rem; max-width: 950px; }
+    .walkthrough h2 {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      margin-bottom: 0.75rem;
+    }
+    .walkthrough h3 {
+      font-size: 14px;
+      font-weight: 700;
+      margin: 1.5rem 0 0.5rem;
+    }
+    .walkthrough p, .walkthrough li {
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    .walkthrough ul.actors { list-style: none; margin-bottom: 0.5rem; }
+    .walkthrough ul.actors li { margin-bottom: 0.35rem; }
+    .walkthrough ol.steps { padding-left: 1.25rem; }
+    .walkthrough ol.steps li { margin-bottom: 0.6rem; }
+    .walkthrough code {
+      font-family: "Courier New", monospace;
+      font-size: 11px;
+      background: rgba(51,58,5,0.06);
+      padding: 0.05rem 0.3rem;
+      border-radius: 3px;
+    }
+    .walkthrough .takeaway {
+      margin-top: 1.5rem;
+      padding: 0.9rem 1rem;
+      background: rgba(252,216,99,0.20);
+      border: 1px solid #FCA600;
+      border-radius: 6px;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    .walkthrough .plain {
+      margin-bottom: 1.5rem;
+      padding: 0.9rem 1rem;
+      background: rgba(157,177,221,0.20);
+      border: 1px solid #333A05;
+      border-radius: 6px;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    .walkthrough .plain p { margin-bottom: 0.4rem; }
+    .walkthrough .plain p:last-child { margin-bottom: 0; }
+    .ua-script {
+      margin-top: 2.5rem;
+      padding-top: 1.5rem;
+      border-top: 2px solid rgba(51,58,5,0.20);
+      max-width: 950px;
+    }
+    .ua-script .eyebrow { margin-bottom: 0.5rem; }
+    .ua-script h2 { font-size: 16px; font-weight: 700; margin-bottom: 0.75rem; }
+    .ua-script h3 { font-size: 14px; font-weight: 700; margin: 1.25rem 0 0.5rem; }
+    .ua-script p, .ua-script li { font-size: 12px; line-height: 1.6; }
+    .ua-script ul.actors { list-style: none; margin-bottom: 0.5rem; }
+    .ua-script ul.actors li { margin-bottom: 0.35rem; }
+    .ua-script ol.steps { padding-left: 1.25rem; }
+    .ua-script ol.steps li { margin-bottom: 0.6rem; }
+    .ua-script ol.steps ul { list-style: disc; padding-left: 1.25rem; margin-top: 0.3rem; }
+    .ua-script ol.steps ul li { font-size: 11px; color: #4f5d75; margin-bottom: 0.2rem; }
+    .ua-script code {
+      font-family: "Courier New", monospace;
+      font-size: 11px;
+      background: rgba(51,58,5,0.06);
+      padding: 0.05rem 0.3rem;
+      border-radius: 3px;
+    }
+    .ua-script .takeaway {
+      margin-top: 1.5rem;
+      padding: 0.9rem 1rem;
+      background: rgba(252,216,99,0.20);
+      border: 1px solid #FCA600;
+      border-radius: 6px;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Docs Agent · one request</p>
+    <h1>Docs Agent's own work — retrieve, translate, search, compose</h1>
+    <p class="subtitle">run_docs_agent always reads the knowledge base first, then asks the chat model to extract and translate a Ukrainian search term before ever touching Silpo MCP — the catalogue is Ukrainian-language data, so an untranslated query would silently return nothing. Silpo MCP is skipped entirely when there's no product term to search, and any Silpo failure except an expired auth token degrades to an empty result rather than failing the request. There are two separate merges, easy to mistake for one: retrieved text is merged first, to build the prompt; retrieved source metadata is merged last, to overwrite whatever the model claims about where its answer came from.</p>
+
+    <svg viewBox="0 0 1300 800" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="docs-seq-title docs-seq-desc">
+      <title id="docs-seq-title">Docs Agent's retrieve-translate-search-compose sequence</title>
+      <desc id="docs-seq-desc">Sequence diagram showing the Docs A2A server calling run_docs_agent, which reads the knowledge-base retriever unconditionally, asks the chat model to extract and translate a Ukrainian catalogue search term, optionally calls Silpo MCP when a search term was found (skipped otherwise, and degrading to an empty result on most failures except an expired auth token which raises), merges the retrieved text into one prompt block, asks the chat model a second time to compose the final answer, then separately merges the retrieved sources' metadata to overwrite the answer's own claimed source list, and returns the result to the A2A server.</desc>
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#000000"/></marker>
+        <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#FCA600"/></marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+      <!-- Lifelines -->
+      <line x1="130" y1="80" x2="130" y2="668" stroke="rgba(51,58,5,0.25)" stroke-width="1" stroke-dasharray="3,3"/>
+      <line x1="390" y1="80" x2="390" y2="668" stroke="rgba(51,58,5,0.25)" stroke-width="1" stroke-dasharray="3,3"/>
+      <line x1="650" y1="80" x2="650" y2="668" stroke="rgba(51,58,5,0.25)" stroke-width="1" stroke-dasharray="3,3"/>
+      <line x1="910" y1="80" x2="910" y2="668" stroke="rgba(51,58,5,0.25)" stroke-width="1" stroke-dasharray="3,3"/>
+      <line x1="1170" y1="80" x2="1170" y2="668" stroke="rgba(51,58,5,0.25)" stroke-width="1" stroke-dasharray="3,3"/>
+
+      <!-- OPT frame: Silpo MCP call -->
+      <rect x="374" y="280" width="812" height="92" rx="4" fill="rgba(51,58,5,0.03)" stroke="rgba(51,58,5,0.22)" stroke-width="1"/>
+      <rect x="374" y="280" width="36" height="16" rx="2" fill="#f5f5f5" stroke="rgba(51,58,5,0.22)" stroke-width="1"/>
+      <text x="392" y="292" fill="#4f5d75" font-size="11" font-family="Arial, sans-serif" text-anchor="middle" letter-spacing="0.08em">OPT</text>
+      <text x="416" y="292" fill="#4f5d75" font-size="11" font-family="Arial, sans-serif">[search term is non-empty]</text>
+
+      <!-- Activation bars -->
+      <rect x="126" y="112" width="8" height="530" fill="rgba(51,58,5,0.06)" stroke="#4f5d75" stroke-width="0.8"/>
+      <rect x="386" y="112" width="8" height="530" fill="rgba(51,58,5,0.06)" stroke="#4f5d75" stroke-width="0.8"/>
+      <rect x="646" y="152" width="8" height="32" fill="rgba(51,58,5,0.06)" stroke="#4f5d75" stroke-width="0.8"/>
+      <rect x="906" y="216" width="8" height="32" fill="rgba(51,58,5,0.06)" stroke="#4f5d75" stroke-width="0.8"/>
+      <rect x="906" y="502" width="8" height="32" fill="rgba(51,58,5,0.06)" stroke="#4f5d75" stroke-width="0.8"/>
+      <rect x="1166" y="316" width="8" height="32" fill="rgba(51,58,5,0.06)" stroke="#4f5d75" stroke-width="0.8"/>
+
+      <!-- M1: A2A Server -> run_docs_agent -->
+      <line x1="138" y1="112" x2="382" y2="112" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <rect x="170" y="98" width="220" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="280" y="108" fill="#000000" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">run_docs_agent(masked_query)</text>
+
+      <!-- M2: run_docs_agent -> Retriever -->
+      <line x1="398" y1="152" x2="642" y2="152" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <rect x="440" y="138" width="160" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="520" y="148" fill="#000000" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">invoke(masked_query)</text>
+
+      <!-- M3: Retriever --> run_docs_agent -->
+      <line x1="650" y1="184" x2="402" y2="184" stroke="#000000" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+      <rect x="440" y="170" width="170" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="525" y="180" fill="#000000" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">kb_docs (chunks + metadata)</text>
+
+      <!-- M4: run_docs_agent -> Chat model (translate) -->
+      <line x1="398" y1="216" x2="902" y2="216" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <rect x="560" y="202" width="180" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="650" y="212" fill="#000000" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">translate_fn(masked_query)</text>
+
+      <!-- M5: Chat model --> run_docs_agent -->
+      <line x1="910" y1="248" x2="402" y2="248" stroke="#000000" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+      <rect x="560" y="234" width="180" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="650" y="244" fill="#000000" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">search_term_uk (may be empty)</text>
+
+      <!-- M6: run_docs_agent -> Silpo MCP -->
+      <line x1="398" y1="316" x2="1162" y2="316" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <rect x="700" y="302" width="220" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="810" y="312" fill="#000000" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">search_products(search_term_uk)</text>
+
+      <!-- M7: Silpo MCP --> run_docs_agent -->
+      <line x1="1170" y1="348" x2="402" y2="348" stroke="#000000" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+      <rect x="700" y="334" width="220" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="810" y="344" fill="#000000" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">products (list) | error</text>
+
+      <rect x="392" y="386" width="440" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="392" y="396" fill="#4f5d75" font-size="11" font-family="Arial, sans-serif">note: auth-expired error raises (loud); any other MCP failure degrades to []</text>
+
+      <!-- Self message: merge 1 of 2 — TEXT content, feeds the prompt -->
+      <rect x="392" y="418" width="420" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="392" y="428" fill="#4f5d75" font-size="11" font-family="Arial, sans-serif">merge 1 of 2 — TEXT content, feeds the prompt (not sources)</text>
+      <rect x="392" y="440" width="300" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="392" y="450" fill="#000000" font-size="11" font-family="Arial, sans-serif">retrieved_block = kb_texts + mcp_texts</text>
+      <path d="M 384,462 H 420 V 478 H 384" fill="none" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+      <!-- M8: run_docs_agent -> Chat model (compose) -->
+      <line x1="398" y1="502" x2="902" y2="502" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <rect x="560" y="488" width="180" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="650" y="498" fill="#000000" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">compose_fn(prompt)</text>
+
+      <!-- M9: Chat model --> run_docs_agent -->
+      <line x1="910" y1="534" x2="402" y2="534" stroke="#000000" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+      <rect x="560" y="520" width="180" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="650" y="530" fill="#000000" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">DocsResponse (answer, confidence)</text>
+
+      <!-- Self message: merge 2 of 2 — source METADATA, overwrites the model's own answer.sources -->
+      <rect x="392" y="558" width="460" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="392" y="568" fill="#4f5d75" font-size="11" font-family="Arial, sans-serif">merge 2 of 2 — source METADATA, overwrites answer.sources (not text)</text>
+      <rect x="392" y="580" width="280" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="392" y="590" fill="#000000" font-size="11" font-family="Arial, sans-serif">sources = kb_sources + mcp_sources</text>
+      <path d="M 384,602 H 420 V 618 H 384" fill="none" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+      <!-- M11: run_docs_agent --> A2A Server (headline return, accent) -->
+      <line x1="386" y1="642" x2="142" y2="642" stroke="#FCA600" stroke-width="1.6" stroke-dasharray="4,3" marker-end="url(#arrow-accent)"/>
+      <rect x="160" y="628" width="256" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="288" y="638" fill="#FCA600" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">DocsAgentResult(response, context, tools_called)</text>
+
+      <!-- Actor boxes -->
+      <rect x="50" y="40" width="160" height="40" rx="6" fill="rgba(157,177,221,0.30)" stroke="#333A05" stroke-width="1"/>
+      <text x="130" y="58" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">Docs A2A Server</text>
+      <text x="130" y="72" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">the A2A hop's entry point</text>
+
+      <rect x="310" y="40" width="160" height="40" rx="6" fill="#ffffff" stroke="#333A05" stroke-width="1"/>
+      <text x="390" y="58" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">run_docs_agent</text>
+      <text x="390" y="72" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">orchestrator</text>
+
+      <rect x="570" y="40" width="160" height="40" rx="6" fill="rgba(157,177,221,0.30)" stroke="#333A05" stroke-width="1"/>
+      <text x="650" y="58" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">Retriever</text>
+      <text x="650" y="72" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">hybrid KB search</text>
+
+      <rect x="830" y="40" width="160" height="40" rx="6" fill="rgba(82,124,35,0.10)" stroke="#527C23" stroke-width="1"/>
+      <text x="910" y="58" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">Chat model</text>
+      <text x="910" y="72" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">translate, then compose</text>
+
+      <rect x="1090" y="40" width="160" height="40" rx="6" fill="rgba(82,124,35,0.10)" stroke="#527C23" stroke-width="1"/>
+      <text x="1170" y="58" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">Silpo MCP</text>
+      <text x="1170" y="72" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">retail catalogue, external</text>
+
+      <!-- Legend -->
+      <line x1="40" y1="688" x2="1260" y2="688" stroke="rgba(51,58,5,0.14)" stroke-width="0.8"/>
+      <line x1="40" y1="708" x2="68" y2="708" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <text x="76" y="712" fill="#333A05" font-size="11" font-family="Arial, sans-serif">Call</text>
+      <line x1="140" y1="708" x2="168" y2="708" stroke="#000000" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+      <text x="176" y="712" fill="#333A05" font-size="11" font-family="Arial, sans-serif">Return</text>
+      <line x1="260" y1="708" x2="288" y2="708" stroke="#FCA600" stroke-width="1.6" stroke-dasharray="4,3" marker-end="url(#arrow-accent)"/>
+      <text x="296" y="712" fill="#333A05" font-size="11" font-family="Arial, sans-serif">Result back to A2A server</text>
+    </svg>
+
+    <div class="walkthrough">
+      <h2>How to read this diagram — actor by actor, step by step</h2>
+
+      <div class="plain">
+        <p><strong>In plain terms.</strong> Five "lanes": <strong>Docs A2A Server</strong> is where the request arrives from Supervisor's A2A call. <strong>run_docs_agent</strong> is the orchestrator doing all the work described here. <strong>Retriever</strong> searches the static knowledge base. <strong>Chat model</strong> is used twice — once to translate, once to compose the answer. <strong>Silpo MCP</strong> is the external retail catalogue, called only when there's an actual product to look up.</p>
+        <p>Order matters: the knowledge base is always searched first. Only after that does a small LLM call pull out the product/category the customer meant and translate it to Ukrainian — because Silpo's catalogue is Ukrainian-language data, and searching it in the customer's own language would just return nothing. If that translation came back empty (the message wasn't about a specific product), Silpo MCP is skipped entirely — not called with an empty query. If it came back non-empty, Silpo MCP is queried; most failures there are swallowed and treated as "no products found," except an expired login token, which is treated as a real problem and raised instead of hidden.</p>
+        <p>Whatever came back from the knowledge base and (maybe) Silpo MCP is combined into one block of text — that's merge #1 — and handed to the chat model a second time, this time to actually write the answer. Right before returning, run_docs_agent does a second, different merge — of source metadata, not text — overwriting whatever source list the model claimed with the sources it actually retrieved. The model doesn't get to invent where an answer came from.</p>
+      </div>
+
+      <h3>Five lifelines</h3>
+      <ul class="actors">
+        <li><code>Docs A2A Server</code> — the process boundary Supervisor's A2A call lands on; everything else here happens inside this one process.</li>
+        <li><code>run_docs_agent</code> — the orchestrator function; owns the whole sequence below.</li>
+        <li><code>Retriever</code> — the hybrid (vector + BM25) search over the static knowledge base.</li>
+        <li><code>Chat model</code> — the LLM, used for two different jobs in this one request: extracting/translating a search term, then composing the final answer.</li>
+        <li><code>Silpo MCP</code> — the real external retail-catalogue tool server.</li>
+      </ul>
+
+      <h3>Sequence, step by step</h3>
+      <ol class="steps">
+        <li><strong>Docs A2A Server → run_docs_agent: <code>run_docs_agent(masked_query)</code></strong> — the already-masked customer message, handed over once the A2A call lands.</li>
+        <li><strong>run_docs_agent → Retriever: <code>invoke(masked_query)</code> → ← <code>kb_docs</code></strong> — unconditional: the knowledge base is searched on every single request, whether or not it later turns out to be product-related.</li>
+        <li><strong>run_docs_agent → Chat model: <code>translate_fn(masked_query)</code> → ← <code>search_term_uk</code></strong> — a small, separate LLM call whose only job is to pull out the product/category term and translate it to Ukrainian. It can legitimately return an empty string, and often should (a general question has no product to search).</li>
+        <li><strong><code>OPT [search term is non-empty]</code></strong> — the whole Silpo MCP branch is skipped outright when the translation step returned nothing:
+          <ul style="list-style: disc; padding-left: 1.25rem; margin-top: 0.3rem;">
+            <li style="font-size: 11px; color: #4f5d75; margin-bottom: 0.2rem;"><strong>run_docs_agent → Silpo MCP: <code>search_products(search_term_uk)</code></strong> → ← <code>products | error</code>.</li>
+            <li style="font-size: 11px; color: #4f5d75; margin-bottom: 0.2rem;">Note: an expired-auth error is <em>not</em> swallowed — it propagates up loudly, since that needs a human to re-authenticate. Every other failure degrades silently to an empty product list.</li>
+          </ul>
+        </li>
+        <li><strong>Self message (merge 1 of 2) — <code>retrieved_block = kb_texts + mcp_texts</code></strong> — this is a <em>different</em> merge from the one at the end: it combines the retrieved <strong>text content</strong> from both sources into one block, because that text is what the next step needs as its prompt input. Nothing about citations happens here.</li>
+        <li><strong>run_docs_agent → Chat model: <code>compose_fn(prompt)</code> → ← <code>DocsResponse</code></strong> — the second, different LLM call: writes the actual customer-facing answer from the merged text block above. The model returns its own <code>sources</code> field too — but that value doesn't survive the next step.</li>
+        <li><strong>Self message (merge 2 of 2) — <code>sources = kb_sources + mcp_sources</code></strong> — a separate merge of <strong>source metadata</strong> (not text), and it runs <em>after</em> <code>compose_fn</code> on purpose: it overwrites whatever <code>sources</code> the model just claimed with the sources run_docs_agent can prove it actually retrieved. There's nothing to overwrite until the model has answered, which is exactly why this step comes last, not first.</li>
+        <li><strong>run_docs_agent → Docs A2A Server: <code>DocsAgentResult(response, context, tools_called)</code></strong> (accent arrow) — carries the answer, the raw retrieved text (for the faithfulness evaluator), and which Silpo MCP tool actually got called (empty if it was skipped or failed).</li>
+      </ol>
+
+      <h3>Two merges, easy to confuse — what each one is</h3>
+      <p>Both self-messages say "merge," and both combine a knowledge-base result with a Silpo MCP result — but they merge two completely different things, at two different points in the sequence, for two different reasons:</p>
+      <ul style="list-style: disc; padding-left: 1.25rem; margin: 0.5rem 0 0.5rem;">
+        <li style="margin-bottom: 0.4rem;"><strong>Merge 1 — text, before <code>compose_fn</code>:</strong> <code>kb_texts + mcp_texts → retrieved_block</code>. This is raw retrieved <em>content</em> (FAQ answers, product names and prices) joined into one string, because it has to exist <em>before</em> the prompt can be built — the model needs something to read.</li>
+        <li><strong>Merge 2 — metadata, after <code>compose_fn</code>:</strong> <code>kb_sources + mcp_sources → answer.sources</code>. This is citation <em>metadata</em> (where each fact came from), and it deliberately runs <em>after</em> the model has answered, because its whole purpose is to replace whatever the model itself claimed as its sources with the real ones. Doing this before the model call would make no sense — there'd be no model-claimed value yet to correct.</li>
+      </ul>
+
+      <h3>What metadata actually flows through this diagram</h3>
+      <p>The two branches don't carry the same metadata shape — the knowledge base is a curated, versioned document set; Silpo MCP is a live catalogue with no such concept.</p>
+      <ul style="list-style: disc; padding-left: 1.25rem; margin: 0.5rem 0 0.5rem;">
+        <li style="margin-bottom: 0.4rem;"><strong>From the Retriever (knowledge base):</strong> every chunk's <code>Document.metadata</code> carries <code>id</code>, <code>source</code>, <code>retrieved_at</code>, <code>version</code>. Only three of those four become part of the final <code>Source</code> object handed to the customer — <code>ref=source</code> (e.g. <code>internal_policy/returns_v3.md</code>), <code>retrieved_at</code>, and <code>version</code> (e.g. <code>"3.1"</code>). <code>id</code> stays internal — it's how the retriever indexes the chunk, never something a customer needs to see.</li>
+        <li><strong>From Silpo MCP:</strong> each product result carries at least <code>name</code> and <code>price</code> (used to build the readable <code>mcp_texts</code> line, e.g. <code>"Молоко 2.5%: 42 грн"</code>). Its <code>Source</code> is built differently: <code>ref="Сільпо: " + name</code> (the product's own name, not an opaque product id — an id would be unreadable in the chat UI's source list) and <code>retrieved_at=fetched_at</code> (the moment of this call). There is no <code>version</code> — Silpo's catalogue has no document-revision concept the way the curated knowledge base does, so that field is simply left at its default empty string.</li>
+      </ul>
+
+      <div class="takeaway">
+        <strong>The point of the connections:</strong> the chat model is called twice for two unrelated jobs (translate, then compose) — never one call doing both. Silpo MCP is reached only through a translated, Ukrainian, non-empty term, and its failures are triaged: routine unavailability degrades quietly, an expired credential does not. The two merge steps look similar but are not the same operation — one assembles the prompt's input (text, before the model runs), the other corrects the model's output (metadata, after it runs) — and mixing up their order would either starve the prompt of content or have nothing left to correct.
+      </div>
+    </div>
+
+    <div class="ua-script" lang="uk">
+      <p class="eyebrow">Сценарій доповіді (українською)</p>
+      <h2>П'ять "рятівних кругів"</h2>
+      <ul class="actors">
+        <li><code>Docs A2A Server</code> — межа процесу, на якій зупиняється виклик A2A від Supervisor; все інше тут відбувається всередині цього одного процесу.</li>
+        <li><code>run_docs_agent</code> — функція оркестратора; володіє всією послідовністю нижче.</li>
+        <li><code>Retriever</code> — гібридний (вектор + BM25) пошук по статичній базі знань.</li>
+        <li><code>Chat model</code> — LLM, що використовується для двох різних завдань у цьому одному запиті: вилучення/переклад пошукового терміна, а потім складання остаточної відповіді.</li>
+        <li><code>Silpo MCP</code> — справжній зовнішній сервер інструментів для роботи з роздрібними каталогами.</li>
+      </ul>
+
+      <h3>Послідовність, крок за кроком</h3>
+      <ol class="steps">
+        <li><strong>Docs A2A Server → run_docs_agent: <code>run_docs_agent(masked_query)</code></strong> — уже замасковане повідомлення клієнта, яке передається одразу після A2A-виклику.</li>
+        <li><strong>run_docs_agent → Retriever: <code>invoke(masked_query)</code> → ← <code>kb_docs</code></strong> — безумовний: пошук у базі знань виконується для кожного окремого запиту, незалежно від того, чи виявиться він пізніше пов'язаним із товаром.</li>
+        <li><strong>run_docs_agent → Chat model: <code>translate_fn(masked_query)</code> → ← <code>search_term_uk</code></strong> — невеликий окремий виклик LLM, єдине завдання якого — вилучити термін товару/категорії і перекласти його українською. Він може легітимно повернути порожній рядок, і часто саме так і повинен (загальне питання не містить товару для пошуку).</li>
+        <li><strong><code>OPT [search term is non-empty]</code></strong> — уся гілка Silpo MCP повністю пропускається, якщо крок перекладу нічого не повернув:
+          <ul>
+            <li><strong>run_docs_agent → Silpo MCP: <code>search_products(search_term_uk)</code></strong> → ← <code>products | error</code>.</li>
+            <li>Примітка: помилка простроченої автентифікації не "проковтується" — вона поширюється голосно, бо потребує повторної автентифікації людиною. Будь-яка інша помилка непомітно деградує до порожнього списку товарів.</li>
+          </ul>
+        </li>
+        <li><strong>Власне повідомлення (об'єднання 1 з 2) — <code>retrieved_block = kb_texts + mcp_texts</code></strong> — це об'єднання відрізняється від того, що наприкінці: воно поєднує отриманий текстовий вміст з обох джерел в один блок, бо саме цей текст потрібен наступному кроку як вхідні дані. Про джерела/цитування тут ще нічого не йдеться.</li>
+        <li><strong>run_docs_agent → Chat model: <code>compose_fn(prompt)</code> → ← <code>DocsResponse</code></strong> — другий, інший виклик LLM: складає фактичну відповідь для клієнта з об'єднаного текстового блоку вище. Модель також повертає власне поле <code>sources</code>, але це значення не переживає наступний крок.</li>
+        <li><strong>Власне повідомлення (об'єднання 2 з 2) — <code>sources = kb_sources + mcp_sources</code></strong> — окреме об'єднання вихідних метаданих (не тексту), яке виконується після <code>compose_fn</code> навмисно: воно перезаписує те, що модель щойно заявила як <code>sources</code>, реальними джерелами, які run_docs_agent може довести, що справді отримав. Нема чого перезаписувати, доки модель не відповіла — саме тому цей крок виконується останнім, а не першим.</li>
+        <li><strong>run_docs_agent → Docs A2A Server: <code>DocsAgentResult(response, context, tools_called)</code></strong> (акцентна стрілка) — містить відповідь, отриманий необроблений текст (для оцінювача достовірності) і назву інструмента Silpo MCP, який справді був викликаний (порожньо, якщо виклик пропущено або провалився).</li>
+      </ol>
+
+      <h3>Два об'єднання, які легко сплутати — у чому різниця</h3>
+      <p>В обох self-message написано "об'єднання", і обидва поєднують результат бази знань із результатом Silpo MCP — але вони об'єднують дві абсолютно різні речі, у двох різних точках послідовності, з двох різних причин:</p>
+      <ul style="list-style: disc; padding-left: 1.25rem; margin: 0.5rem 0 0.5rem;">
+        <li style="margin-bottom: 0.4rem;"><strong>Об'єднання 1 — текст, перед <code>compose_fn</code>:</strong> <code>kb_texts + mcp_texts → retrieved_block</code>. Це необроблений отриманий контент (відповіді FAQ, назви товарів і ціни), об'єднаний в один рядок, бо він має існувати <em>до</em> побудови промпту — моделі потрібно щось прочитати.</li>
+        <li><strong>Об'єднання 2 — метадані, після <code>compose_fn</code>:</strong> <code>kb_sources + mcp_sources → answer.sources</code>. Це метадані цитування (звідки взявся кожен факт), і вони навмисно виконуються <em>після</em> того, як модель відповіла, бо їхня єдина мета — замінити те, що сама модель заявила як свої джерела, на реальні. Робити це до виклику моделі не мало б сенсу — не було б ще жодного заявленого моделлю значення, яке треба виправляти.</li>
+      </ul>
+
+      <h3>Які метадані насправді проходять через цю схему</h3>
+      <p>Дві гілки не несуть однакову форму метаданих — база знань це курований, версіонований набір документів; Silpo MCP — живий каталог без такого поняття.</p>
+      <ul style="list-style: disc; padding-left: 1.25rem; margin: 0.5rem 0 0.5rem;">
+        <li style="margin-bottom: 0.4rem;"><strong>З Retriever (база знань):</strong> метадані кожного фрагмента несуть <code>id</code>, <code>source</code>, <code>retrieved_at</code>, <code>version</code>. Лише три з цих чотирьох стають частиною фінального об'єкта <code>Source</code>, що передається клієнту — <code>ref=source</code> (напр. <code>internal_policy/returns_v3.md</code>), <code>retrieved_at</code> і <code>version</code> (напр. <code>"3.1"</code>). <code>id</code> лишається внутрішнім — це те, чим retriever індексує фрагмент, а не те, що потрібно бачити клієнту.</li>
+        <li><strong>З Silpo MCP:</strong> кожен результат товару несе щонайменше <code>name</code> і <code>price</code> (використовуються для побудови читабельного рядка <code>mcp_texts</code>, напр. <code>"Молоко 2.5%: 42 грн"</code>). Його <code>Source</code> побудований інакше: <code>ref="Сільпо: " + name</code> (власна назва товару, а не непрозорий id товару — id був би нечитабельним у списку джерел чат-інтерфейсу) і <code>retrieved_at=fetched_at</code> (момент цього виклику). <code>version</code> немає взагалі — каталог Сільпо не має поняття версії документа, на відміну від курованої бази знань, тому це поле просто лишається порожнім рядком за замовчуванням.</li>
+      </ul>
+
+      <div class="takeaway">
+        <strong>Суть зв'язків:</strong> модель чату викликається двічі для двох непов'язаних завдань (переклад, потім складання відповіді) — жодного разу один виклик не робить обидва. До Silpo MCP можна дістатись лише через перекладений українською, непорожній термін, а його збої класифікуються: рутинна недоступність деградує тихо, прострочені облікові дані — ні. Два кроки об'єднання виглядають схоже, але це не одна й та сама операція — один збирає вхідні дані запиту (текст, до виклику моделі), інший виправляє вихідні дані моделі (метадані, після виклику) — і переплутання їхнього порядку або залишило б промпт без вмісту, або не мало б чого виправляти.
+      </div>
+    </div>
+  </div>
+</body>
+</html>

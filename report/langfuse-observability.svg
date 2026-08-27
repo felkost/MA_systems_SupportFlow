@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 1300 820" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="lf-title lf-desc">
+      <title id="lf-title">What data reaches Langfuse and what it stores</title>
+      <desc id="lf-desc">Data-flow diagram showing three separate OS processes — Supervisor, Docs Agent, and Web Search Agent — each opening their own named Langfuse spans, all passing through a should_export_span filter and a mask_otel_spans PII-redaction step before being stored in Langfuse as one trace grouping generation, span, tool, and guardrail observations, each carrying prompt version, model, token usage, and input/output text, plus versioned prompts and optional trace tags; a dashed line shows the trace_id and parent_span_id propagating from Supervisor to the two A2A agent processes so their spans parent onto the same trace despite running in separate processes.</desc>
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#000000"/></marker>
+        <marker id="arrow-bold" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><polygon points="0 0, 9 3.5, 0 7" fill="#000000"/></marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+      <!-- Arrows (behind boxes) -->
+      <!-- Source -> Filter -->
+      <path d="M 340,120 H 420 Q 428,120 428,128 V 272 Q 428,280 436,280 H 476" fill="none" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <path d="M 340,336 H 476" fill="none" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <path d="M 340,488 H 420 Q 428,488 428,480 V 396 Q 428,388 436,388 H 476" fill="none" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+      <!-- Filter -> Mask -->
+      <line x1="576" y1="390" x2="576" y2="430" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <!-- Mask -> Langfuse -->
+      <line x1="676" y1="470" x2="756" y2="470" stroke="#000000" stroke-width="1.6" marker-end="url(#arrow-bold)"/>
+
+      <!-- Cross-process trace propagation (dashed, secondary) -->
+      <path d="M 340,150 H 396 Q 404,150 404,158 V 262 Q 404,270 396,270 H 344" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+      <path d="M 340,180 H 380 Q 388,180 388,188 V 448 Q 388,456 380,456 H 344" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+      <rect x="352" y="192" width="96" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="400" y="202" fill="#4f5d75" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">trace_id +</text>
+      <rect x="342" y="210" width="116" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="400" y="220" fill="#4f5d75" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">parent_span_id</text>
+
+      <!-- Node: Supervisor process -->
+      <rect x="60" y="64" width="280" height="172" rx="8" fill="#f5f5f5"/>
+      <rect x="60" y="64" width="280" height="172" rx="8" fill="#ffffff" stroke="#333A05" stroke-width="1"/>
+      <text x="200" y="88" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">Supervisor process</text>
+      <text x="200" y="102" fill="#4f5d75" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">seeds trace_id, opens its own spans</text>
+      <text x="76" y="126" fill="#333A05" font-size="11" font-family="Arial, sans-serif">input_filter.run (guardrail)</text>
+      <text x="76" y="144" fill="#333A05" font-size="11" font-family="Arial, sans-serif">supervisor.routing (span)</text>
+      <text x="76" y="162" fill="#333A05" font-size="11" font-family="Arial, sans-serif">acp.call_router (generation)</text>
+      <text x="76" y="180" fill="#333A05" font-size="11" font-family="Arial, sans-serif">a2a.send_message ×2 (span)</text>
+      <text x="76" y="198" fill="#333A05" font-size="11" font-family="Arial, sans-serif">escalation_agent.compose (generation)</text>
+      <text x="76" y="216" fill="#333A05" font-size="11" font-family="Arial, sans-serif">telegram.send · report_writer.write</text>
+
+      <!-- Node: Docs Agent process -->
+      <rect x="60" y="270" width="280" height="132" rx="8" fill="#f5f5f5"/>
+      <rect x="60" y="270" width="280" height="132" rx="8" fill="#ffffff" stroke="#333A05" stroke-width="1"/>
+      <text x="200" y="294" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">Docs Agent process</text>
+      <text x="200" y="308" fill="#4f5d75" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">its own A2A server, own spans</text>
+      <text x="76" y="332" fill="#333A05" font-size="11" font-family="Arial, sans-serif">docs_agent.a2a_request (root span)</text>
+      <text x="76" y="350" fill="#333A05" font-size="11" font-family="Arial, sans-serif">docs_agent.compose (generation)</text>
+      <text x="76" y="368" fill="#333A05" font-size="11" font-family="Arial, sans-serif">silpo_mcp.call_tool (tool)</text>
+
+      <!-- Node: Web Search Agent process -->
+      <rect x="60" y="436" width="280" height="106" rx="8" fill="#f5f5f5"/>
+      <rect x="60" y="436" width="280" height="106" rx="8" fill="#ffffff" stroke="#333A05" stroke-width="1"/>
+      <text x="200" y="460" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">Web Search Agent process</text>
+      <text x="200" y="474" fill="#4f5d75" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">its own A2A server, own spans</text>
+      <text x="76" y="498" fill="#333A05" font-size="11" font-family="Arial, sans-serif">web_search_agent.a2a_request (root)</text>
+      <text x="76" y="516" fill="#333A05" font-size="11" font-family="Arial, sans-serif">web_search_agent.compose (generation)</text>
+
+      <!-- Node: filter gate -->
+      <rect x="480" y="250" width="200" height="140" rx="8" fill="#f5f5f5"/>
+      <rect x="480" y="250" width="200" height="140" rx="8" fill="rgba(82,124,35,0.10)" stroke="#527C23" stroke-width="1" stroke-dasharray="4,4"/>
+      <text x="580" y="278" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">should_export_span</text>
+      <text x="580" y="296" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">extends Langfuse's</text>
+      <text x="580" y="312" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">default filter (or),</text>
+      <text x="580" y="328" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">never replaces it —</text>
+      <text x="580" y="344" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">keeps named spans,</text>
+      <text x="580" y="360" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">drops SDK noise</text>
+
+      <!-- Node: mask gate -->
+      <rect x="480" y="430" width="200" height="80" rx="8" fill="#f5f5f5"/>
+      <rect x="480" y="430" width="200" height="80" rx="8" fill="rgba(82,124,35,0.10)" stroke="#527C23" stroke-width="1" stroke-dasharray="4,4"/>
+      <text x="580" y="456" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">mask_otel_spans</text>
+      <text x="580" y="472" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">2nd PII barrier,</text>
+      <text x="580" y="488" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">at export time —</text>
+      <text x="580" y="504" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">independent of input</text>
+
+      <!-- Node: Langfuse (composite, focal) -->
+      <rect x="760" y="64" width="480" height="560" rx="10" fill="#f5f5f5"/>
+      <rect x="760" y="64" width="480" height="560" rx="10" fill="rgba(252,216,99,0.20)" stroke="#FCA600" stroke-width="1.6"/>
+      <text x="1000" y="94" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">Langfuse</text>
+      <text x="1000" y="110" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">one process per project — receives from all three</text>
+
+      <!-- Inner chip: Trace -->
+      <rect x="784" y="130" width="432" height="96" rx="6" fill="#ffffff" stroke="#333A05" stroke-width="1"/>
+      <text x="1000" y="152" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">Trace</text>
+      <text x="800" y="170" fill="#333A05" font-size="11" font-family="Arial, sans-serif">one trace_id per customer request — the grouping key</text>
+      <text x="800" y="186" fill="#333A05" font-size="11" font-family="Arial, sans-serif">that pulls spans from all 3 processes into one view</text>
+      <text x="800" y="202" fill="#333A05" font-size="11" font-family="Arial, sans-serif">session_id (report_writer.write) + optional tags</text>
+      <text x="800" y="218" fill="#333A05" font-size="11" font-family="Arial, sans-serif">(tag_trace — e.g. before/after a prompt change)</text>
+
+      <!-- Inner chip: Observations -->
+      <rect x="784" y="242" width="432" height="192" rx="6" fill="#ffffff" stroke="#333A05" stroke-width="1"/>
+      <text x="1000" y="264" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">Observations (spans inside the trace)</text>
+      <text x="800" y="284" fill="#333A05" font-size="11" font-family="Arial, sans-serif">generation — prompt (name+version), model,</text>
+      <text x="800" y="300" fill="#333A05" font-size="11" font-family="Arial, sans-serif">usage_details (token counts → cost), input, output</text>
+      <text x="800" y="320" fill="#333A05" font-size="11" font-family="Arial, sans-serif">span — plain step timing/metadata (routing decision,</text>
+      <text x="800" y="336" fill="#333A05" font-size="11" font-family="Arial, sans-serif">A2A hop, file write), no prompt/tokens</text>
+      <text x="800" y="356" fill="#333A05" font-size="11" font-family="Arial, sans-serif">tool — Silpo MCP call, Telegram send; metadata</text>
+      <text x="800" y="372" fill="#333A05" font-size="11" font-family="Arial, sans-serif">names which tool, records success/error status</text>
+      <text x="800" y="392" fill="#333A05" font-size="11" font-family="Arial, sans-serif">guardrail — input_filter.run; metadata: triggered?</text>
+      <text x="800" y="408" fill="#333A05" font-size="11" font-family="Arial, sans-serif">and which rejection reason, if any</text>
+
+      <!-- Inner chip: Prompts -->
+      <rect x="784" y="448" width="432" height="80" rx="6" fill="#ffffff" stroke="#333A05" stroke-width="1"/>
+      <text x="1000" y="470" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">Prompt Management</text>
+      <text x="800" y="488" fill="#333A05" font-size="11" font-family="Arial, sans-serif">every generation links its exact prompt version</text>
+      <text x="800" y="504" fill="#333A05" font-size="11" font-family="Arial, sans-serif">(label="production" is mutable — the version is not)</text>
+
+      <!-- Inner chip: what you can trace -->
+      <rect x="784" y="540" width="432" height="64" rx="6" fill="rgba(82,124,35,0.08)" stroke="#527C23" stroke-width="1"/>
+      <text x="1000" y="562" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">What you can follow, end to end</text>
+      <text x="800" y="580" fill="#333A05" font-size="11" font-family="Arial, sans-serif">one request → 3 processes → cost + latency, all in one trace</text>
+      <text x="800" y="596" fill="#333A05" font-size="11" font-family="Arial, sans-serif">— never a disconnected trace per process</text>
+
+      <!-- Legend -->
+      <line x1="40" y1="670" x2="1260" y2="670" stroke="rgba(51,58,5,0.14)" stroke-width="0.8"/>
+      <text x="40" y="686" fill="#333A05" font-size="11" font-family="Arial, sans-serif" letter-spacing="0.08em">LEGEND</text>
+
+      <rect x="40" y="696" width="14" height="10" rx="2" fill="#ffffff" stroke="#333A05" stroke-width="1"/>
+      <text x="60" y="704" fill="#333A05" font-size="11" font-family="Arial, sans-serif">Process / observation</text>
+
+      <rect x="220" y="696" width="14" height="10" rx="2" fill="rgba(82,124,35,0.10)" stroke="#527C23" stroke-width="1" stroke-dasharray="3,2"/>
+      <text x="240" y="704" fill="#333A05" font-size="11" font-family="Arial, sans-serif">Export-time gate</text>
+
+      <rect x="380" y="696" width="14" height="10" rx="2" fill="rgba(252,216,99,0.20)" stroke="#FCA600" stroke-width="1.4"/>
+      <text x="400" y="704" fill="#333A05" font-size="11" font-family="Arial, sans-serif">Langfuse (store)</text>
+
+      <line x1="520" y1="702" x2="548" y2="702" stroke="#000000" stroke-width="1.6" marker-end="url(#arrow-bold)"/>
+      <text x="556" y="704" fill="#333A05" font-size="11" font-family="Arial, sans-serif">Span export</text>
+
+      <line x1="660" y1="702" x2="688" y2="702" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+      <text x="696" y="704" fill="#333A05" font-size="11" font-family="Arial, sans-serif">Trace context (A2A metadata)</text>
+    </svg>
