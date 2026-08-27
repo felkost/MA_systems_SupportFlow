@@ -72,6 +72,16 @@
   background: transparent;
 }
 
+.pill:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.pill:disabled:hover {
+  border-color: var(--border);
+  color: var(--text-muted);
+}
+
 /* --- Chat --------------------------------------------------------------- */
 
 .chat {

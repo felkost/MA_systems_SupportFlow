@@ -27,6 +27,16 @@ function getSessionId() {
   return sessionId
 }
 
+// A new session_id, not just a cleared message list — Escalation's
+// dedup/cap store is scoped per session_id, so "start over" means the
+// backend sees a genuinely new conversation too, not the same one with
+// an emptied browser-side view of it.
+function resetSessionId() {
+  const sessionId = crypto.randomUUID()
+  sessionStorage.setItem(SESSION_KEY, sessionId)
+  return sessionId
+}
+
 // Stored choice wins; otherwise follow the OS. localStorage throws in some
 // privacy modes, so every access is guarded — a themed page must still render.
 function initialTheme() {
@@ -91,6 +101,16 @@ function App() {
       .then((data) => setAllowRealSend(data.allow_real_send))
       .catch(() => setAllowRealSend(null))
   }, [])
+
+  function clearChat() {
+    setMessages([])
+    try {
+      sessionStorage.removeItem(MESSAGES_KEY)
+    } catch {
+      /* messages state is already cleared; storage just won't persist that */
+    }
+    resetSessionId()
+  }
 
   async function toggleRealSend() {
     const next = !allowRealSend
@@ -163,6 +183,15 @@ function App() {
           <span className="brand-sub">SupportFlow</span>
         </div>
         <div className="topbar-actions">
+          <button
+            type="button"
+            className="pill"
+            onClick={clearChat}
+            disabled={messages.length === 0}
+            title="Очистити історію розмови і почати заново"
+          >
+            🗑️ Нова розмова
+          </button>
           {allowRealSend !== null && (
             <button
               type="button"
