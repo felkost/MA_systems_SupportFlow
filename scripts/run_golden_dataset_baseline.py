@@ -34,7 +34,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from src.infrastructure.observability import tag_trace  # noqa: E402
+from src.infrastructure.observability import experiment_tags, tag_trace  # noqa: E402
 from src.kernel.settings import PROJECT_ROOT  # noqa: E402
 from tests.evaluation import harness  # noqa: E402
 
@@ -62,7 +62,7 @@ def _score_case(case: dict, run_tag: str) -> dict:
         # this run's own identifier so separate baseline runs (pre/post a
         # fix, or a future re-run) show up as distinct, comparable groups
         # in Langfuse's Trace Tags filter instead of one mixed pool.
-        tag_trace(trace_id, [run_tag])
+        tag_trace(trace_id, [run_tag, *experiment_tags()])
 
     result: dict = {
         "id": case["id"],

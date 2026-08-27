@@ -15,7 +15,12 @@ from langfuse.types import TraceContext
 from src.application.graph_nodes import build_graph
 from src.domain.filters import run_input_filter
 from src.domain.state import SupportFlowState
-from src.infrastructure.observability import build_callback_handler, get_langfuse_client
+from src.infrastructure.observability import (
+    build_callback_handler,
+    experiment_tags,
+    get_langfuse_client,
+    tag_trace,
+)
 from src.kernel.constants import GRAPH_RECURSION_LIMIT
 
 
@@ -81,6 +86,13 @@ def handle_request(
     # an error. Found live during an observability smoke test — the
     # mechanism existed but was never actually wired to the root.
     trace_context: TraceContext = {"trace_id": trace_id}
+
+    # Tagged before the graph runs, not after: a request that escalates or
+    # raises still belongs to the experiment being measured, and an
+    # untagged failure would quietly bias the comparison toward success.
+    tags = experiment_tags()
+    if tags:
+        tag_trace(trace_id, tags)
 
     # The guardrail span wraps this call site, not the inside of
     # `src.domain.filters` — that module is `domain`-layer and may not

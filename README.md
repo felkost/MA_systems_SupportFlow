@@ -59,6 +59,7 @@ sequenceDiagram
 python -m venv .venv
 .venv/Scripts/pip install -r requirements.txt -r requirements-dev.txt
 cp .env.example .env   # fill in OpenRouter, Silpo MCP, Tavily, Telegram, Langfuse keys
+git config core.hooksPath hooks   # mirrors the evaluation sets to Langfuse on commit
 ```
 
 One-time, manual (Silpo's OAuth is phone+OTP against a real account, not

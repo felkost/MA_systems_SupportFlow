@@ -56,6 +56,12 @@ class Settings(BaseSettings):
         (`.env.example`). `True` with either Langfuse key empty is a fatal
         startup error, checked by `src.infrastructure.observability
         .configure_tracing` — never a silent no-trace fallback.
+    experiment, experiment_started_at : str, default=""
+        Names the prompt experiment this process is serving and the date it
+        began. Both are attached as Langfuse trace tags, so a prompt change
+        shows up as its own comparable group in Scores > Analytics instead
+        of blending into the pool it is meant to be measured against. Empty
+        (the default) means untagged traffic — the pre-experiment baseline.
     frontend_origin : str, default="http://localhost:5173"
         Task §8: CORS on `src.interfaces.api` is open only to this one
         origin. Vite's own default dev port.
@@ -78,6 +84,8 @@ class Settings(BaseSettings):
     bypass_hitl: bool = False
     allow_real_send: bool = False
     tracing_enabled: bool = False
+    experiment: str = ""
+    experiment_started_at: str = ""
     frontend_origin: str = "http://localhost:5173"
 
 
