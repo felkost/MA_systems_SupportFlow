@@ -1,12 +1,11 @@
 """Supervisor's request-handling entrypoint: runs the input filter ahead
-of the graph (docs/decisions.md #14 — masking is a precondition of
-entering the graph, never a node inside it, so there is no
-`input_filter` node), then builds and invokes it. The graph's own nodes,
-conditional edges, and compilation live in `src.application.graph_nodes`
-(Stage 4 Wave A split — this file grew past CLAUDE.md's 320-line ceiling
-once tracing instrumentation landed; request orchestration and graph
-definition are a genuine responsibility split, not a constants-only
-extraction).
+of the graph — masking is a precondition of entering the graph, never a
+node inside it, so there is no `input_filter` node — then builds and
+invokes it. The graph's own nodes, conditional edges, and compilation
+live in `src.application.graph_nodes`: this file grew past its
+file-size ceiling once tracing instrumentation landed, so request
+orchestration and graph definition were split — a genuine responsibility
+split, not a constants-only extraction.
 """
 
 from contextlib import nullcontext
@@ -56,8 +55,7 @@ def handle_request(
     ----------
     raw_text : str
         The unmasked customer message. Never stored — `run_input_filter`
-        produces the masked version that alone enters state
-        (docs/decisions.md #14).
+        produces the masked version that alone enters state.
     request_id, session_id, trace_id : str
 
     Returns
@@ -72,23 +70,21 @@ def handle_request(
     ------
     NotImplementedError
         The route reached is Docs, Web Search, or Escalation — not yet
-        built (docs/decisions.md #16). Expected in Stage 1; a later
-        stage's build removes this.
+        built.
     """
     # `trace_context` seeds Langfuse's actual trace id with our own
-    # `trace_id` (Stage 4 decision 32) — without this, every root span
-    # opened here gets a Langfuse-auto-generated trace id instead, and
-    # the A2A hop's server-side span (which *does* use the metadata
-    # `trace_id`) ends up parented under a trace id nothing else in this
-    # process ever used: two disconnected traces for one request, exactly
-    # what task §9 calls an error. Found live during Stage 4 Wave A's own
-    # observability smoke test — the mechanism existed but was never
-    # actually wired to the root.
+    # `trace_id` — without this, every root span opened here gets a
+    # Langfuse-auto-generated trace id instead, and the A2A hop's
+    # server-side span (which *does* use the metadata `trace_id`) ends up
+    # parented under a trace id nothing else in this process ever used:
+    # two disconnected traces for one request, exactly what task §9 calls
+    # an error. Found live during an observability smoke test — the
+    # mechanism existed but was never actually wired to the root.
     trace_context: TraceContext = {"trace_id": trace_id}
 
-    # docs/decisions.md #36: the guardrail span wraps this call site, not
-    # the inside of `src.domain.filters` — that module is `domain`-layer
-    # and may not import `infra` (`tests/test_layering.py`).
+    # The guardrail span wraps this call site, not the inside of
+    # `src.domain.filters` — that module is `domain`-layer and may not
+    # import `infra` (`tests/test_layering.py`).
     client = get_langfuse_client()
     span_cm = (
         client.start_as_current_observation(

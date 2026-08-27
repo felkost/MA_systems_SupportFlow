@@ -1,5 +1,5 @@
-"""`RouteCorrectnessMetric`/`PrivacySafetyMetric` (Stage 4 Wave B decision
-D-B1) — deterministic, no LLM call, so these run synchronously and fast.
+"""`RouteCorrectnessMetric`/`PrivacySafetyMetric` — deterministic, no LLM
+call, so these run synchronously and fast.
 """
 
 from deepeval.test_case import LLMTestCase

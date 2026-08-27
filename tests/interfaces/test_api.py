@@ -1,4 +1,4 @@
-"""FastAPI `/chat` endpoint tests (Stage 5, task §8) — `supervisor.handle_request`
+"""FastAPI `/chat` endpoint tests (task §8) — `supervisor.handle_request`
 mocked at the *importing* module (`src.interfaces.api.supervisor`, not
 `src.application.supervisor`), same pattern `test_supervisor.py` already
 uses for `graph_nodes`. No live LLM/A2A/Silpo/Telegram call.

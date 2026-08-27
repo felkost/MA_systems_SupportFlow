@@ -2,8 +2,7 @@
 
 No SDK dependency — the endpoint is one JSON POST (confirmed against the
 official Bot API docs, `core.telegram.org/bots/api#sendmessage`), and
-`httpx` is already a pinned dependency (docs/decisions.md's ladder
-discipline: reuse before adding).
+`httpx` is already a pinned dependency — reuse before adding.
 """
 
 from contextlib import nullcontext

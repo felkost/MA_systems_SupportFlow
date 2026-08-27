@@ -1,13 +1,12 @@
-"""Failure-and-abuse row FB5: cross-check that `tools_called` (Stage 4
-Wave B decision D-B7) actually matches what Langfuse's own `mcp.tool.<name>`
-spans recorded for the same request — printed side by side for one live
-case so the author can compare by eye. Mirrors Wave A's own
-`observability_smoke.py` pattern (live read-back with a retry deadline,
-since Langfuse ingestion is asynchronous).
+"""Cross-check that `tools_called` actually matches what Langfuse's own
+`mcp.tool.<name>` spans recorded for the same request — printed side by
+side for one live case so the author can compare by eye. Mirrors
+`observability_smoke.py`'s own pattern (live read-back with a retry
+deadline, since Langfuse ingestion is asynchronous).
 
     TRACING_ENABLED=true .venv/Scripts/python scripts/golden_dataset_smoke.py
 
-Go/no-go per FB5: PRINTED_TOOLS_CALLED and the `mcp.tool.*` span names
+Go/no-go: PRINTED_TOOLS_CALLED and the `mcp.tool.*` span names
 found in the trace name the same tool(s), for one product-search case.
 """
 

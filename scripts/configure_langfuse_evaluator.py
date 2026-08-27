@@ -1,8 +1,7 @@
-"""Stage 4 Wave B decision D-B2: create one Langfuse LLM-as-a-Judge
-evaluator (task §9: "Langfuse automatically evaluates new traces using
-LLM-as-a-Judge") and bind it to new observations, via direct REST calls
-against Langfuse's own `unstable` API — not the installed `langfuse==4.14.4`
-SDK's typed client.
+"""Create one Langfuse LLM-as-a-Judge evaluator (task §9: "Langfuse
+automatically evaluates new traces using LLM-as-a-Judge") and bind it to
+new observations, via direct REST calls against Langfuse's own `unstable`
+API — not the installed `langfuse==4.14.4` SDK's typed client.
 
 **Why raw REST, not `client.api.unstable.evaluators`/`.evaluation_rules`:**
 confirmed live 2026-08-26 — the installed SDK's `Evaluator_LlmAsJudge`
@@ -10,17 +9,16 @@ response model requires a `scope` field that the real server's response
 does not return (`pydantic_core.ValidationError: ... llm_as_judge.scope
 Field required`), even though the evaluator is genuinely created
 server-side (confirmed via `GET api/public/unstable/evaluators` showing
-it with a real `id`). This is exactly the "unstable API may have drifted
-since 4.14.4" risk this wave's own kickoff spec flagged in advance — the
+it with a real `id`) — the unstable API has drifted since 4.14.4, so the
 fix is bypassing the SDK's response parsing, not working around a bug in
 this project's own code. Every payload shape below was confirmed against
 the real server's actual JSON (both the 200 success shape and a 422
 `evaluator_preflight_failed` error), not just the SDK's stale type stubs.
 
 The judge prompt template is fenced the same way `supportflow/router`'s
-customer-message slot is (decision #18's pattern, FB4) — `{{input}}`/
-`{{output}}` are Langfuse's own template variables, filled from real trace
-content, so they get the same "this is data, not instructions" framing.
+customer-message slot is — `{{input}}`/`{{output}}` are Langfuse's own
+template variables, filled from real trace content, so they get the same
+"this is data, not instructions" framing.
 
 Prerequisite (confirmed live — this script fails loudly with a clear
 `evaluator_preflight_failed` message if skipped): a model connection must
@@ -37,7 +35,7 @@ instead of erroring, and existing evaluation rules move onto the newest
 version automatically — the same "new version, not a duplicate" pattern
 `scripts/seed_prompts.py` already relies on for prompts.
 
-Go/no-go per D-B2: run one real request afterward (e.g.
+Go/no-go: run one real request afterward (e.g.
 `scripts/observability_smoke.py`), then check in the Langfuse UI that the
 new trace carries a score from this evaluator — that live read-back is
 the actual verification, not this script's exit code.
@@ -63,7 +61,7 @@ _EVALUATOR_NAME = "supportflow-answer-relevance"
 # match the "Provider name" configured under Langfuse UI -> Project
 # Settings -> LLM Connections (confirmed live: "OpenRouter"). `model` must
 # be one of that connection's own added custom model names — kept in sync
-# with config/models.yaml's `judge` entry (decision #47/D-B8).
+# with config/models.yaml's `judge` entry.
 _JUDGE_MODEL_CONFIG = {"provider": "OpenRouter", "model": "anthropic/claude-haiku-4.5"}
 
 _JUDGE_PROMPT = """\
@@ -145,9 +143,8 @@ def main() -> None:
         # nonsensical input/output for a "customer message vs. final
         # answer" relevance judge — and each one is a real, separately
         # billed judge call. Scoped to only the three named generation
-        # spans that actually compose a customer-facing answer
-        # (decision #35's "8 named sink sites") — 1 real score per
-        # request instead of ~23.
+        # spans that actually compose a customer-facing answer — 1 real
+        # score per request instead of ~23.
         "filter": [
             {
                 "type": "stringOptions",

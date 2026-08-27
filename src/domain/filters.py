@@ -1,7 +1,6 @@
 """The input filter (task §7 step 1): language, domain bounds, and
-personal/forbidden data — all three checks, before Router
-(docs/decisions.md #10). Pure, deterministic, no I/O and no LLM call, so it
-belongs in `domain`.
+personal/forbidden data — all three checks, before Router. Pure,
+deterministic, no I/O and no LLM call, so it belongs in `domain`.
 
 Two independent things happen here, and they are not the same gate:
 
@@ -9,11 +8,10 @@ Two independent things happen here, and they are not the same gate:
   length cap, or a language the project does not support. These short-
   circuit before any Router LLM call is made.
 - **Masking** (`mask_pii`) — always applied to build the text that ever
-  enters state or a trace (docs/decisions.md #14: masking is a precondition
-  of entering the graph, never a node inside it). A message containing a
-  phone number is not rejected outright — a customer giving a callback
-  number is a normal support interaction — it is masked before it is
-  stored or traced.
+  enters state or a trace (masking is a precondition of entering the
+  graph, never a node inside it). A message containing a phone number is
+  not rejected outright — a customer giving a callback number is a normal
+  support interaction — it is masked before it is stored or traced.
 """
 
 import re
@@ -40,9 +38,9 @@ _EMAIL_RE = re.compile(r"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}")
 # over the same digit run.
 _PHONE_RE = re.compile(r"(?<!\d)(\+?\d{9,13})(?!\d)")
 # 14-19 digits is card-shaped but ambiguous with an order/reference number
-# (docs/decisions.md #10, F9) — only a Luhn-valid run is treated as a card.
-# A non-Luhn run in this range is assumed to be an order number and is
-# deliberately NOT flagged; that is this filter's known ceiling.
+# — only a Luhn-valid run is treated as a card. A non-Luhn run in this
+# range is assumed to be an order number and is deliberately NOT flagged;
+# that is this filter's known ceiling.
 _CARD_CANDIDATE_RE = re.compile(r"(?<!\d)(\d{14,19})(?!\d)")
 
 _DIGIT_WORDS = {
@@ -78,7 +76,7 @@ _DIGIT_SEPARATOR_RE = re.compile(r"(?<=\d)[\s\-.]+(?=\d)")
 
 def _luhn_valid(digits: str) -> bool:
     """Standard Luhn check, used only to separate a card number from an
-    order number of similar length (docs/decisions.md #10).
+    order number of similar length.
     """
     total = 0
     for i, ch in enumerate(reversed(digits)):
@@ -94,8 +92,7 @@ def _luhn_valid(digits: str) -> bool:
 def _canonicalise_digits(text: str) -> str:
     """NFKC-normalise, expand spelled-out digit words, then collapse
     whitespace/dashes/dots between digits — so `"0 6 7 - one two three"`
-    and similar obfuscation collapse to a single scannable digit run
-    (docs/decisions.md #10, F8).
+    and similar obfuscation collapse to a single scannable digit run.
     """
     normalised = unicodedata.normalize("NFKC", text)
     expanded = _DIGIT_WORD_RE.sub(
@@ -128,9 +125,9 @@ def contains_forbidden_data(text: str) -> bool:
 def mask_pii(text: str) -> str:
     """Replace detected email/phone/card substrings with `[REDACTED]`.
 
-    This is what builds `SupportFlowState.original_request_masked`
-    (docs/decisions.md #14) — the only version of the customer's message
-    that ever enters the graph or a Langfuse trace.
+    This is what builds `SupportFlowState.original_request_masked` — the
+    only version of the customer's message that ever enters the graph or
+    a Langfuse trace.
 
     Parameters
     ----------
@@ -152,10 +149,9 @@ def mask_pii(text: str) -> str:
 
 def detect_language(text: str) -> SupportedLanguage:
     """A stdlib Unicode-script heuristic — a gate ("supported / not"), not
-    a classifier (docs/decisions.md #10). Router's own
-    `ClassificationOutput.language` remains the fine-grained signal
-    downstream; this function only decides whether the input filter lets
-    a message through to Router at all.
+    a classifier. Router's own `ClassificationOutput.language` remains the
+    fine-grained signal downstream; this function only decides whether
+    the input filter lets a message through to Router at all.
 
     Parameters
     ----------
@@ -167,8 +163,8 @@ def detect_language(text: str) -> SupportedLanguage:
         Cyrillic with a Ukrainian-only letter (і/ї/є/ґ) is `"uk"`; Cyrillic
         with a Russian-only letter (ы/ъ/э) is `"ru"`; Cyrillic with
         neither defaults to `"uk"` (the project's dominant expected
-        language, docs/decisions.md #6); Latin-only is `"en"`; no
-        recognisable letters at all is `"unsupported"`.
+        language); Latin-only is `"en"`; no recognisable letters at all
+        is `"unsupported"`.
     """
     if any(ch in _UK_ONLY_LETTERS for ch in text):
         return "uk"
@@ -188,9 +184,8 @@ def is_within_domain_bounds(text: str) -> bool:
     Not a domain classifier — Router's own classification already
     re-covers "general" vs. genuinely out-of-scope more precisely, and
     duplicating that here would spend a check on every request for no
-    added precision (docs/decisions.md #10). This only catches
-    symbol-only or emoji-only spam that would otherwise reach the Router
-    LLM for nothing.
+    added precision. This only catches symbol-only or emoji-only spam
+    that would otherwise reach the Router LLM for nothing.
 
     Parameters
     ----------

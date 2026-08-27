@@ -1,4 +1,4 @@
-"""Stage 4 Wave B decision D-B9: the measure-only baseline run.
+"""The measure-only baseline run.
 
 Runs all 18 golden-dataset cases once, scores each with the metrics
 `tests.evaluation.harness.metrics_for_test_case` assigns it (this varies
@@ -17,14 +17,13 @@ Silpo MCP/Tavily calls, up to 4 judge-model calls per Docs/Web-Search case
 (Answer Relevancy + Faithfulness), one real file write and (only with
 `ALLOW_REAL_SEND=true`, which this script never sets) a real Telegram
 send. State the expected cost/time out loud and get the author's
-permission before running, per CLAUDE.md's resource-control rule — this
-script does not ask for you.
+permission before running — this script does not ask for you.
 
     .venv/Scripts/python scripts/run_golden_dataset_baseline.py
 
 Requires the real 4-process topology running for the 15 non-fault-injected
 cases (`python -m src.interfaces.launcher` in a separate terminal) — the
-3 fault-injected cases run in-process regardless (D-B6).
+3 fault-injected cases run in-process regardless.
 """
 
 import json

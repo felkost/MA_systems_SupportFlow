@@ -102,14 +102,13 @@ async def test_run_docs_agent_degrades_gracefully_when_mcp_search_fails() -> Non
 
     assert len(result.response.sources) == 1  # KB only — MCP failure degraded silently
     assert result.retrieval_context == ["Графік роботи в застосунку."]
-    assert result.tools_called == []  # Stage 4 Wave B D-B7.3: no completed call
+    assert result.tools_called == []  # no completed call
 
 
 @pytest.mark.asyncio
 async def test_run_docs_agent_propagates_oauth_auth_required_error() -> None:
-    """docs/decisions.md Stage 4 Wave B D-B3: `SilpoMcpAuthRequiredError`'s
-    own docstring promises "fails loudly rather than ... silently
-    degrading" (CLAUDE.md §4 invariant) — it must NOT be swallowed by the
+    """`SilpoMcpAuthRequiredError`'s own docstring promises "fails loudly
+    rather than ... silently degrading" — it must NOT be swallowed by the
     same broad `except Exception` that legitimately degrades a generic
     Silpo MCP failure to KB-only (the sibling test above).
     """

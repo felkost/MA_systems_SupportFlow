@@ -4,10 +4,9 @@ Telegram message to the configured test channel — task §10's own live
 verification requirement for Escalation Agent.
 
 `pytest --cov=src` never sends a real Telegram message or writes outside
-`tmp_path` — this script is the counterpart. Requires
-`docs/telegram_bot_setup.md`'s setup to be done first (real
-`TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID` in `.env`), and `ALLOW_REAL_SEND=true`
-set for this run only:
+`tmp_path` — this script is the counterpart. Requires the Telegram bot
+setup to be done first (real `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID` in
+`.env`), and `ALLOW_REAL_SEND=true` set for this run only:
 
     ALLOW_REAL_SEND=true BYPASS_HITL=true \
         .venv/Scripts/python scripts/escalation_agent_smoke.py
@@ -31,7 +30,7 @@ def main() -> None:
         print(
             "ALLOW_REAL_SEND is not set — this run will write a file but "
             "not send Telegram. Set ALLOW_REAL_SEND=true to also verify "
-            "the real send (docs/telegram_bot_setup.md)."
+            "the real send."
         )
 
     context = EscalationContext(

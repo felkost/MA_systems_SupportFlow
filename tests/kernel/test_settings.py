@@ -26,7 +26,7 @@ def test_load_agent_config_reads_the_real_models_yaml() -> None:
     assert not config.model.startswith("«")
     assert config.timeout_seconds == 10
     assert config.confidence_threshold is None
-    assert config.max_retries == 1  # default, docs/decisions.md #12
+    assert config.max_retries == 1  # default
 
 
 def test_load_agent_config_reads_every_declared_role() -> None:

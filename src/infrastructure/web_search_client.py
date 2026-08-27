@@ -1,5 +1,5 @@
 """The A2A client side of Web Search Agent — `application/supervisor.py`'s
-only path to it (docs/decisions.md #1/#23). Mirrors
+only path to it. Mirrors
 `src.infrastructure.acp.call_router`'s "one call attempt, deadline
 enforced, typed failure" shape, but over the network instead of in-process.
 """
@@ -19,7 +19,7 @@ from src.kernel.settings import load_agent_config
 class WebSearchUnavailableError(Exception):
     """The remote agent reported its search tool as unavailable (task §7
     step 6) — carries the remote `error_type`/`error` for `errors`
-    logging, never the raw exception text (docs/decisions.md #14).
+    logging, never the raw exception text.
     """
 
 
@@ -31,9 +31,8 @@ class WebSearchInvalidResponseError(Exception):
 
 @dataclass(frozen=True)
 class WebSearchCallResult:
-    """`response` plus `retrieval_context` (docs/decisions.md #22) and
-    `tools_called` (Stage 4 Wave B decision D-B7) — all cross the A2A hop
-    in the same reply payload.
+    """`response` plus `retrieval_context` and `tools_called` — all cross
+    the A2A hop in the same reply payload.
     """
 
     response: WebSearchResponse
@@ -56,14 +55,13 @@ def call_web_search(
     Parameters
     ----------
     masked_text : str
-        Already PII-masked (docs/decisions.md #14).
+        Already PII-masked.
     request_id, session_id, trace_id : str
     deadline : datetime
-        Enforced by `send_a2a_message` (docs/decisions.md #19's pattern).
+        Enforced by `send_a2a_message`.
     parent_span_id : str, optional
-        The caller's current Langfuse observation id (Stage 4 decision
-        39), forwarded unchanged to `send_a2a_message`. `None` when
-        tracing is disabled.
+        The caller's current Langfuse observation id, forwarded unchanged
+        to `send_a2a_message`. `None` when tracing is disabled.
     httpx_client : httpx.AsyncClient, optional
         Injected for testing against an in-process ASGI app — production
         callers use the default (a real network client).

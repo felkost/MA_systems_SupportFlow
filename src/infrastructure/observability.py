@@ -1,11 +1,9 @@
 """Langfuse/OTel tracing setup — the one place every process configures its
-own span exporter (CLAUDE.md invariant), composes `should_export_span`
-rather than replacing it, and applies the second, export-time PII barrier
-(docs/decisions.md #14, amended by this stage's own decision 34 — see
-`docs/decisions.md`'s dated addendum under #14).
+own span exporter, composes `should_export_span` rather than replacing
+it, and applies the second, export-time PII barrier.
 
 Confirmed against the installed `langfuse==4.14.4` SDK by direct source
-inspection this stage (not assumed from v2/v3-era docs): the LangChain
+inspection (not assumed from v2/v3-era docs): the LangChain
 integration lives at `langfuse.langchain.CallbackHandler`, not
 `langfuse.callback.CallbackHandler`; cross-process span parenting uses
 Langfuse's own `TraceContext` (`trace_id`+`parent_span_id`), not OTel
@@ -90,9 +88,9 @@ _OWN_SPAN_NAMES = frozenset(
 
 
 def should_export_span(span: Any) -> bool:
-    """Compose onto Langfuse's own default filter, never replace it
-    (CLAUDE.md invariant). Confirmed live (Stage 4 Wave A's own
-    observability smoke test) that every span this project opens manually
+    """Compose onto Langfuse's own default filter, never replace it.
+    Confirmed live (this project's own observability smoke test) that
+    every span this project opens manually
     via `client.start_as_current_observation(...)` already carries
     `is_langfuse_span`'s `scope.name == "langfuse-sdk"` stamp, so
     `is_default_export_span` alone already keeps every one of them —
@@ -105,8 +103,7 @@ def should_export_span(span: Any) -> bool:
 
 
 def mask_otel_spans(*, params: MaskOtelSpansParams) -> MaskOtelSpansResult | None:
-    """Second, independent PII barrier at actual export time
-    (docs/decisions.md #14, decision 34's amendment) — reuses
+    """Second, independent PII barrier at actual export time — reuses
     `src.domain.filters.mask_pii`'s email/phone/card patterns. A raising
     hook drops the *entire* export batch (SDK docstring), so every
     non-`str` attribute value (a legal `bool`/`int`/`float` per
@@ -126,15 +123,14 @@ def mask_otel_spans(*, params: MaskOtelSpansParams) -> MaskOtelSpansResult | Non
 
 def configure_tracing() -> None:
     """Build this process's Langfuse client, once, eagerly — never lazily
-    inside a request path (docs/decisions.md's Stage 4 decision 33): a
-    misconfigured key raising mid-request collides with
+    inside a request path: a misconfigured key raising mid-request
+    collides with
     `src.infrastructure.acp.call_router`'s broad `except Exception`,
     silently relabeling itself as a router-output failure.
 
     No-ops if `settings.tracing_enabled` is `False`. Raises if `True` and
     either Langfuse key is empty — the same "fails loudly at startup,
-    never silently" precedent as a cold-cache prompt fetch
-    (docs/decisions.md #13).
+    never silently" precedent as a cold-cache prompt fetch.
     """
     global _client, _configured
     if _configured:

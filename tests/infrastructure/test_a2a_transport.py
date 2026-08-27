@@ -2,7 +2,7 @@
 no real socket) — proves the hand-assembled server/client wiring actually
 works against the installed `a2a-sdk==1.1.2`, not just that it imports.
 Also proves `request_id`/`session_id`/`trace_id` travel across the hop
-(docs/decisions.md #23) and that `send_a2a_message` fails fast on an
+and that `send_a2a_message` fails fast on an
 already-passed deadline, mirroring `call_router`'s contract
 (`tests/infrastructure/test_acp.py`).
 """

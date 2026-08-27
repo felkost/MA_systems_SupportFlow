@@ -1,7 +1,7 @@
 """One-time interactive Silpo MCP login, writing the resulting OAuth
-tokens to disk via `DiskTokenStorage` (docs/decisions.md #5) — this is
-what Docs Agent's own process reads on every subsequent startup, so it
-never needs this manual step again while the refresh token stays valid.
+tokens to disk via `DiskTokenStorage` — this is what Docs Agent's own
+process reads on every subsequent startup, so it never needs this manual
+step again while the refresh token stays valid.
 
 This performs a real phone+OTP login in a browser. Run it once, by the
 project author, never from application code (the same rule
@@ -54,8 +54,8 @@ async def main() -> None:
     # Monkeypatch the module-level handlers `call_mcp_tool` uses, so this
     # one-off script can drive a real interactive login without adding an
     # interactive code path to production `silpo_mcp.py` itself (that
-    # module's own handlers must keep failing loudly — docs/decisions.md
-    # #5 — an unattended agent process must never try to open a browser).
+    # module's own handlers must keep failing loudly — an unattended
+    # agent process must never try to open a browser).
     import src.infrastructure.silpo_mcp as silpo_mcp
 
     silpo_mcp.redirect_handler = _interactive_redirect_handler

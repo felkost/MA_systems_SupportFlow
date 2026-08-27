@@ -1,28 +1,27 @@
-"""One-iteration meta-prompting cycle for Docs Agent's own prompt (Stage 4
-Wave B decision #49/D-B10, triggered — Support Resolution Quality ~0.61
-(n=8) measured on `evals/docs_optimization_set.json` against
-`supportflow/docs`'s current `production` prompt, decision #54, still
-below the 0.70 orientation floor; judges consistently flag one pattern —
-relevant, honest answers with no concrete next step).
+"""One-iteration meta-prompting cycle for Docs Agent's own prompt,
+triggered because Support Resolution Quality ~0.61 (n=8) measured on
+`evals/docs_optimization_set.json` against `supportflow/docs`'s current
+`production` prompt was still below the 0.70 orientation floor; judges
+consistently flag one pattern — relevant, honest answers with no concrete
+next step.
 
-D-B10's own conditional rule: one round only. This script measures
-`production`, sends the current prompt plus the judges' own low-score
-reasoning to a strong, family-independent model for a single rewrite
-(Docs Agent's own model is `openai/gpt-5.6-luna`; the rewrite uses
-`anthropic/claude-sonnet-5` — same family as the judge but a stronger
-tier, confirmed in `docs/model-prices-2026-08-25-02.md`), seeds the
-result to Langfuse under the `candidate` label (never `production`),
-re-measures against `candidate`, and prints both side by side. It never
-promotes `candidate` to `production` — that label swap is the author's
-own call, made manually after reading this script's output.
+One round only, by design. This script measures `production`, sends the
+current prompt plus the judges' own low-score reasoning to a strong,
+family-independent model for a single rewrite (Docs Agent's own model is
+`openai/gpt-5.6-luna`; the rewrite uses `anthropic/claude-sonnet-5` — same
+family as the judge but a stronger tier), seeds the result to Langfuse
+under the `candidate` label (never `production`), re-measures against
+`candidate`, and prints both side by side. It never promotes `candidate`
+to `production` — that label swap is the author's own call, made manually
+after reading this script's output.
 
     .venv/Scripts/python scripts/meta_prompt_docs.py
 
 Paid, live: >=3 runs x 8 cases x 2 prompt versions = >=48 real Docs Agent
 calls (search-term extraction + compose), >=48 real judge (GEval) calls,
 plus one real rewrite call to the meta-prompt model. State cost/time and
-get the author's permission before running, per CLAUDE.md's
-resource-control rule — this script does not ask for you.
+get the author's permission before running — this script does not ask
+for you.
 """
 
 import asyncio
@@ -47,13 +46,12 @@ from tests.evaluation.harness import (  # noqa: E402
 )
 
 OPTIMIZATION_SET_PATH = Path(PROJECT_ROOT) / "evals" / "docs_optimization_set.json"
-N_RUNS = 3  # decision #17's own n>=3 discipline — a single run is not evidence.
-LOW_SCORE_THRESHOLD = 0.70  # the same orientation floor decision #48 already set.
+N_RUNS = 3  # n>=3 discipline — a single run is not evidence.
+LOW_SCORE_THRESHOLD = 0.70  # the same orientation floor used elsewhere.
 
 # Family-independent from Docs Agent's own model (openai/gpt-5.6-luna) —
 # same family as the judge but a stronger tier for a one-off rewrite,
-# confirmed live in the project's own catalogue
-# (docs/model-prices-2026-08-25-02.md).
+# confirmed live in the project's own catalogue.
 META_PROMPT_MODEL = "anthropic/claude-sonnet-5"
 DOCS_PROMPT_NAME = "supportflow/docs"
 
@@ -85,7 +83,7 @@ def _score_case(case: dict[str, Any], label: str) -> dict[str, Any]:
 
 
 def _run_set(label: str) -> dict[str, list[dict[str, Any]]]:
-    """>=3 runs per case (decision #17's own n>=3 discipline)."""
+    """>=3 runs per case — a single run is not evidence."""
     per_case: dict[str, list[dict[str, Any]]] = {}
     for case in _load_cases():
         print(f"  {case['id']} x{N_RUNS} runs against '{label}'...")
@@ -157,7 +155,7 @@ def main() -> None:
     langfuse.create_prompt(
         name=DOCS_PROMPT_NAME,
         prompt=candidate_prompt,
-        labels=["candidate"],  # never "production" — D-B10's own rule.
+        labels=["candidate"],  # never "production" — that swap is manual.
         type="text",
     )
     langfuse.flush()

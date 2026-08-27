@@ -1,14 +1,13 @@
 """Starts every A2A-hosted agent as its own subprocess and prints a port
-table with measured startup time and peak memory (docs/decisions.md #7 —
-the multi-process topology's own instrument for "does this actually start
-up light and fast", not just asserted).
+table with measured startup time and peak memory — the multi-process
+topology's own instrument for "does this actually start up light and
+fast", not just asserted.
 
 Run manually:
 
     .venv/Scripts/python -m src.interfaces.launcher
 
-Starts both Web Search Agent and Docs Agent (docs/decisions.md #20's two
-waves both landed).
+Starts both Web Search Agent and Docs Agent.
 """
 
 import subprocess
@@ -44,14 +43,14 @@ def _wait_for_ready(
     ----------
     probe : Callable[[], bool]
     timeout : float, default=60.0
-        Live-confirmed 2026-08-26 (Stage 4 Wave B verification session):
-        the original 20.0s default was too tight under real machine load —
-        `docs_a2a_server`'s own agent-card endpoint (a static response,
-        not dependent on the lazily-loaded retriever, docs/decisions.md
-        #7) still failed to answer within 20s during a busy session,
-        raising here and crashing `launcher.py` before either subprocess
-        had a chance to be cleaned up. Widened to match this project's
-        own observed real-world startup variance rather than a guess.
+        Live-confirmed 2026-08-26: the original 20.0s default was too
+        tight under real machine load — `docs_a2a_server`'s own
+        agent-card endpoint (a static response, not dependent on the
+        lazily-loaded retriever) still failed to answer within 20s during
+        a busy session, raising here and crashing `launcher.py` before
+        either subprocess had a chance to be cleaned up. Widened to match
+        this project's own observed real-world startup variance rather
+        than a guess.
     poll_interval : float, default=0.2
 
     Raises
@@ -83,7 +82,7 @@ def launch_agent(role: AgentRole) -> LaunchedAgent:
     Parameters
     ----------
     role : str
-        Must have a `port` in `config/models.yaml` (docs/decisions.md #26).
+        Must have a `port` in `config/models.yaml`.
 
     Returns
     -------

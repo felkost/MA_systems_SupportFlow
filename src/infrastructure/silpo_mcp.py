@@ -1,8 +1,8 @@
-"""Silpo MCP client: tool invocation and the code-level tool allowlist
-(docs/decisions.md #24 — closes F24, the seeded Docs prompt's dead
-file-path reference). OAuth/token lifecycle lives in
-`src.infrastructure.silpo_mcp_auth` (Stage 4 Wave A split — this file was
-already over CLAUDE.md's 320-line ceiling before tracing instrumentation).
+"""Silpo MCP client: tool invocation and the code-level tool allowlist —
+closes the seeded Docs prompt's dead file-path reference. OAuth/token
+lifecycle lives in `src.infrastructure.silpo_mcp_auth` — this file was
+already over the project's line-count ceiling before tracing
+instrumentation.
 
 `OAuthClientProvider` is an `httpx.Auth` subclass that plugs directly into
 `langchain_mcp_adapters.sessions.StreamableHttpConnection(auth=...)`.
@@ -29,11 +29,11 @@ from src.infrastructure.silpo_mcp_auth import (  # noqa: F401
 )
 from src.kernel.settings import settings
 
-# docs/silpo_mcp_allowlist.md: 17 non-personal, read-only tools, derived
-# from each tool's own description (not a name-pattern heuristic) —
-# `silpo_get_loyalty_info`/`silpo_get_promo_codes` are personal despite not
-# matching the `silpo_get_my_*` prefix, so this list is data, not a filter
-# rule Docs Agent could reconstruct from names alone.
+# 17 non-personal, read-only tools, derived from each tool's own
+# description (not a name-pattern heuristic) — `silpo_get_loyalty_info`/
+# `silpo_get_promo_codes` are personal despite not matching the
+# `silpo_get_my_*` prefix, so this list is data, not a filter rule Docs
+# Agent could reconstruct from names alone.
 SILPO_ALLOWLIST: frozenset[str] = frozenset(
     {
         "silpo_find_address",
@@ -58,9 +58,8 @@ SILPO_ALLOWLIST: frozenset[str] = frozenset(
 
 
 class SilpoMcpToolNotAllowedError(Exception):
-    """Attempted to call a tool outside `SILPO_ALLOWLIST` — the code-level
-    enforcement docs/decisions.md #24 requires, independent of whatever
-    the seeded prompt says.
+    """Attempted to call a tool outside `SILPO_ALLOWLIST` — code-level
+    enforcement, independent of whatever the seeded prompt says.
     """
 
 
@@ -117,8 +116,8 @@ async def call_mcp_tool(name: str, args: dict[str, Any]) -> dict[str, Any]:
     # ponytail: opens a fresh MCP session per call rather than reusing one
     # across the bootstrap chain — simpler and safe (OAuth token is
     # disk-cached, so no re-login), at the cost of a few extra round
-    # trips per Docs Agent request. Revisit if latency measurement
-    # (Stage 4) shows this is the bottleneck.
+    # trips per Docs Agent request. Revisit if latency measurement shows
+    # this is the bottleneck.
     """
     if name not in SILPO_ALLOWLIST:
         raise SilpoMcpToolNotAllowedError(name)
@@ -168,7 +167,7 @@ def _parse_tool_result(result: Any) -> dict[str, Any]:
         # Langfuse `silpo_mcp.call_tool` span still records the attempt).
         # Re-raised as this module's own typed error so callers like
         # `search_products` can degrade gracefully without losing the
-        # fact that the call happened (Stage 4 Wave B decision D-B7).
+        # fact that the call happened.
         raise SilpoMcpResultParseError(
             f"malformed MCP tool result JSON: {exc}"
         ) from exc
@@ -181,10 +180,10 @@ CallToolFn = Callable[[str, dict[str, Any]], Awaitable[dict[str, Any]]]
 @dataclass(frozen=True)
 class BranchContext:
     """The non-personal branch/delivery/timeslot context most Silpo MCP
-    product tools require (docs/decisions.md #27) — their own
-    descriptions say to source this from `silpo_get_shopping_cart_by_id`
-    (personal, excluded, docs/decisions.md #2), so this bootstraps the
-    same fields from three allowlisted, non-personal tools instead.
+    product tools require — their own descriptions say to source this
+    from `silpo_get_shopping_cart_by_id` (personal, excluded), so this
+    bootstraps the same fields from three allowlisted, non-personal
+    tools instead.
     """
 
     branch_id: str
@@ -196,7 +195,7 @@ class BranchContext:
 # ponytail: process-lifetime cache, no TTL/staleness check — a branch's
 # delivery/timeslot options rarely change within a single process's
 # uptime. Upgrade to a timestamped, periodically-refreshed cache if
-# Stage 4 measurement shows stale slots causing failed product calls.
+# measurement shows stale slots causing failed product calls.
 _branch_context_cache: BranchContext | None = None
 
 
@@ -217,10 +216,10 @@ async def get_branch_context(
     -------
     tuple[BranchContext, list[str]]
         The context, plus the names of the tools actually called to build
-        it this call — `[]` when served from cache (Stage 4 Wave B
-        decision D-B7.2: a golden-dataset case's `expected_tools` names
-        only the terminal product tool, never these, precisely because
-        whether they fire is cache-timing-dependent).
+        it this call — `[]` when served from cache: a golden-dataset
+        case's `expected_tools` names only the terminal product tool,
+        never these, precisely because whether they fire is
+        cache-timing-dependent.
     """
     global _branch_context_cache
     if _branch_context_cache is not None and not force_refresh:
@@ -237,7 +236,7 @@ async def get_branch_context(
         # requires numbers — an uncast string previously made the server
         # reject the call with an MCP -32602 input-validation error,
         # which _parse_tool_result then tried (and failed) to read as
-        # JSON. docs/decisions.md #51.
+        # JSON.
         {
             "latitude": float(branch["latitude"]),
             "longitude": float(branch["longitude"]),
@@ -273,8 +272,8 @@ async def search_products(
     Parameters
     ----------
     query : str
-        Already translated to Ukrainian (docs/decisions.md #6) — this
-        function has no opinion on language, it only searches.
+        Already translated to Ukrainian — this function has no opinion
+        on language, it only searches.
     limit : int, default=5
     call_tool : CallToolFn, default=`call_mcp_tool`
         Injected for testing.
@@ -283,10 +282,10 @@ async def search_products(
     -------
     tuple[list[dict[str, Any]], list[str]]
         Raw product dicts from the tool's `queries[0].products` (`[]` if
-        nothing matched), plus the tool names actually called this call
-        (Stage 4 Wave B decision D-B7) — appended only after
-        `silpo_find_products_batch` itself returns, mirroring
-        `retrieval_context`'s "actually retrieved" semantics.
+        nothing matched), plus the tool names actually called this
+        call — appended only after `silpo_find_products_batch` itself
+        returns, mirroring `retrieval_context`'s "actually retrieved"
+        semantics.
     """
     context, tool_names = await get_branch_context(call_tool=call_tool)
     tool_names = tool_names + ["silpo_find_products_batch"]
@@ -301,7 +300,6 @@ async def search_products(
                 # Live-confirmed 2026-08-26: "batch" is literal — the tool
                 # takes an array of queries (its own response echoes back
                 # one `queries[i]` entry per input), not a bare string.
-                # docs/decisions.md #52.
                 "products": [query],
                 "limit": limit,
             },

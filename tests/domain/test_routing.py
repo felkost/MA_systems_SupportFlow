@@ -1,5 +1,5 @@
 """`decide_route()` tested exhaustively as a pure function — this is where
-route correctness lives, independent of any graph (docs/decisions.md #16).
+route correctness lives, independent of any graph.
 """
 
 import pytest

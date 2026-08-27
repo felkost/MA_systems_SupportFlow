@@ -1,12 +1,12 @@
-"""Silpo MCP OAuth: persistent token storage and the manual-login contract
-(docs/decisions.md #5). Split out of `silpo_mcp.py` (Stage 4 Wave A) as a
-genuine responsibility split — token lifecycle versus tool invocation —
-not a constants-only extraction; `silpo_mcp.py` was already over CLAUDE.md's
-320-line ceiling before Wave A added tracing instrumentation to it.
+"""Silpo MCP OAuth: persistent token storage and the manual-login
+contract. Split out of `silpo_mcp.py` as a genuine responsibility split —
+token lifecycle versus tool invocation — not a constants-only extraction;
+`silpo_mcp.py` was already over the project's line-count ceiling before
+tracing instrumentation was added to it.
 
 Confirmed against the installed `mcp==1.29.0` package by direct source
-inspection (see insights.md, 2026-08-25): `TokenStorage` is a
-`typing.Protocol` with four async methods, no inheritance required.
+inspection: `TokenStorage` is a `typing.Protocol` with four async
+methods, no inheritance required.
 """
 
 import json
@@ -21,16 +21,16 @@ DEFAULT_TOKEN_PATH = PROJECT_ROOT / ".cache" / "silpo_mcp_token.json"
 
 class SilpoMcpAuthRequiredError(Exception):
     """No valid token on disk and no automated login exists — Silpo's
-    OAuth is phone+OTP against a real account (docs/decisions.md #5),
-    so this fails loudly rather than attempting to open a browser from
-    inside an unattended agent process.
+    OAuth is phone+OTP against a real account, so this fails loudly
+    rather than attempting to open a browser from inside an unattended
+    agent process.
     """
 
 
 class DiskTokenStorage:
     """`mcp.client.auth.oauth2.TokenStorage` implementation backed by one
-    JSON file (docs/decisions.md #5). Never logged, never sent to
-    Langfuse — `.cache/` is gitignored.
+    JSON file. Never logged, never sent to Langfuse — `.cache/` is
+    gitignored.
 
     Implements `TokenStorage`'s four async methods structurally (it is a
     `Protocol`, not an ABC — no inheritance declared, matching the
@@ -76,7 +76,7 @@ async def redirect_handler(authorization_url: str) -> None:
     """
     raise SilpoMcpAuthRequiredError(
         "No valid Silpo MCP token on disk. A human must complete the "
-        "phone+OTP login once (docs/decisions.md #5) — authorization URL: "
+        "phone+OTP login once — authorization URL: "
         f"{authorization_url}"
     )
 

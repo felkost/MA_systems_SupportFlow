@@ -1,14 +1,13 @@
-"""The in-process delegation channel for Router and Escalation
-(docs/decisions.md #1, #19). `infrastructure`, not `application` — this is
-a transport client, and `tests/test_layering.py` allows
-application-to-application imports, so misplacing it there would pass
-silently (docs/decisions.md #9's lane-1 finding).
+"""The in-process delegation channel for Router and Escalation.
+`infrastructure`, not `application` — this is a transport client, and
+`tests/test_layering.py` allows application-to-application imports, so
+misplacing it there would pass silently.
 
 `call_router` is one call attempt: it enforces `envelope.deadline`, fetches
 the versioned prompt, calls the model, and validates the result. Retry and
-fail-closed policy (docs/decisions.md #12) is `application/router_agent.py`'s
-job, not this module's — this module has no opinion about what happens when
-it fails, only about failing loudly and on time.
+fail-closed policy is `application/router_agent.py`'s job, not this
+module's — this module has no opinion about what happens when it fails,
+only about failing loudly and on time.
 """
 
 import time
@@ -34,16 +33,15 @@ class AcpEnvelope(BaseModel):
     ----------
     request_id : str
     session_id : str
-        docs/decisions.md #19 — task §9 requires it in observation
-        metadata; the draft envelope had no path for it.
+        Task §9 requires it in observation metadata; the draft envelope
+        had no path for it.
     task : {"classify", "escalate"}
     deadline : datetime
         Timezone-aware. `call_router` raises `TimeoutError` if this has
         already passed by the time the model call would return.
     trace_id : str
     payload : str
-        The masked customer message (docs/decisions.md #14) — never the
-        raw one.
+        The masked customer message — never the raw one.
     """
 
     request_id: str
@@ -72,7 +70,7 @@ def call_router(envelope: AcpEnvelope) -> tuple[ClassificationOutput, int]:
     -------
     (ClassificationOutput, int)
         The validated classification and the resolved Langfuse prompt
-        version actually used (docs/decisions.md #13 — captured here so
+        version actually used — captured here so
         `application/router_agent.py` can put it in
         `SupportFlowState.router_prompt_version`).
 
@@ -85,7 +83,7 @@ def call_router(envelope: AcpEnvelope) -> tuple[ClassificationOutput, int]:
 
     Notes
     -----
-    docs/decisions.md #19: `deadline` is enforced here, not merely carried
+    `deadline` is enforced here, not merely carried
     — a field nothing checks reads as a control during review while
     providing none.
     """

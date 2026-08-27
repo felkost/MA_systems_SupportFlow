@@ -1,15 +1,13 @@
 """Hybrid retrieval over the internal knowledge base — Chroma (semantic)
-+ BM25 (keyword) combined via `EnsembleRetriever` (docs/decisions.md #7).
++ BM25 (keyword) combined via `EnsembleRetriever`.
 
 Heavy ML imports (`langchain_huggingface`'s embedding model, `chromadb`)
 stay inside `build_retriever()`, never at module top level, and the
 retriever itself is built once, lazily, on Docs Agent's first use — not
-at any process's startup (docs/decisions.md #7). Confirmed against the
-installed packages: `EnsembleRetriever` lives in
-`langchain_classic.retrievers.ensemble` (not `langchain.retrievers` —
-that module doesn't exist in `langchain==1.3.16`'s layout), `BM25Retriever`
-still comes from `langchain_community.retrievers` (insights.md,
-2026-08-25).
+at any process's startup. Confirmed against the installed packages:
+`EnsembleRetriever` lives in `langchain_classic.retrievers.ensemble` (not
+`langchain.retrievers` — that module doesn't exist in `langchain==1.3.16`'s
+layout), `BM25Retriever` still comes from `langchain_community.retrievers`.
 """
 
 import json

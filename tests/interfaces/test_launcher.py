@@ -1,8 +1,8 @@
-"""`_wait_for_ready`'s polling logic (docs/decisions.md #7) — the one
-piece of `src.interfaces.launcher` testable without actually spawning an
-OS process. Spawning and measuring a real subprocess is exercised
-manually (Wave 2a go/no-go, docs/decisions.md #20), the same way
-`scripts/probe_silpo_mcp.py` and `scripts/run_router_gate.py` are.
+"""`_wait_for_ready`'s polling logic — the one piece of
+`src.interfaces.launcher` testable without actually spawning an OS
+process. Spawning and measuring a real subprocess is exercised manually,
+the same way `scripts/probe_silpo_mcp.py` and `scripts/run_router_gate.py`
+are.
 """
 
 import pytest

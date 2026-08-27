@@ -1,11 +1,10 @@
-"""Shared A2A plumbing for both A2A-hosted agents (Docs, Web Search —
-docs/decisions.md #1). One module, reused by both `interfaces/*_a2a_server.py`
-entrypoints and by `application`'s node functions, so the client/server
-wiring is written once, not duplicated per agent.
+"""Shared A2A plumbing for both A2A-hosted agents (Docs, Web Search). One
+module, reused by both `interfaces/*_a2a_server.py` entrypoints and by
+`application`'s node functions, so the client/server wiring is written
+once, not duplicated per agent.
 
 Confirmed against the installed `a2a-sdk==1.1.2` package by direct
-`inspect`/`dir()` probing (see docs/decisions.md #23, insights.md
-2026-08-25) — this version has no `A2AStarletteApplication`/
+`inspect`/`dir()` probing — this version has no `A2AStarletteApplication`/
 `DefaultRequestHandler`/built-in trace propagation; a server is
 hand-assembled from `FastAPI()` + `add_a2a_routes_to_fastapi()`, and
 `request_id`/`session_id`/`trace_id`/`deadline` travel in
@@ -42,7 +41,7 @@ from fastapi import FastAPI
 
 from src.infrastructure.observability import get_langfuse_client
 
-# docs/decisions.md #23: only "1.0" is negotiated by this SDK version.
+# Only "1.0" is negotiated by this SDK version.
 _PROTOCOL_VERSION = "1.0"
 
 
@@ -69,7 +68,7 @@ def build_agent_card(name: str, description: str, url: str) -> AgentCard:
     -------
     AgentCard
         A protobuf message (`a2a.types.a2a_pb2.AgentCard`), not Pydantic —
-        confirmed by SDK probe, docs/decisions.md #23.
+        confirmed by SDK probe.
     """
     return AgentCard(
         name=name,
@@ -113,8 +112,8 @@ def build_server_app(agent_executor: AgentExecutor, agent_card: AgentCard) -> Fa
 
 
 def read_request_metadata(context: RequestContext) -> dict[str, str]:
-    """The `request_id`/`session_id`/`trace_id`/`deadline` the client sent
-    (docs/decisions.md #23). `RequestContext.metadata` (confirmed by
+    """The `request_id`/`session_id`/`trace_id`/`deadline` the client sent.
+    `RequestContext.metadata` (confirmed by
     reading the installed SDK's source, not its `__init__` signature —
     `RequestContext` exposes `metadata`/`message` properties, not a
     `.request` attribute) already returns a plain `dict[str, str]`.
@@ -210,18 +209,17 @@ def send_a2a_message(
     base_url : str
         The target agent's A2A server base URL.
     text : str
-        Already-masked payload (docs/decisions.md #14) — never raw
-        customer text.
+        Already-masked payload — never raw customer text.
     request_id, session_id, trace_id : str
-        Carried in `SendMessageRequest.metadata` (docs/decisions.md #23).
+        Carried in `SendMessageRequest.metadata`.
     deadline : datetime
         Timezone-aware. Raises `A2ATimeoutError` if already passed.
     httpx_client : httpx.AsyncClient, optional
         Injected for testing (an ASGI-transport client against an in-process
         app, no real socket) — defaults to a real network client.
     parent_span_id : str, optional
-        The caller's current Langfuse observation id (Stage 4 decision 39)
-        — carried in `SendMessageRequest.metadata` alongside `trace_id` so
+        The caller's current Langfuse observation id — carried in
+        `SendMessageRequest.metadata` alongside `trace_id` so
         the callee's own root span parents onto this trace. `None` when
         tracing is disabled.
 
@@ -239,8 +237,8 @@ def send_a2a_message(
 
     Notes
     -----
-    Opens its own client-side Langfuse span around the network call
-    (Stage 4 decision 39) — a connection failure before the callee ever
+    Opens its own client-side Langfuse span around the network call — a
+    connection failure before the callee ever
     opens its own root span (refused connection, timeout, DNS failure —
     precisely task §7's escalation trigger) would otherwise leave no trace
     record at all. The exception always propagates unchanged; Langfuse's

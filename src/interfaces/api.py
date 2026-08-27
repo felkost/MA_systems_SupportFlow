@@ -8,7 +8,7 @@ confirmation step (`escalation_agent.py::_default_confirm`) blocks on
 — never true for a uvicorn worker thread serving a browser request. This is
 the same "automated run" case `tests/evaluation/harness.py`'s own
 `_bypass_hitl()` and `scripts/golden_dataset_smoke.py` already handle
-(CLAUDE.md's "explicit bypass flag in automated runs") — scoped with
+— an explicit bypass flag for automated runs — scoped with
 try/finally, never a permanent module-level mutation, since `settings` is a
 process-wide singleton other code (and, in the test process, other test
 modules) also reads. `ALLOW_REAL_SEND` is untouched, so this alone never
@@ -100,8 +100,8 @@ def set_real_send(payload: RealSendToggleRequest) -> dict[str, bool]:
     toggled again, matching the author's own request ("turn it on, it
     works with Telegram; turn it off, it doesn't").
 
-    Carries the same risk `/chat`'s own no-auth design already accepts
-    (decision 5): this endpoint has no auth either, only CORS restricting
+    Carries the same risk `/chat`'s own no-auth design already accepts:
+    this endpoint has no auth either, only CORS restricting
     it to the local frontend origin — acceptable for a local demo, not a
     hosted deployment.
     """

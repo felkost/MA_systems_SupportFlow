@@ -1,5 +1,5 @@
 """`SupportFlowState`'s own shape, beyond what `test_supervisor.py`'s
-higher-level tests already exercise (docs/decisions.md Stage 4 Wave B).
+higher-level tests already exercise.
 """
 
 from src.application.supervisor import build_initial_state

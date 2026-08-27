@@ -2,11 +2,10 @@
 fallback (task §3/§13). `search()`'s fallback control flow takes injected
 provider callables so it is testable without any network call — the real
 `_tavily_search`/`_ddgs_search` bodies are exercised only by the manual
-smoke path (docs/decisions.md #21), never by `pytest --cov=src`.
+smoke path, never by `pytest --cov=src`.
 
 Confirmed against the installed `tavily-python==0.8.0` and `ddgs==9.15.0`
-packages (`TavilyClient.search`, `DDGS.text`), not assumed from docs —
-`insights.md`, 2026-08-25.
+packages (`TavilyClient.search`, `DDGS.text`), not assumed from docs.
 """
 
 from collections.abc import Callable
@@ -27,7 +26,7 @@ class SearchResult(BaseModel):
     url : str
     content : str
         The snippet/summary text the provider returned — this becomes one
-        entry of `SupportFlowState.retrieval_context` (docs/decisions.md #22).
+        entry of `SupportFlowState.retrieval_context`.
     """
 
     title: str
@@ -45,10 +44,10 @@ class SearchUnavailableError(Exception):
 class SearchOutcome:
     """`search()`'s result plus which provider actually served it.
 
-    Stage 4 Wave B decision D-B7.4: `Source.ref` (the mandatory response
-    model's own field) carries no provider tag — it is free-form,
-    LLM-generated text — so `SupportFlowState.tools_called` needs this
-    signal from `search()` itself, not inferred after the fact.
+    `Source.ref` (the mandatory response model's own field) carries no
+    provider tag — it is free-form, LLM-generated text — so
+    `SupportFlowState.tools_called` needs this signal from `search()`
+    itself, not inferred after the fact.
     """
 
     results: list[SearchResult]
@@ -59,8 +58,8 @@ SearchFn = Callable[[str], SearchOutcome]
 
 
 def _tavily_search(query: str) -> list[SearchResult]:
-    # Lazy import per docs/decisions.md #7's "heavy import inside the
-    # function that uses it" discipline; no py.typed stubs upstream.
+    # Lazy import: heavy import inside the function that uses it; no
+    # py.typed stubs upstream.
     from tavily import TavilyClient  # type: ignore[import-untyped]
 
     client = TavilyClient(api_key=settings.tavily_api_key)
@@ -76,7 +75,7 @@ def _tavily_search(query: str) -> list[SearchResult]:
 
 
 def _ddgs_search(query: str) -> list[SearchResult]:
-    from ddgs import DDGS  # lazy per docs/decisions.md #7
+    from ddgs import DDGS  # lazy: heavy import inside the function that uses it
 
     with DDGS() as ddgs:
         hits = ddgs.text(query, max_results=5)

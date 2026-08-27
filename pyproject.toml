@@ -20,7 +20,7 @@ ignore_missing_imports = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
-# Stage 4 Wave B: `eval`-marked tests make real LLM/Silpo MCP/Tavily/
+# `eval`-marked tests make real LLM/Silpo MCP/Tavily/
 # Telegram calls (the golden-dataset run) — excluded by default so plain
 # `pytest --cov=src` keeps the README's Gate promise ("never makes a live
 # call"). Run them deliberately with `pytest -m eval tests/test_golden_dataset.py`

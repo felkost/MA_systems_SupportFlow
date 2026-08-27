@@ -1,6 +1,6 @@
 """The A2A client side of Docs Agent — `application/supervisor.py`'s only
-path to it (docs/decisions.md #1/#23). Mirrors
-`src.infrastructure.web_search_client.call_web_search`'s shape.
+path to it. Mirrors `src.infrastructure.web_search_client.call_web_search`'s
+shape.
 """
 
 import json
@@ -18,7 +18,7 @@ from src.kernel.settings import load_agent_config
 class DocsUnavailableError(Exception):
     """The remote Docs Agent reported an invalid-output failure (task §7
     step 6) — carries the remote `error_type`/`error`, never the raw
-    exception text (docs/decisions.md #14).
+    exception text.
     """
 
 
@@ -30,8 +30,7 @@ class DocsInvalidResponseError(Exception):
 
 @dataclass(frozen=True)
 class DocsCallResult:
-    """`response` plus `retrieval_context` (docs/decisions.md #22) and
-    `tools_called` (Stage 4 Wave B decision D-B7)."""
+    """`response` plus `retrieval_context` and `tools_called`."""
 
     response: DocsResponse
     retrieval_context: list[str]
@@ -53,14 +52,13 @@ def call_docs_agent(
     Parameters
     ----------
     masked_text : str
-        Already PII-masked (docs/decisions.md #14).
+        Already PII-masked.
     request_id, session_id, trace_id : str
     deadline : datetime
         Enforced by `send_a2a_message`.
     parent_span_id : str, optional
-        The caller's current Langfuse observation id (Stage 4 decision
-        39), forwarded unchanged to `send_a2a_message`. `None` when
-        tracing is disabled.
+        The caller's current Langfuse observation id, forwarded unchanged
+        to `send_a2a_message`. `None` when tracing is disabled.
     httpx_client : httpx.AsyncClient, optional
         Injected for testing against an in-process ASGI app.
 

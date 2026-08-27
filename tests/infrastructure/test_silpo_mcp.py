@@ -1,7 +1,7 @@
 """Silpo MCP client: disk-backed `TokenStorage` round-trip and allowlist
-enforcement (docs/decisions.md #5/#24). The MCP session itself is never
-touched here — `pytest` mocks it completely (docs/decisions.md #21); a
-live check is `scripts/docs_agent_smoke.py`, run manually.
+enforcement. The MCP session itself is never touched here — `pytest`
+mocks it completely; a live check is `scripts/docs_agent_smoke.py`, run
+manually.
 """
 
 from pathlib import Path
@@ -88,7 +88,6 @@ def test_filter_allowed_tools_keeps_only_allowlisted_names() -> None:
 
 
 def test_allowlist_has_exactly_seventeen_non_personal_read_only_tools() -> None:
-    # docs/silpo_mcp_allowlist.md: 17 non-personal, read-only tools.
     assert len(SILPO_ALLOWLIST) == 17
     assert "silpo_get_my_shopping_cart" not in SILPO_ALLOWLIST
     assert "silpo_add_or_update_cart_products" not in SILPO_ALLOWLIST
@@ -127,9 +126,9 @@ def test_parse_tool_result_raises_typed_error_on_malformed_json() -> None:
 async def _fake_call_tool(name: str, args: dict) -> dict:
     if name == "silpo_list_branches":
         # Live-confirmed 2026-08-26: the real MCP server returns these as
-        # strings, not numbers (docs/decisions.md #51) — kept as strings
-        # here too so a regression that drops get_branch_context's own
-        # float() cast fails this fake exactly like the real server did.
+        # strings, not numbers — kept as strings here too so a regression
+        # that drops get_branch_context's own float() cast fails this fake
+        # exactly like the real server did.
         return {
             "branches": [
                 {
@@ -155,8 +154,8 @@ async def _fake_call_tool(name: str, args: dict) -> dict:
             ]
         }
     if name == "silpo_find_products_batch":
-        # Live-confirmed 2026-08-26 (docs/decisions.md #52): "batch" is
-        # literal — the tool requires an array of queries, not a bare
+        # Live-confirmed 2026-08-26: "batch" is literal — the tool
+        # requires an array of queries, not a bare
         # string; a caller passing a string gets a -32602 validation
         # error the server returns as unparseable text, not a clean
         # error, so a regression here fails loudly.
@@ -191,8 +190,8 @@ async def test_get_branch_context_bootstraps_from_non_personal_tools_only() -> N
 
 @pytest.mark.asyncio
 async def test_get_branch_context_reports_no_tool_names_when_cached() -> None:
-    """Stage 4 Wave B decision D-B7.2: a golden-dataset `expected_tools`
-    entry must not depend on whether the cache happened to be warm.
+    """A golden-dataset `expected_tools` entry must not depend on whether
+    the cache happened to be warm.
     """
     silpo_mcp._branch_context_cache = None
     await get_branch_context(call_tool=_fake_call_tool)

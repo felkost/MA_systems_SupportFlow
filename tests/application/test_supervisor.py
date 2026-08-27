@@ -1,7 +1,6 @@
-"""Graph edge dispatch (docs/decisions.md #16): a test asserts only that
+"""Graph edge dispatch: a test asserts only that
 the router's conditional edge reaches the *expected* node — never that
-that node produces a working result. Docs, Web Search, and Escalation
-Agent are all real as of Stage 3 (docs/decisions.md #20); their tests mock
+that node produces a working result. Their tests mock
 only `call_docs_agent`/`call_web_search`/`run_escalation_agent` (the
 external boundary each node crosses), never a real network/LLM call.
 """
@@ -215,9 +214,8 @@ def test_critical_classification_dispatches_to_escalate_node(
 def test_router_exhaustion_also_dispatches_to_escalate_node(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    # docs/decisions.md #12: Router's own failure fails closed to
-    # Escalation, exercised through the graph rather than router_agent
-    # directly.
+    # Router's own failure fails closed to Escalation, exercised through
+    # the graph rather than router_agent directly.
     monkeypatch.setattr(
         graph_nodes,
         "run_router",

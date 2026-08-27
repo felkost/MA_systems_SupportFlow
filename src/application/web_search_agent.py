@@ -1,8 +1,8 @@
 """Web Search Agent orchestration: call the search tool, fence the
-retrieved content as untrusted data (docs/decisions.md #24 — F3, mirrors
-Decision 18's customer-message fencing), then compose a `WebSearchResponse`.
+retrieved content as untrusted data, mirroring the customer-message
+fencing, then compose a `WebSearchResponse`.
 
-Runs inside the Web Search A2A server process (docs/decisions.md #1) —
+Runs inside the Web Search A2A server process —
 `src/interfaces/web_search_a2a_server.py`'s `AgentExecutor` is the only
 caller. `src/application/supervisor.py` must never import this module
 directly (it reaches Web Search Agent only through the A2A client,
@@ -38,14 +38,13 @@ class WebSearchAgentResult:
     retrieval_context : list[str]
         The raw search-result snippets actually used, carried alongside
         `response` in the A2A reply so `SupportFlowState.retrieval_context`
-        (docs/decisions.md #22) can be populated even though Web Search
-        Agent runs in its own process (docs/decisions.md #1) — without
-        this, Stage 4's `FaithfulnessMetric` would have nothing to score
-        the Web Search route against.
+        can be populated even though Web Search Agent runs in its own
+        process — without this, the `FaithfulnessMetric` would have
+        nothing to score the Web Search route against.
     tools_called : list[str]
-        Which provider actually served the result (Stage 4 Wave B
-        decision D-B7) — `["tavily"]` or `["duckduckgo"]`, populated only
-        once `search()` has actually returned.
+        Which provider actually served the result — `["tavily"]` or
+        `["duckduckgo"]`, populated only once `search()` has actually
+        returned.
     """
 
     response: WebSearchResponse
@@ -61,8 +60,8 @@ def run_web_search(
     Parameters
     ----------
     masked_query : str
-        Already PII-masked (docs/decisions.md #14) — Web Search Agent must
-        never receive raw personal data (task §4/§9).
+        Already PII-masked — Web Search Agent must never receive raw
+        personal data (task §4/§9).
     search_fn : SearchFn, default=`src.infrastructure.web_search.search`
         Injected for testing the tool-unavailable path without a network
         call; production callers use the default.
@@ -71,7 +70,7 @@ def run_web_search(
     -------
     WebSearchAgentResult
         `response.sources[].retrieved_at` is stamped with this call's own
-        fetch time, not left to the model to guess (docs/decisions.md #15).
+        fetch time, not left to the model to guess.
 
     Raises
     ------
@@ -112,7 +111,7 @@ def run_web_search(
             raw = structured_model.invoke(compiled_prompt)
             if generation is not None:
                 usage = getattr(raw.get("raw"), "usage_metadata", None) or {}
-                # See docs_agent.py's identical fix, Stage 4 Wave B D-B2.
+                # See docs_agent.py's identical fix.
                 generation.update(
                     usage_details=dict(usage),
                     input=compiled_prompt,
@@ -126,8 +125,8 @@ def run_web_search(
             f"model returned no valid WebSearchResponse: {raw.get('parsing_error')}"
         )
 
-    # docs/decisions.md #15: this call's own fetch time is authoritative,
-    # not whatever timestamp the model guessed at.
+    # This call's own fetch time is authoritative, not whatever timestamp
+    # the model guessed at.
     result.sources = [
         source.model_copy(update={"retrieved_at": fetched_at})
         for source in result.sources

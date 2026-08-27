@@ -1,4 +1,4 @@
-"""Docs Agent's A2A server entrypoint (docs/decisions.md #1). Hosts
+"""Docs Agent's A2A server entrypoint. Hosts
 `src.application.docs_agent.run_docs_agent` behind the A2A protocol —
 `application/supervisor.py` reaches it only over the network, never by
 direct import (`tests/test_layering.py`).
@@ -37,8 +37,7 @@ class DocsExecutor(AgentExecutor):
 
     A failure is reported back as a JSON error payload in the reply text,
     not as a transport-level error — same contract as
-    `src.interfaces.web_search_a2a_server.WebSearchExecutor`
-    (docs/decisions.md #23).
+    `src.interfaces.web_search_a2a_server.WebSearchExecutor`.
     """
 
     async def execute(self, context: RequestContext, event_queue: EventQueue) -> None:
@@ -68,11 +67,9 @@ class DocsExecutor(AgentExecutor):
                     }
                 )
             except (DocsInvalidOutputError, SilpoMcpAuthRequiredError) as exc:
-                # docs/decisions.md Stage 4 Wave B D-B3: an uncaught
-                # SilpoMcpAuthRequiredError here crashes the request-
-                # handling task instead of reaching docs_client.py as a
-                # readable error — this is the layer round 1 of that
-                # wave's kickoff review missed.
+                # An uncaught SilpoMcpAuthRequiredError here crashes the
+                # request-handling task instead of reaching docs_client.py
+                # as a readable error.
                 reply_text = json.dumps(
                     {"error_type": type(exc).__name__, "error": str(exc)}
                 )
@@ -106,8 +103,7 @@ def build_app() -> FastAPI:
 def main() -> None:
     # Eagerly configured here, not in launcher.py — launcher.py spawns
     # this module as a real subprocess (`subprocess.Popen`), so a call in
-    # launcher.py's own body would never reach this process
-    # (docs/decisions.md Stage 4 decision 33's second-round correction).
+    # launcher.py's own body would never reach this process.
     configure_tracing()
     config = load_agent_config("docs")
     if config.port is None:

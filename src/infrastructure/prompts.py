@@ -1,5 +1,5 @@
-"""Fetch a versioned system prompt from Langfuse Prompt Management
-(docs/decisions.md #13). Never a hardcoded string — the Langfuse SDK's own
+"""Fetch a versioned system prompt from Langfuse Prompt Management.
+Never a hardcoded string — the Langfuse SDK's own
 prompt cache absorbs a transient outage; only a cold-cache failure (no
 cached copy at all) is allowed to raise.
 
@@ -15,8 +15,8 @@ from langfuse import Langfuse
 from src.infrastructure.observability import get_langfuse_client
 from src.kernel.settings import settings
 
-# docs/decisions.md #13: a stale cached prompt is acceptable; only a
-# cold-cache fetch (no cache at all yet) is fatal. 5 minutes bounds how
+# A stale cached prompt is acceptable; only a cold-cache fetch (no cache
+# at all yet) is fatal. 5 minutes bounds how
 # long a Langfuse outage can go undetected while still serving requests.
 _CACHE_TTL_SECONDS = 300
 _FETCH_TIMEOUT_SECONDS = 5
@@ -27,8 +27,8 @@ _bare_client: Langfuse | None = None
 def _get_client() -> Langfuse:
     """The process's traced client if tracing is configured, otherwise a
     bare, untraced client of its own — prompt-fetching must keep working
-    independent of tracing state (docs/decisions.md Stage 4 decision 33).
-    Driven by `get_langfuse_client()`'s actual return value, never by
+    independent of tracing state. Driven by `get_langfuse_client()`'s
+    actual return value, never by
     re-reading `settings.tracing_enabled` directly: a process where
     `configure_tracing()` was never called (e.g. a topology mistake) would
     otherwise misread "tracing enabled" as true, skip this fallback, and
@@ -50,8 +50,8 @@ def _get_client() -> Langfuse:
 def get_prompt_client(name: str, label: str = "production") -> Any:
     """Fetch the raw `TextPromptClient`/`ChatPromptClient` object — needed
     where a caller must attach the prompt to a Langfuse generation span
-    (`start_as_current_observation(..., prompt=<PromptClient>)`, Stage 4)
-    rather than just read its text/version. `get_prompt` below is a thin
+    (`start_as_current_observation(..., prompt=<PromptClient>)`) rather
+    than just read its text/version. `get_prompt` below is a thin
     wrapper over this for callers that only need the two plain values.
 
     Parameters
@@ -85,8 +85,8 @@ def get_prompt(name: str, label: str = "production") -> tuple[str, int]:
     name : str
         Langfuse prompt name (e.g. `"supportflow/router"`).
     label : str, default="production"
-        Mutable — docs/decisions.md #13 is why the *resolved* version is
-        returned rather than the caller re-deriving it from the label.
+        Mutable — this is why the *resolved* version is returned rather
+        than the caller re-deriving it from the label.
 
     Returns
     -------
@@ -96,8 +96,8 @@ def get_prompt(name: str, label: str = "production") -> tuple[str, int]:
     ------
     Exception
         Whatever the Langfuse SDK raises on a cold-cache fetch failure
-        (no network and no prior cached copy) — propagated unchanged, per
-        docs/decisions.md #13: never substitute a hardcoded string.
+        (no network and no prior cached copy) — propagated unchanged;
+        never substitute a hardcoded string.
     """
     prompt_client = get_prompt_client(name, label)
     return prompt_client.prompt, prompt_client.version

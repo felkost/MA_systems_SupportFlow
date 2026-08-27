@@ -1,11 +1,11 @@
-"""Input filter tests (task §7 step 1, docs/decisions.md #10). This is a
+"""Input filter tests (task §7 step 1). This is a
 data-protection code path — task §10 requires 100% coverage here, not the
 general 80% target.
 
-The fixture tables are the measured-recall artefact docs/decisions.md #10
+The fixture tables are the measured-recall artefact this test suite
 commits to: `test_pii_fixture_recall` asserts every positive fixture is
 caught, and reports the count so recall is a number with its n, not a
-claim of "handles PII" (agentic-project-delivery's honesty contract).
+claim of "handles PII".
 """
 
 from src.domain.filters import (
@@ -17,10 +17,9 @@ from src.domain.filters import (
 )
 
 # --- PII fixtures: (text, should_be_flagged) ---------------------------
-# Positive cases are drawn from docs/decisions.md #10's named failure
-# modes (F8): spaced/dashed digits, spelled-out digits, Cyrillic input.
-# Negative cases include order numbers (F9) — the false-positive the Luhn
-# check exists to avoid.
+# Positive cases cover named failure modes: spaced/dashed digits,
+# spelled-out digits, Cyrillic input. Negative cases include order
+# numbers — the false-positive the Luhn check exists to avoid.
 _PII_FIXTURES: list[tuple[str, bool]] = [
     ("Зв'яжіться зі мною за номером 0671234567", True),
     ("+380 67 123 45 67 подзвоніть будь ласка", True),

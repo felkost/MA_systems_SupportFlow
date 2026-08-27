@@ -2,10 +2,9 @@
 
 `Source` is not one of the four mandatory models — it is the element type
 of `DocsResponse.sources` / `WebSearchResponse.sources`, structured instead
-of `list[str]` per docs/decisions.md #15: task §6 asks only for "sources",
-but a bare string can neither carry a retrieval timestamp (staleness,
-docs/decisions.md #15) nor populate DeepEval's `retrieval_context` for
-`FaithfulnessMetric` at Stage 4.
+of `list[str]`: task §6 asks only for "sources", but a bare string can
+neither carry a retrieval timestamp (staleness) nor populate DeepEval's
+`retrieval_context` for `FaithfulnessMetric`.
 """
 
 from datetime import datetime
@@ -26,10 +25,10 @@ class Source(BaseModel):
         A URL, document id, or MCP tool-call identifier — whatever
         identifies where this came from.
     retrieved_at : datetime
-        When this value was fetched. docs/decisions.md #15: a quoted price
-        or availability fact is wrong the moment it goes stale; carrying
-        this lets an agent's prompt say "станом на …" instead of stating a
-        fact as if it were current forever.
+        When this value was fetched. A quoted price or availability fact
+        is wrong the moment it goes stale; carrying this lets an agent's
+        prompt say "станом на …" instead of stating a fact as if it were
+        current forever.
     version : str, default=""
         A rule version or document version, when the source has one (task
         §5: "every knowledge-base document has a source, retrieval date,
@@ -54,8 +53,8 @@ class ClassificationOutput(BaseModel):
     language : str
         ISO 639-1 code (the seeded `supportflow/router` prompt instructs
         this format explicitly). Self-reported by the same LLM that
-        classifies the message — docs/decisions.md #10 notes this is an
-        accepted trade-off, not a proven-accurate signal.
+        classifies the message — an accepted trade-off, not a
+        proven-accurate signal.
     """
 
     category: Category
@@ -71,9 +70,8 @@ class DocsResponse(BaseModel):
     answer : str
     sources : list[Source], default=[]
     confidence : float
-        0 to 1 (task §6). Self-reported by the answering LLM — see
-        docs/decisions.md #12's note (F19) on why this is an unvalidated
-        gate until Stage 4 measures it against judged correctness.
+        0 to 1 (task §6). Self-reported by the answering LLM — an
+        unvalidated gate until measured against judged correctness.
     """
 
     answer: str
@@ -103,8 +101,8 @@ class EscalationOutput(BaseModel):
         What the customer is told is happening next. The seeded
         `supportflow/escalation` prompt forbids full address/phone/email/
         payment data here — a prompt instruction, not a control; the
-        deterministic filter from docs/decisions.md #14 runs over this
-        field before it is written or sent (Stage 3 build, decided now).
+        deterministic filter runs over this field before it is written or
+        sent.
     attempted_resolution : str
         What was already tried, so an operator never re-derives it.
     """
