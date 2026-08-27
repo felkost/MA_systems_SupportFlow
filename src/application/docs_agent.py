@@ -79,6 +79,22 @@ def _get_retriever() -> Any:
     return _retriever_singleton
 
 
+def warm_up_retriever() -> None:
+    """Build the retriever now instead of inside the first request.
+
+    Notes
+    -----
+    Measured 2026-08-27: `build_retriever` costs ~72s once, after which
+    every `invoke` is ~0.1s. Left lazy, that cost lands inside the first
+    customer request and blows `config/models.yaml`'s `docs.timeout_seconds`
+    (75s) — observed live as an 84.4s escalation, while the identical
+    second request answered in 13.0s. Paying it at process startup keeps
+    the retriever out of module import (the layering rule this module's
+    lazy singleton exists for) while removing it from the request path.
+    """
+    _get_retriever()
+
+
 def _translate_to_ukrainian_search_term(masked_query: str) -> str:
     model = get_chat_model("docs")
     structured_model = model.with_structured_output(_SearchTerm)

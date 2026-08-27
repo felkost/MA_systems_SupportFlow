@@ -9,6 +9,7 @@ Run standalone for manual testing:
 """
 
 import json
+import logging
 import uuid
 from contextlib import nullcontext
 from typing import Any
@@ -20,7 +21,11 @@ from a2a.types.a2a_pb2 import Message, Part, Role
 from fastapi import FastAPI
 from langfuse.types import TraceContext
 
-from src.application.docs_agent import DocsInvalidOutputError, run_docs_agent
+from src.application.docs_agent import (
+    DocsInvalidOutputError,
+    run_docs_agent,
+    warm_up_retriever,
+)
 from src.infrastructure.silpo_mcp_auth import SilpoMcpAuthRequiredError
 from src.infrastructure.a2a_transport import (
     build_agent_card,
@@ -30,6 +35,10 @@ from src.infrastructure.a2a_transport import (
 )
 from src.infrastructure.observability import configure_tracing, get_langfuse_client
 from src.kernel.settings import load_agent_config
+
+# The caller only ever sees the error payload's type tag; without
+# this the provider/tool text that explains the failure is lost.
+logger = logging.getLogger(__name__)
 
 
 class DocsExecutor(AgentExecutor):
@@ -70,6 +79,7 @@ class DocsExecutor(AgentExecutor):
                 # An uncaught SilpoMcpAuthRequiredError here crashes the
                 # request-handling task instead of reaching docs_client.py
                 # as a readable error.
+                logger.exception("%s failed: %s", type(exc).__name__, exc)
                 reply_text = json.dumps(
                     {"error_type": type(exc).__name__, "error": str(exc)}
                 )
@@ -108,6 +118,10 @@ def main() -> None:
     config = load_agent_config("docs")
     if config.port is None:
         raise KeyError("config/models.yaml's 'docs' row has no 'port'")
+    # Before the port opens, not after: a request that arrives mid-warm-up
+    # would still pay the build cost and time out. `launcher.py`'s probe
+    # deadline is sized for this.
+    warm_up_retriever()
     uvicorn.run(build_app(), host="127.0.0.1", port=config.port)
 
 

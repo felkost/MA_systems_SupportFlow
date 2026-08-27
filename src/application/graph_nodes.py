@@ -11,6 +11,7 @@ The graph wired here is the real one — real Router node, real
 conditional edges dispatching on `decide_route()`.
 """
 
+import logging
 from contextlib import nullcontext
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -35,6 +36,12 @@ from src.infrastructure.web_search_client import (
     call_web_search,
 )
 from src.kernel.settings import load_agent_config
+
+# Without this, every A2A failure reached the customer as a bare
+# `*_unavailable` tag with its cause discarded — unreproducible by
+# design. The text goes to the process log only, never to Langfuse or
+# to the customer-facing answer.
+logger = logging.getLogger(__name__)
 
 
 def _current_observation_id() -> str | None:
@@ -107,7 +114,8 @@ def docs_node(state: SupportFlowState) -> dict[str, Any]:
             deadline,
             parent_span_id=_current_observation_id(),
         )
-    except (A2ATimeoutError, A2AClientTimeoutError):
+    except (A2ATimeoutError, A2AClientTimeoutError) as exc:
+        logger.warning("docs_timeout after %ss: %s", config.timeout_seconds, exc)
         # A2ATimeoutError: this project's own pre-flight deadline check.
         # A2AClientTimeoutError: the a2a-sdk's own runtime network
         # read-timeout — found live during a smoke test (Docs Agent's
@@ -115,7 +123,8 @@ def docs_node(state: SupportFlowState) -> dict[str, Any]:
         # config/models.yaml's docs.timeout_seconds), never triggered
         # before because no prior live run hit a slow-enough first call.
         return {"next_action": "escalate", "errors": ["docs_timeout"]}
-    except (DocsUnavailableError, AgentCardResolutionError):
+    except (DocsUnavailableError, AgentCardResolutionError) as exc:
+        logger.warning("docs_unavailable: %s", exc)
         # AgentCardResolutionError: the agent's process never answered the
         # `/.well-known/agent-card.json` probe — literally "agent
         # unavailable", the same escalation task §7 step 6 already
@@ -124,7 +133,8 @@ def docs_node(state: SupportFlowState) -> dict[str, Any]:
         # visible crash) instead of the graceful escalation every other
         # transport failure on this path already produces.
         return {"next_action": "escalate", "errors": ["docs_unavailable"]}
-    except DocsInvalidResponseError:
+    except DocsInvalidResponseError as exc:
+        logger.warning("docs_invalid_response: %s", exc)
         return {"next_action": "escalate", "errors": ["docs_invalid_response"]}
 
     if (
@@ -171,12 +181,15 @@ def web_search_node(state: SupportFlowState) -> dict[str, Any]:
             deadline,
             parent_span_id=_current_observation_id(),
         )
-    except (A2ATimeoutError, A2AClientTimeoutError):
+    except (A2ATimeoutError, A2AClientTimeoutError) as exc:
+        logger.warning("web_search_timeout after %ss: %s", config.timeout_seconds, exc)
         return {"next_action": "escalate", "errors": ["web_search_timeout"]}
-    except (WebSearchUnavailableError, AgentCardResolutionError):
+    except (WebSearchUnavailableError, AgentCardResolutionError) as exc:
+        logger.warning("web_search_unavailable: %s", exc)
         # See `docs_node`'s own note — same live-found HTTP-500 path.
         return {"next_action": "escalate", "errors": ["web_search_unavailable"]}
-    except WebSearchInvalidResponseError:
+    except WebSearchInvalidResponseError as exc:
+        logger.warning("web_search_invalid_response: %s", exc)
         return {"next_action": "escalate", "errors": ["web_search_invalid_response"]}
 
     if (
