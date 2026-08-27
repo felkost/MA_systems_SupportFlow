@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 1000 700" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="pr-sup-title pr-sup-desc">
+        <title id="pr-sup-title">Supervisor prompt structure, marked unused</title>
+        <desc id="pr-sup-desc">Layer-stack diagram of the Supervisor prompt's structure, overlaid with a diagonal not-called marking, showing that unlike the other four prompts it has no enforced output schema and is never fetched by get_prompt in the codebase, which is why Langfuse shows zero observations for it — Supervisor's actual routing logic is deterministic Python code, not a model call.</desc>
+        <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+        <rect x="90" y="60" width="780" height="56" fill="#f0f0f0" stroke="#8a8a8a" stroke-width="1" stroke-dasharray="5,4"/>
+        <text x="106" y="82" fill="#8a8a8a" font-size="9" font-family="Arial, sans-serif" letter-spacing="0.1em">01</text>
+        <text x="140" y="84" fill="#666" font-size="13" font-weight="700" font-family="Arial, sans-serif">Identity</text>
+        <text x="864" y="84" fill="#8a8a8a" font-size="10" font-family="Arial, sans-serif" text-anchor="end">"the local coordinator over Router, Docs, Web Search, Escalation"</text>
+
+        <rect x="90" y="116" width="780" height="56" fill="#f0f0f0" stroke="#8a8a8a" stroke-width="1" stroke-dasharray="5,4"/>
+        <text x="106" y="138" fill="#8a8a8a" font-size="9" font-family="Arial, sans-serif" letter-spacing="0.1em">02</text>
+        <text x="140" y="140" fill="#666" font-size="13" font-weight="700" font-family="Arial, sans-serif">Capabilities</text>
+        <text x="864" y="140" fill="#8a8a8a" font-size="10" font-family="Arial, sans-serif" text-anchor="end">delegates only — never searches or answers directly</text>
+
+        <rect x="90" y="172" width="780" height="56" fill="#f0f0f0" stroke="#8a8a8a" stroke-width="1" stroke-dasharray="5,4"/>
+        <text x="106" y="194" fill="#8a8a8a" font-size="9" font-family="Arial, sans-serif" letter-spacing="0.1em">03</text>
+        <text x="140" y="196" fill="#666" font-size="13" font-weight="700" font-family="Arial, sans-serif">Goals</text>
+        <text x="864" y="196" fill="#8a8a8a" font-size="10" font-family="Arial, sans-serif" text-anchor="end">route, compare confidence, compose or hand off</text>
+
+        <rect x="90" y="228" width="780" height="120" fill="#f0f0f0" stroke="#8a8a8a" stroke-width="1" stroke-dasharray="5,4"/>
+        <text x="106" y="250" fill="#8a8a8a" font-size="9" font-family="Arial, sans-serif" letter-spacing="0.1em">04</text>
+        <text x="140" y="252" fill="#666" font-size="13" font-weight="700" font-family="Arial, sans-serif">Constraints</text>
+        <text x="120" y="276" fill="#666" font-size="11" font-family="Arial, sans-serif">• critical classification → straight to Escalation</text>
+        <text x="120" y="296" fill="#666" font-size="11" font-family="Arial, sans-serif">• low confidence, contradictory sources, or unavailable tool → Escalation</text>
+        <text x="120" y="316" fill="#666" font-size="11" font-family="Arial, sans-serif">• step count bounded by config timeouts / middleware call limits</text>
+
+        <rect x="90" y="348" width="780" height="60" fill="#f0f0f0" stroke="#8a8a8a" stroke-width="1" stroke-dasharray="5,4"/>
+        <text x="106" y="370" fill="#8a8a8a" font-size="9" font-family="Arial, sans-serif" letter-spacing="0.1em">05</text>
+        <text x="140" y="372" fill="#666" font-size="13" font-weight="700" font-family="Arial, sans-serif">Output Format</text>
+        <text x="120" y="394" fill="#b03a2e" font-size="11" font-family="Arial, sans-serif">prose only — "a short final answer… or a handoff" — no Pydantic schema</text>
+
+        <rect x="90" y="408" width="780" height="56" fill="#f0f0f0" stroke="#8a8a8a" stroke-width="1" stroke-dasharray="5,4"/>
+        <text x="106" y="430" fill="#8a8a8a" font-size="9" font-family="Arial, sans-serif" letter-spacing="0.1em">06</text>
+        <text x="140" y="432" fill="#b03a2e" font-size="13" font-weight="700" font-family="Arial, sans-serif">Input — none</text>
+        <text x="864" y="432" fill="#b03a2e" font-size="10" font-family="Arial, sans-serif" text-anchor="end">no {{placeholder}} at all — nothing to compile</text>
+
+        <!-- Diagonal NOT CALLED banner — spans Identity/Capabilities/Goals only (y60-228), clear of Constraints below -->
+        <g transform="rotate(-8 480 144)">
+          <rect x="230" y="118" width="500" height="52" fill="rgba(176,58,46,0.14)" stroke="#b03a2e" stroke-width="1.6"/>
+          <text x="480" y="152" fill="#b03a2e" font-size="20" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle" letter-spacing="0.08em">NEVER CALLED</text>
+        </g>
+
+        <line x1="90" y1="494" x2="870" y2="494" stroke="rgba(51,58,5,0.18)" stroke-width="1"/>
+        <text x="90" y="514" fill="#333A05" font-size="10" font-family="Arial, sans-serif" letter-spacing="0.08em">LANGFUSE OBSERVATIONS (7 DAYS)</text>
+        <rect x="90" y="526" width="780" height="42" fill="rgba(176,58,46,0.08)" stroke="#b03a2e" stroke-width="1"/>
+        <text x="480" y="552" fill="#b03a2e" font-size="13" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">docs: 98 · router: 82 · escalation: 46 · web_search: 26 · supervisor: 0</text>
+
+        <text x="90" y="600" fill="#4f5d75" font-size="10" font-family="Arial, sans-serif">no src/ code ever calls get_prompt("supportflow/supervisor") or get_prompt_client() with this name —</text>
+        <text x="90" y="616" fill="#4f5d75" font-size="10" font-family="Arial, sans-serif">Supervisor's real routing is decide_route(), plain deterministic Python, not an LLM call</text>
+      </svg>

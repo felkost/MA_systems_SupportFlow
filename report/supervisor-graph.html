@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SupportFlow · Supervisor graph</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:  #f5f5f5;
+      --color-ink:    #333A05;
+      --color-accent: #FCA600;
+      --font-sans: Arial, "Helvetica Neue", Helvetica, sans-serif;
+    }
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+    .frame { max-width: 1200px; width: 100%; }
+    .eyebrow {
+      font-family: var(--font-sans);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #527C23;
+      margin-bottom: 0.5rem;
+    }
+    h1 {
+      font-family: var(--font-sans);
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      line-height: 1.2;
+      color: var(--color-ink);
+      margin-bottom: 0.4rem;
+    }
+    .subtitle {
+      font-family: var(--font-sans);
+      font-size: 14px;
+      font-weight: 400;
+      color: #527C23;
+      margin-bottom: 1.5rem;
+      max-width: 900px;
+    }
+    svg { width: 100%; min-width: 1050px; display: block; }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Supervisor · LangGraph</p>
+    <h1>Supervisor's graph — why two components, and what it does step by step</h1>
+    <p class="subtitle">Four nodes, all in one process. Router and Escalation (solid orange) are Supervisor's own two components — the only real business logic it owns. Docs and Web Search (dashed) are thin call-out nodes: they just make the A2A call shown in the architecture diagram and read the result, no logic of their own. The graph itself has no loop — every path ends at Escalation or a direct answer. The one retry in this picture is internal to the Router node (it retries its own classification call up to once before failing closed), not a cycle in the graph.</p>
+
+    <svg viewBox="0 0 1200 700" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="graph-title graph-desc">
+      <title id="graph-title">Supervisor LangGraph state flow</title>
+      <desc id="graph-desc">State diagram of the Supervisor's LangGraph: from a start marker into a Router node, which retries its own classification call once internally on failure, then routes by guard condition to Docs, Web Search, or directly to Escalation. Docs and Web Search each either return an answer to the end marker or fall back to Escalation on low confidence or a tool error. Escalation always ends the graph. There is no cycle among the graph's nodes.</desc>
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#000000"/></marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+      <!-- Start marker -->
+      <circle cx="600" cy="64" r="6" fill="#333A05"/>
+      <line x1="600" y1="70" x2="600" y2="96" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+      <!-- Router self-loop (internal retry, not a graph cycle) -->
+      <path d="M 720,118 C 754,118 754,146 720,146" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="3,3" marker-end="url(#arrow)"/>
+      <rect x="758" y="112" width="150" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="758" y="122" fill="#4f5d75" font-size="11" font-family="Arial, sans-serif">timeout/invalid → retry ≤1</text>
+
+      <!-- Edges -->
+      <!-- Router -> Docs (guard: category=product) -->
+      <path d="M 540,168 V 208 Q 540,216 532,216 H 338 Q 330,216 330,224 V 248" fill="none" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <rect x="368" y="188" width="112" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="424" y="198" fill="#000000" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">category=product</text>
+
+      <!-- Router -> Web Search (guard: category=general) -->
+      <path d="M 660,168 V 208 Q 660,216 668,216 H 862 Q 870,216 870,224 V 248" fill="none" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <rect x="716" y="188" width="112" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="772" y="198" fill="#000000" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">category=general</text>
+
+      <!-- Router -> Escalate (guard: critical | retries exhausted) -->
+      <line x1="600" y1="168" x2="600" y2="400" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <rect x="524" y="270" width="152" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="600" y="280" fill="#000000" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">critical | retries exhausted</text>
+
+      <!-- Docs -> Escalate (guard: low confidence | tool error) -->
+      <path d="M 440,284 H 454 Q 462,284 462,292 V 412 Q 462,420 470,420 H 490" fill="none" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <rect x="392" y="342" width="130" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="457" y="352" fill="#000000" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">confidence/error</text>
+
+      <!-- Web Search -> Escalate (guard: low confidence | tool error) -->
+      <path d="M 760,284 H 746 Q 738,284 738,292 V 412 Q 738,420 730,420 H 710" fill="none" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <rect x="678" y="342" width="130" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="743" y="352" fill="#000000" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">confidence/error</text>
+
+      <!-- Docs -> End (guard: respond) -->
+      <path d="M 330,320 V 552 Q 330,560 338,560 H 592" fill="none" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <rect x="290" y="420" width="64" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="322" y="430" fill="#000000" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">respond</text>
+
+      <!-- Web Search -> End (guard: respond) -->
+      <path d="M 870,320 V 552 Q 870,560 862,560 H 608" fill="none" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <rect x="838" y="420" width="64" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="870" y="430" fill="#000000" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">respond</text>
+
+      <!-- Escalate -> End (unconditional) -->
+      <line x1="600" y1="472" x2="600" y2="552" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+      <!-- Node: Router (Supervisor's own component, focal) -->
+      <rect x="480" y="96" width="240" height="72" rx="8" fill="#f5f5f5"/>
+      <rect x="480" y="96" width="240" height="72" rx="8" fill="rgba(252,216,99,0.35)" stroke="#FCA600" stroke-width="1.4"/>
+      <text x="600" y="128" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">Router</text>
+      <text x="600" y="144" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">classify + mask, decide route</text>
+      <text x="600" y="158" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">Supervisor's own node</text>
+
+      <!-- Node: Docs (A2A call-out, dashed) -->
+      <rect x="220" y="248" width="220" height="72" rx="8" fill="rgba(51,58,5,0.02)" stroke="rgba(51,58,5,0.35)" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="330" y="280" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">Docs</text>
+      <text x="330" y="296" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">calls Docs Agent over A2A</text>
+      <text x="330" y="310" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">no logic of its own</text>
+
+      <!-- Node: Web Search (A2A call-out, dashed) -->
+      <rect x="760" y="248" width="220" height="72" rx="8" fill="rgba(51,58,5,0.02)" stroke="rgba(51,58,5,0.35)" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="870" y="280" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">Web Search</text>
+      <text x="870" y="296" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">calls Web Search Agent over A2A</text>
+      <text x="870" y="310" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">no logic of its own</text>
+
+      <!-- Node: Escalate (Supervisor's own component, focal) -->
+      <rect x="490" y="400" width="220" height="72" rx="8" fill="#f5f5f5"/>
+      <rect x="490" y="400" width="220" height="72" rx="8" fill="rgba(252,216,99,0.35)" stroke="#FCA600" stroke-width="1.4"/>
+      <text x="600" y="432" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">Escalate</text>
+      <text x="600" y="448" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">writes report, notifies Telegram</text>
+      <text x="600" y="462" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">Supervisor's own node</text>
+
+      <!-- End marker (ringed dot) -->
+      <circle cx="600" cy="560" r="8" fill="none" stroke="#333A05" stroke-width="1.2"/>
+      <circle cx="600" cy="560" r="5" fill="#333A05"/>
+
+      <!-- Legend -->
+      <line x1="40" y1="612" x2="1160" y2="612" stroke="rgba(51,58,5,0.14)" stroke-width="0.8"/>
+      <text x="40" y="628" fill="#333A05" font-size="11" font-family="Arial, sans-serif" letter-spacing="0.08em">LEGEND</text>
+
+      <rect x="40" y="638" width="14" height="10" rx="2" fill="rgba(252,216,99,0.35)" stroke="#FCA600" stroke-width="1.4"/>
+      <text x="60" y="646" fill="#333A05" font-size="11" font-family="Arial, sans-serif">Supervisor's own node</text>
+
+      <rect x="220" y="638" width="14" height="10" rx="2" fill="rgba(51,58,5,0.02)" stroke="rgba(51,58,5,0.35)" stroke-width="1" stroke-dasharray="3,2"/>
+      <text x="240" y="646" fill="#333A05" font-size="11" font-family="Arial, sans-serif">A2A call-out node (no logic)</text>
+
+      <circle cx="440" cy="643" r="5" fill="#333A05"/>
+      <text x="452" y="646" fill="#333A05" font-size="11" font-family="Arial, sans-serif">Start</text>
+
+      <circle cx="530" cy="643" r="6" fill="none" stroke="#333A05" stroke-width="1.2"/>
+      <circle cx="530" cy="643" r="3.5" fill="#333A05"/>
+      <text x="544" y="646" fill="#333A05" font-size="11" font-family="Arial, sans-serif">End</text>
+
+      <path d="M 640,643 C 656,637 656,649 640,643" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="3,3"/>
+      <text x="664" y="646" fill="#333A05" font-size="11" font-family="Arial, sans-serif">Internal retry (not a graph cycle)</text>
+    </svg>
+  </div>
+</body>
+</html>

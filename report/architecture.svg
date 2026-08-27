@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="architecture-title architecture-desc">
+      <title id="architecture-title">SupportFlow system architecture</title>
+      <desc id="architecture-desc">Architecture diagram showing the React chat UI calling a FastAPI entry point, which invokes an in-process Supervisor graph. The Supervisor contains two internal nodes, Router and Escalation: Router classifies the request and either lets the Supervisor delegate it over an A2A network call to a separate Docs Agent or Web Search Agent process, or Escalation hands it to a human via Telegram directly, without a network hop. The Docs Agent reads a knowledge-base store and the Silpo retail MCP server, and all three processes export traces to Langfuse.</desc>
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#000000"/></marker>
+        <marker id="arrow-bold" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><polygon points="0 0, 9 3.5, 0 7" fill="#000000"/></marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+      <!-- Zone: same process -->
+      <rect x="500" y="144" width="320" height="280" rx="8" fill="rgba(51,58,5,0.03)" stroke="rgba(51,58,5,0.14)" stroke-width="0.8"/>
+      <rect x="520" y="150" width="120" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="580" y="160" fill="rgba(51,58,5,0.55)" font-size="11" font-family="Arial, sans-serif" text-anchor="middle" letter-spacing="0.08em">SAME PROCESS</text>
+
+      <!-- Zone: A2A server processes -->
+      <rect x="180" y="456" width="920" height="104" rx="8" fill="rgba(51,58,5,0.03)" stroke="rgba(51,58,5,0.14)" stroke-width="0.8"/>
+      <rect x="220" y="462" width="220" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="330" y="472" fill="rgba(51,58,5,0.55)" font-size="11" font-family="Arial, sans-serif" text-anchor="middle" letter-spacing="0.08em">A2A SERVER PROCESSES</text>
+
+      <!-- Arrows (behind boxes) -->
+      <!-- A1 Frontend -> FastAPI (HTTP) -->
+      <line x1="660" y1="120" x2="660" y2="176" stroke="#000000" stroke-width="1.6" marker-end="url(#arrow-bold)"/>
+      <!-- A2 FastAPI -> Supervisor (in-process call) -->
+      <line x1="660" y1="232" x2="660" y2="272" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <!-- A3 Supervisor -> Docs Agent (A2A) -->
+      <path d="M 590,408 V 456 Q 590,464 582,464 H 308 Q 300,464 300,472 V 488" fill="none" stroke="#000000" stroke-width="1.6" marker-end="url(#arrow-bold)"/>
+      <!-- A4 Supervisor -> Web Search Agent (A2A) -->
+      <path d="M 730,408 V 456 Q 730,464 738,464 H 972 Q 980,464 980,472 V 488" fill="none" stroke="#000000" stroke-width="1.6" marker-end="url(#arrow-bold)"/>
+      <!-- A5 Supervisor -> Telegram (Escalation's own send, in-process) -->
+      <line x1="660" y1="408" x2="660" y2="600" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <!-- A6 Docs Agent -> Silpo MCP -->
+      <path d="M 267,544 V 576 Q 267,584 259,584 H 178 Q 170,584 170,592 V 600" fill="none" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <!-- A7 Docs Agent -> KB Store -->
+      <path d="M 333,544 V 576 Q 333,584 341,584 H 362 Q 370,584 370,592 V 600" fill="none" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <!-- A8 Supervisor -> Langfuse (trace export, dashed) -->
+      <line x1="800" y1="314" x2="1100" y2="314" stroke="#000000" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+      <!-- A9 Web Search Agent -> Langfuse (trace export, dashed) -->
+      <path d="M 1020,488 H 1132 Q 1140,488 1140,480 V 464" fill="none" stroke="#000000" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+      <!-- A10 Docs Agent -> Langfuse (trace export, dashed; hops over the Supervisor-Telegram line) -->
+      <path d="M 400,516 H 420 Q 428,516 428,508 V 480 Q 428,472 436,472 H 652 a 8,8 0 0,1 16,0 H 1172 Q 1180,472 1180,464" fill="none" stroke="#000000" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+
+      <!-- Arrow labels -->
+      <rect x="392" y="440" width="28" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="406" y="450" fill="#000000" font-size="11" font-family="Arial, sans-serif" text-anchor="middle" letter-spacing="0.04em">A2A</text>
+
+      <rect x="732" y="440" width="28" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="746" y="450" fill="#000000" font-size="11" font-family="Arial, sans-serif" text-anchor="middle" letter-spacing="0.04em">A2A</text>
+
+      <!-- Node: Frontend (input) -->
+      <rect x="560" y="64" width="200" height="56" rx="6" fill="#f5f5f5"/>
+      <rect x="560" y="64" width="200" height="56" rx="6" fill="rgba(157,177,221,0.30)" stroke="#333A05" stroke-width="1"/>
+      <rect x="568" y="72" width="32" height="14" rx="2" fill="transparent" stroke="rgba(51,58,5,0.40)" stroke-width="0.8"/>
+      <text x="584" y="82" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle" letter-spacing="0.04em">WEB</text>
+      <text x="660" y="98" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">React Chat UI</text>
+      <text x="660" y="112" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">customer browser</text>
+
+      <!-- Node: FastAPI (backend) -->
+      <rect x="560" y="176" width="200" height="56" rx="6" fill="#f5f5f5"/>
+      <rect x="560" y="176" width="200" height="56" rx="6" fill="#ffffff" stroke="#333A05" stroke-width="1"/>
+      <rect x="568" y="184" width="28" height="14" rx="2" fill="transparent" stroke="rgba(51,58,5,0.40)" stroke-width="0.8"/>
+      <text x="582" y="194" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle" letter-spacing="0.04em">API</text>
+      <text x="660" y="210" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">FastAPI</text>
+      <text x="660" y="224" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">POST /chat</text>
+
+      <!-- Node: Supervisor (focal, composite — contains Router + Escalation) -->
+      <rect x="520" y="272" width="280" height="136" rx="6" fill="#f5f5f5"/>
+      <rect x="520" y="272" width="280" height="136" rx="6" fill="rgba(252,216,99,0.35)" stroke="#FCA600" stroke-width="1.4"/>
+      <rect x="528" y="280" width="32" height="14" rx="2" fill="transparent" stroke="rgba(252,166,0,0.55)" stroke-width="0.8"/>
+      <text x="544" y="290" fill="#FCA600" font-size="11" font-family="Arial, sans-serif" text-anchor="middle" letter-spacing="0.04em">ORCH</text>
+      <text x="660" y="292" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">Supervisor</text>
+      <text x="660" y="306" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">one LangGraph, in-process</text>
+      <!-- Inner node: Router -->
+      <rect x="540" y="344" width="110" height="52" rx="6" fill="#ffffff" stroke="#333A05" stroke-width="1"/>
+      <text x="595" y="366" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">Router</text>
+      <text x="595" y="380" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">classify + mask</text>
+      <!-- Inner node: Escalation -->
+      <rect x="670" y="344" width="110" height="52" rx="6" fill="#ffffff" stroke="#333A05" stroke-width="1"/>
+      <text x="725" y="366" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">Escalation</text>
+      <text x="725" y="380" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">human handoff</text>
+
+      <!-- Node: Docs Agent (backend, own process) -->
+      <rect x="200" y="488" width="200" height="56" rx="6" fill="#f5f5f5"/>
+      <rect x="200" y="488" width="200" height="56" rx="6" fill="#ffffff" stroke="#333A05" stroke-width="1"/>
+      <rect x="208" y="496" width="28" height="14" rx="2" fill="transparent" stroke="rgba(51,58,5,0.40)" stroke-width="0.8"/>
+      <text x="222" y="506" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle" letter-spacing="0.04em">A2A</text>
+      <text x="300" y="522" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">Docs Agent</text>
+      <text x="300" y="536" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">RAG + Silpo MCP</text>
+
+      <!-- Node: Web Search Agent (backend, own process) -->
+      <rect x="880" y="488" width="200" height="56" rx="6" fill="#f5f5f5"/>
+      <rect x="880" y="488" width="200" height="56" rx="6" fill="#ffffff" stroke="#333A05" stroke-width="1"/>
+      <rect x="888" y="496" width="28" height="14" rx="2" fill="transparent" stroke="rgba(51,58,5,0.40)" stroke-width="0.8"/>
+      <text x="902" y="506" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle" letter-spacing="0.04em">A2A</text>
+      <text x="980" y="522" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">Web Search Agent</text>
+      <text x="980" y="536" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">Tavily / DuckDuckGo</text>
+
+      <!-- Node: Langfuse (external) -->
+      <rect x="1100" y="264" width="120" height="200" rx="6" fill="#f5f5f5"/>
+      <rect x="1100" y="264" width="120" height="200" rx="6" fill="rgba(82,124,35,0.10)" stroke="#527C23" stroke-width="1"/>
+      <rect x="1108" y="272" width="32" height="14" rx="2" fill="transparent" stroke="rgba(82,124,35,0.45)" stroke-width="0.8"/>
+      <text x="1124" y="282" fill="#527C23" font-size="11" font-family="Arial, sans-serif" text-anchor="middle" letter-spacing="0.04em">OBS</text>
+      <text x="1160" y="352" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">Langfuse</text>
+      <text x="1160" y="366" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">traces + cost,</text>
+      <text x="1160" y="378" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">every process</text>
+
+      <!-- Node: Silpo MCP (external) -->
+      <rect x="80" y="600" width="180" height="56" rx="6" fill="#f5f5f5"/>
+      <rect x="80" y="600" width="180" height="56" rx="6" fill="rgba(82,124,35,0.10)" stroke="#527C23" stroke-width="1"/>
+      <rect x="88" y="608" width="32" height="14" rx="2" fill="transparent" stroke="rgba(82,124,35,0.45)" stroke-width="0.8"/>
+      <text x="104" y="618" fill="#527C23" font-size="11" font-family="Arial, sans-serif" text-anchor="middle" letter-spacing="0.04em">EXT</text>
+      <text x="170" y="634" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">Silpo MCP</text>
+      <text x="170" y="648" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">retail catalogue</text>
+
+      <!-- Node: KB Store (store) -->
+      <rect x="280" y="600" width="180" height="56" rx="6" fill="#f5f5f5"/>
+      <rect x="280" y="600" width="180" height="56" rx="6" fill="rgba(157,177,221,0.40)" stroke="#333A05" stroke-width="1"/>
+      <rect x="288" y="608" width="28" height="14" rx="2" fill="transparent" stroke="rgba(51,58,5,0.40)" stroke-width="0.8"/>
+      <text x="302" y="618" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle" letter-spacing="0.04em">KB</text>
+      <text x="370" y="634" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">Knowledge base</text>
+      <text x="370" y="648" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">FAQ + dialogues</text>
+
+      <!-- Node: Telegram (external) -->
+      <rect x="570" y="600" width="180" height="56" rx="6" fill="#f5f5f5"/>
+      <rect x="570" y="600" width="180" height="56" rx="6" fill="rgba(82,124,35,0.10)" stroke="#527C23" stroke-width="1"/>
+      <rect x="578" y="608" width="32" height="14" rx="2" fill="transparent" stroke="rgba(82,124,35,0.45)" stroke-width="0.8"/>
+      <text x="594" y="618" fill="#527C23" font-size="11" font-family="Arial, sans-serif" text-anchor="middle" letter-spacing="0.04em">EXT</text>
+      <text x="660" y="634" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">Telegram</text>
+      <text x="660" y="648" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">operator handoff</text>
+
+      <!-- Legend strip -->
+      <line x1="40" y1="676" x2="1240" y2="676" stroke="rgba(51,58,5,0.14)" stroke-width="0.8"/>
+      <text x="40" y="692" fill="#333A05" font-size="11" font-family="Arial, sans-serif" letter-spacing="0.08em">LEGEND</text>
+
+      <rect x="40" y="702" width="14" height="10" rx="2" fill="rgba(252,216,99,0.35)" stroke="#FCA600" stroke-width="1.4"/>
+      <text x="60" y="710" fill="#333A05" font-size="11" font-family="Arial, sans-serif">Orchestrator</text>
+
+      <rect x="180" y="702" width="14" height="10" rx="2" fill="#ffffff" stroke="#333A05" stroke-width="1"/>
+      <text x="200" y="710" fill="#333A05" font-size="11" font-family="Arial, sans-serif">Process / API / node</text>
+
+      <rect x="360" y="702" width="14" height="10" rx="2" fill="rgba(157,177,221,0.40)" stroke="#333A05" stroke-width="1"/>
+      <text x="380" y="710" fill="#333A05" font-size="11" font-family="Arial, sans-serif">Store</text>
+
+      <rect x="440" y="702" width="14" height="10" rx="2" fill="rgba(82,124,35,0.10)" stroke="#527C23" stroke-width="1"/>
+      <text x="460" y="710" fill="#333A05" font-size="11" font-family="Arial, sans-serif">External</text>
+
+      <line x1="560" y1="708" x2="588" y2="708" stroke="#000000" stroke-width="1.6" marker-end="url(#arrow-bold)"/>
+      <text x="596" y="710" fill="#333A05" font-size="11" font-family="Arial, sans-serif">HTTP / A2A call</text>
+
+      <line x1="740" y1="708" x2="768" y2="708" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <text x="776" y="710" fill="#333A05" font-size="11" font-family="Arial, sans-serif">In-process call</text>
+
+      <line x1="912" y1="708" x2="940" y2="708" stroke="#000000" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+      <text x="948" y="710" fill="#333A05" font-size="11" font-family="Arial, sans-serif">Trace export</text>
+    </svg>

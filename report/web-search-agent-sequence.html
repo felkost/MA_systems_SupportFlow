@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SupportFlow · Web Search Agent sequence</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:  #f5f5f5;
+      --color-ink:    #333A05;
+      --color-accent: #FCA600;
+      --font-sans: Arial, "Helvetica Neue", Helvetica, sans-serif;
+    }
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+    .frame { max-width: 1300px; width: 100%; }
+    .eyebrow {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #527C23;
+      margin-bottom: 0.5rem;
+    }
+    h1 {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      line-height: 1.2;
+      margin-bottom: 0.4rem;
+    }
+    .subtitle {
+      font-size: 14px;
+      color: #527C23;
+      margin-bottom: 1.5rem;
+      max-width: 980px;
+    }
+    svg { width: 100%; min-width: 1150px; display: block; }
+    .walkthrough { margin-top: 2.5rem; max-width: 950px; }
+    .walkthrough h2 { font-size: 16px; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 0.75rem; }
+    .walkthrough h3 { font-size: 14px; font-weight: 700; margin: 1.5rem 0 0.5rem; }
+    .walkthrough p, .walkthrough li { font-size: 12px; line-height: 1.6; }
+    .walkthrough ul.actors { list-style: none; margin-bottom: 0.5rem; }
+    .walkthrough ul.actors li { margin-bottom: 0.35rem; }
+    .walkthrough ol.steps { padding-left: 1.25rem; }
+    .walkthrough ol.steps li { margin-bottom: 0.6rem; }
+    .walkthrough ol.steps ul { list-style: disc; padding-left: 1.25rem; margin-top: 0.3rem; }
+    .walkthrough ol.steps ul li { font-size: 11px; color: #4f5d75; margin-bottom: 0.2rem; }
+    .walkthrough code {
+      font-family: "Courier New", monospace;
+      font-size: 11px;
+      background: rgba(51,58,5,0.06);
+      padding: 0.05rem 0.3rem;
+      border-radius: 3px;
+    }
+    .walkthrough table { border-collapse: collapse; margin: 0.75rem 0; font-size: 11px; width: 100%; }
+    .walkthrough th, .walkthrough td { text-align: left; padding: 0.4rem 0.6rem; border: 1px solid rgba(51,58,5,0.18); vertical-align: top; }
+    .walkthrough th { background: rgba(51,58,5,0.04); font-weight: 700; }
+    .walkthrough .takeaway {
+      margin-top: 1.5rem;
+      padding: 0.9rem 1rem;
+      background: rgba(252,216,99,0.20);
+      border: 1px solid #FCA600;
+      border-radius: 6px;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    .walkthrough .plain {
+      margin-bottom: 1.5rem;
+      padding: 0.9rem 1rem;
+      background: rgba(157,177,221,0.20);
+      border: 1px solid #333A05;
+      border-radius: 6px;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    .walkthrough .plain p { margin-bottom: 0.4rem; }
+    .walkthrough .plain p:last-child { margin-bottom: 0; }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Web Search Agent · one request</p>
+    <h1>Web Search Agent's own work — search with fallback, then compose</h1>
+    <p class="subtitle">run_web_search tries Tavily first — the task's own required primary provider — and only calls the free, keyless ddgs (DuckDuckGo) library if Tavily raises. Unlike Docs Agent, only one provider's results are ever used per request, never both merged, and there is exactly one chat-model call, not two — there's no language to translate, since a general web search isn't restricted to a Ukrainian-only catalogue.</p>
+
+    <svg viewBox="0 0 1300 720" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="ws-seq-title ws-seq-desc">
+      <title id="ws-seq-title">Web Search Agent's search-with-fallback-then-compose sequence</title>
+      <desc id="ws-seq-desc">Sequence diagram showing the Web Search A2A server calling run_web_search, which tries Tavily first and falls back to ddgs (DuckDuckGo) only if Tavily raises an exception, using whichever provider's results actually came back — never both — then builds one text block from those results, asks the chat model once to compose the final answer, patches only the retrieved_at timestamp on the model's own claimed sources with the real fetch time, and returns the result to the A2A server; if both providers fail, a SearchUnavailableError propagates as the task's own tool-unavailable escalation trigger.</desc>
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#000000"/></marker>
+        <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#FCA600"/></marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+      <!-- Lifelines -->
+      <line x1="130" y1="80" x2="130" y2="600" stroke="rgba(51,58,5,0.25)" stroke-width="1" stroke-dasharray="3,3"/>
+      <line x1="390" y1="80" x2="390" y2="600" stroke="rgba(51,58,5,0.25)" stroke-width="1" stroke-dasharray="3,3"/>
+      <line x1="650" y1="80" x2="650" y2="600" stroke="rgba(51,58,5,0.25)" stroke-width="1" stroke-dasharray="3,3"/>
+      <line x1="910" y1="80" x2="910" y2="600" stroke="rgba(51,58,5,0.25)" stroke-width="1" stroke-dasharray="3,3"/>
+      <line x1="1170" y1="80" x2="1170" y2="600" stroke="rgba(51,58,5,0.25)" stroke-width="1" stroke-dasharray="3,3"/>
+
+      <!-- ALT frame: Tavily then DuckDuckGo fallback -->
+      <rect x="374" y="152" width="552" height="188" rx="4" fill="rgba(51,58,5,0.03)" stroke="rgba(51,58,5,0.22)" stroke-width="1"/>
+      <rect x="374" y="152" width="36" height="16" rx="2" fill="#f5f5f5" stroke="rgba(51,58,5,0.22)" stroke-width="1"/>
+      <text x="392" y="164" fill="#4f5d75" font-size="11" font-family="Arial, sans-serif" text-anchor="middle" letter-spacing="0.08em">ALT</text>
+      <text x="416" y="164" fill="#4f5d75" font-size="11" font-family="Arial, sans-serif">[Tavily succeeds]</text>
+      <line x1="382" y1="260" x2="918" y2="260" stroke="rgba(51,58,5,0.20)" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="392" y="276" fill="#4f5d75" font-size="11" font-family="Arial, sans-serif">[else — Tavily raised, try DuckDuckGo]</text>
+
+      <!-- Activation bars -->
+      <rect x="126" y="112" width="8" height="466" fill="rgba(51,58,5,0.06)" stroke="#4f5d75" stroke-width="0.8"/>
+      <rect x="386" y="112" width="8" height="466" fill="rgba(51,58,5,0.06)" stroke="#4f5d75" stroke-width="0.8"/>
+      <rect x="646" y="196" width="8" height="32" fill="rgba(51,58,5,0.06)" stroke="#4f5d75" stroke-width="0.8"/>
+      <rect x="906" y="288" width="8" height="32" fill="rgba(51,58,5,0.06)" stroke="#4f5d75" stroke-width="0.8"/>
+      <rect x="1166" y="456" width="8" height="32" fill="rgba(51,58,5,0.06)" stroke="#4f5d75" stroke-width="0.8"/>
+
+      <!-- M1: A2A Server -> run_web_search -->
+      <line x1="138" y1="112" x2="382" y2="112" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <rect x="170" y="98" width="230" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="285" y="108" fill="#000000" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">run_web_search(masked_query)</text>
+
+      <!-- M2: run_web_search -> Tavily -->
+      <line x1="398" y1="196" x2="642" y2="196" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <rect x="430" y="182" width="200" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="530" y="192" fill="#000000" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">search(query, max_results=5)</text>
+
+      <!-- M3: Tavily --> run_web_search -->
+      <line x1="650" y1="228" x2="402" y2="228" stroke="#000000" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+      <rect x="440" y="214" width="180" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="530" y="224" fill="#000000" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">results (≤5) | raises</text>
+
+      <!-- M4: run_web_search -> DuckDuckGo -->
+      <line x1="398" y1="288" x2="902" y2="288" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <rect x="560" y="274" width="180" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="650" y="284" fill="#000000" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">text(query, max_results=5)</text>
+
+      <!-- M5: DuckDuckGo --> run_web_search -->
+      <line x1="910" y1="320" x2="402" y2="320" stroke="#000000" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+      <rect x="560" y="306" width="180" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="650" y="316" fill="#000000" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">results (≤5) | raises</text>
+
+      <rect x="392" y="356" width="480" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="392" y="366" fill="#4f5d75" font-size="11" font-family="Arial, sans-serif">note: both providers failing → SearchUnavailableError (escalation trigger)</text>
+
+      <!-- Self message: build retrieved_block -->
+      <rect x="392" y="390" width="420" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="392" y="400" fill="#000000" font-size="11" font-family="Arial, sans-serif">retrieved_block = title + url + content, per result</text>
+      <path d="M 384,412 H 420 V 428 H 384" fill="none" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+      <!-- M6: run_web_search -> Chat model (compose) -->
+      <line x1="398" y1="456" x2="1162" y2="456" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <rect x="700" y="442" width="180" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="790" y="452" fill="#000000" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">compose_fn(prompt)</text>
+
+      <!-- M7: Chat model --> run_web_search -->
+      <line x1="1170" y1="488" x2="402" y2="488" stroke="#000000" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+      <rect x="700" y="474" width="200" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="800" y="484" fill="#000000" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">WebSearchResponse (answer, sources)</text>
+
+      <!-- Self message: patch retrieved_at only -->
+      <rect x="392" y="512" width="440" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="392" y="522" fill="#000000" font-size="11" font-family="Arial, sans-serif">sources[i].retrieved_at = fetched_at (ref unchanged)</text>
+      <path d="M 384,534 H 420 V 550 H 384" fill="none" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+      <!-- M8: run_web_search --> A2A Server (headline return, accent) -->
+      <line x1="386" y1="578" x2="142" y2="578" stroke="#FCA600" stroke-width="1.6" stroke-dasharray="4,3" marker-end="url(#arrow-accent)"/>
+      <rect x="150" y="564" width="270" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="285" y="574" fill="#FCA600" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">WebSearchAgentResult(response, context, tools_called)</text>
+
+      <!-- Actor boxes -->
+      <rect x="50" y="40" width="160" height="40" rx="6" fill="rgba(157,177,221,0.30)" stroke="#333A05" stroke-width="1"/>
+      <text x="130" y="58" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">Web Search A2A</text>
+      <text x="130" y="72" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">the A2A hop's entry point</text>
+
+      <rect x="310" y="40" width="160" height="40" rx="6" fill="#ffffff" stroke="#333A05" stroke-width="1"/>
+      <text x="390" y="58" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">run_web_search</text>
+      <text x="390" y="72" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">orchestrator</text>
+
+      <rect x="570" y="40" width="160" height="40" rx="6" fill="rgba(82,124,35,0.10)" stroke="#527C23" stroke-width="1"/>
+      <text x="650" y="58" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">Tavily</text>
+      <text x="650" y="72" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">primary, paid, keyed</text>
+
+      <rect x="830" y="40" width="160" height="40" rx="6" fill="rgba(82,124,35,0.10)" stroke="#527C23" stroke-width="1"/>
+      <text x="910" y="58" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">DuckDuckGo</text>
+      <text x="910" y="72" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">fallback, free, no key (ddgs)</text>
+
+      <rect x="1090" y="40" width="160" height="40" rx="6" fill="rgba(82,124,35,0.10)" stroke="#527C23" stroke-width="1"/>
+      <text x="1170" y="58" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">Chat model</text>
+      <text x="1170" y="72" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">compose only — no translate step</text>
+
+      <!-- Legend -->
+      <line x1="40" y1="616" x2="1260" y2="616" stroke="rgba(51,58,5,0.14)" stroke-width="0.8"/>
+      <line x1="40" y1="636" x2="68" y2="636" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <text x="76" y="640" fill="#333A05" font-size="11" font-family="Arial, sans-serif">Call</text>
+      <line x1="140" y1="636" x2="168" y2="636" stroke="#000000" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+      <text x="176" y="640" fill="#333A05" font-size="11" font-family="Arial, sans-serif">Return</text>
+      <line x1="260" y1="636" x2="288" y2="636" stroke="#FCA600" stroke-width="1.6" stroke-dasharray="4,3" marker-end="url(#arrow-accent)"/>
+      <text x="296" y="640" fill="#333A05" font-size="11" font-family="Arial, sans-serif">Result back to A2A server</text>
+    </svg>
+
+    <div class="walkthrough">
+      <h2>How to read this diagram — actor by actor, step by step</h2>
+
+      <div class="plain">
+        <p><strong>In plain terms.</strong> Five "lanes": <strong>Web Search A2A</strong> is where Supervisor's A2A call arrives. <strong>run_web_search</strong> is the orchestrator. <strong>Tavily</strong> is tried first. <strong>DuckDuckGo</strong> is tried only if Tavily fails. <strong>Chat model</strong> is called exactly once, just to write the answer — there's no translation step here like Docs Agent has, because a general web search isn't tied to one language.</p>
+        <p>Only one provider's results are ever used — never both. Tavily goes first because the task itself requires it as the primary provider; DuckDuckGo (via the free <code>ddgs</code> library, no API key needed) is the fallback specifically because it costs nothing to keep available, so the whole agent doesn't go dark just because a Tavily key is missing or Tavily is having an outage. If both fail, that's treated as a real problem — a tool-unavailable error that triggers escalation, not a silent empty answer.</p>
+      </div>
+
+      <h3>Five lifelines</h3>
+      <ul class="actors">
+        <li><code>Web Search A2A</code> — the process boundary Supervisor's A2A call lands on.</li>
+        <li><code>run_web_search</code> — the orchestrator function; owns the fallback logic and the one compose call.</li>
+        <li><code>Tavily</code> — the primary provider, a paid API requiring <code>tavily_api_key</code>.</li>
+        <li><code>DuckDuckGo</code> — the fallback provider, reached through the <code>ddgs</code> library, free and keyless.</li>
+        <li><code>Chat model</code> — the LLM, called once, to compose the final answer from whichever provider actually responded.</li>
+      </ul>
+
+      <h3>Sequence, step by step</h3>
+      <ol class="steps">
+        <li><strong>Web Search A2A → run_web_search: <code>run_web_search(masked_query)</code></strong> — the already-masked customer message.</li>
+        <li><strong><code>ALT [Tavily succeeds] / [else — Tavily raised, try DuckDuckGo]</code></strong> — a genuine two-region branch, not two independent optional steps:
+          <ul>
+            <li><strong>Region 1:</strong> run_web_search → Tavily: <code>search(query, max_results=5)</code> → ← up to 5 results, tagged <code>provider="tavily"</code>.</li>
+            <li><strong>Region 2</strong> (only reached if Tavily raised <em>any</em> exception): run_web_search → DuckDuckGo: <code>text(query, max_results=5)</code> → ← up to 5 results, tagged <code>provider="duckduckgo"</code>.</li>
+            <li>Note: if DuckDuckGo <em>also</em> raises, both attempts have now failed — that propagates as <code>SearchUnavailableError</code>, the task's own "tool unavailable" escalation trigger, not an empty result.</li>
+          </ul>
+        </li>
+        <li><strong>Self message: <code>retrieved_block = title + url + content, per result</code></strong> — whichever provider's results came back get normalized into one text block for the prompt. Both providers' raw responses are shaped differently (Tavily's own JSON vs. <code>ddgs</code>'s own dict) but are normalized into the same provider-agnostic <code>SearchResult</code> shape before this point, so this step doesn't need to know which provider it came from.</li>
+        <li><strong>run_web_search → Chat model: <code>compose_fn(prompt)</code> → ← <code>WebSearchResponse</code></strong> — the one and only LLM call in this whole sequence. It writes the answer and proposes its own <code>sources</code> — but only one field of those survives unedited.</li>
+        <li><strong>Self message: <code>sources[i].retrieved_at = fetched_at</code> (ref unchanged)</strong> — narrower than Docs Agent's equivalent step: this only patches the fetch timestamp on each source the model already produced; it does not replace the source list wholesale. The model's own <code>ref</code>/URL is trusted here, since it's directly quoting a URL it was just given, not inventing a document citation.</li>
+        <li><strong>run_web_search → Web Search A2A: <code>WebSearchAgentResult(response, context, tools_called)</code></strong> (accent arrow) — <code>tools_called</code> is exactly one entry, <code>["tavily"]</code> or <code>["duckduckgo"]</code> — never both, since only one provider ever actually ran.</li>
+      </ol>
+
+      <h3>Tavily vs. DuckDuckGo — what's the difference, and why used this way</h3>
+      <table>
+        <tr><th></th><th>Tavily</th><th>DuckDuckGo (<code>ddgs</code>)</th></tr>
+        <tr><td><strong>Role</strong></td><td>Primary — always tried first</td><td>Fallback — tried only if Tavily raises</td></tr>
+        <tr><td><strong>Access</strong></td><td>Paid API, needs <code>tavily_api_key</code></td><td>Free, no API key at all</td></tr>
+        <tr><td><strong>Why this order</strong></td><td>The task itself names Tavily as the required primary provider</td><td>Chosen as fallback specifically <em>because</em> it's free and keyless — the agent still works even with no Tavily key configured, or during a Tavily outage</td></tr>
+        <tr><td><strong>Result shape</strong></td><td>Own JSON (<code>title</code>/<code>url</code>/<code>content</code> fields)</td><td>Own dict (<code>title</code>/<code>href</code>/<code>body</code> fields)</td></tr>
+        <tr><td><strong>Normalized to</strong></td><td colspan="2">Both map into the same provider-agnostic <code>SearchResult(title, url, content)</code> — nothing downstream of this step needs to know which provider answered</td></tr>
+        <tr><td><strong>Used together?</strong></td><td colspan="2">Never — exactly one provider's results are used per request; DuckDuckGo is not a second opinion, it only runs if Tavily didn't answer at all</td></tr>
+      </table>
+      <p>This is a genuinely different pattern from Docs Agent's knowledge-base + Silpo MCP branch: there, <em>both</em> sources are always combined when both are available. Here, the two providers are <strong>mutually exclusive</strong> — a strict "try A, else try B" fallback, never "merge A and B."</p>
+
+      <h3>What data moves through this diagram, and what constrains it</h3>
+      <ul style="list-style: disc; padding-left: 1.25rem; margin: 0.5rem 0 0.5rem;">
+        <li style="margin-bottom: 0.4rem;"><strong>Input constraint:</strong> <code>masked_query</code> must already be PII-masked before it reaches <code>run_web_search</code> — the function itself "has no opinion on masking," it only searches with whatever text it's handed.</li>
+        <li style="margin-bottom: 0.4rem;"><strong>Result-count constraint:</strong> both providers are called with <code>max_results=5</code>, hard-coded — never more than 5 results per provider, per request.</li>
+        <li style="margin-bottom: 0.4rem;"><strong>Shape constraint:</strong> every result, regardless of provider, is forced into <code>SearchResult(title: str, url: str, content: str)</code> — a fixed, provider-agnostic schema.</li>
+        <li style="margin-bottom: 0.4rem;"><strong>Provider tag constraint:</strong> <code>SearchOutcome.provider</code> is a closed <code>Literal["tavily", "duckduckgo"]</code> — no third value is possible, and it's set by <code>search()</code> itself, not guessed afterward from the data.</li>
+        <li><strong>Timestamp constraint:</strong> <code>retrieved_at</code> is never trusted from the model — it's overwritten with this call's own <code>fetched_at</code>, so a source's claimed freshness always reflects when this agent actually fetched it, not when the LLM assumed it did.</li>
+      </ul>
+
+      <div class="takeaway">
+        <strong>The point of the connections:</strong> this is a fallback branch, not a merge branch — Tavily and DuckDuckGo are alternatives, never combined, unlike Docs Agent's knowledge-base-plus-Silpo-MCP pattern. The chat model is called exactly once, because there's nothing to translate first. And only the timestamp gets corrected after the model answers — the model's own source references are trusted here in a way Docs Agent's never are, because a web search source is a URL the model was just handed, not a citation it had to invent.
+      </div>
+    </div>
+  </div>
+</body>
+</html>
