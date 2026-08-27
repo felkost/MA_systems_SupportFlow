@@ -35,14 +35,19 @@ class LaunchedAgent:
 
 
 def _wait_for_ready(
-    probe: Callable[[], bool], timeout: float = 60.0, poll_interval: float = 0.2
+    probe: Callable[[], bool], timeout: float = 180.0, poll_interval: float = 0.2
 ) -> None:
     """Poll `probe` until it returns `True` or `timeout` seconds pass.
 
     Parameters
     ----------
     probe : Callable[[], bool]
-    timeout : float, default=60.0
+    timeout : float, default=180.0
+        Widened again 2026-08-27: `docs_a2a_server` now builds its
+        retriever (~72s, measured) before opening its port, so the
+        agent-card probe cannot answer until that finishes — under the
+        previous 60.0s the launcher raised here and killed a Docs Agent
+        that was starting up correctly.
         Live-confirmed 2026-08-26: the original 20.0s default was too
         tight under real machine load — `docs_a2a_server`'s own
         agent-card endpoint (a static response, not dependent on the

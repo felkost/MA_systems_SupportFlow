@@ -10,6 +10,7 @@ Run standalone for manual testing:
 """
 
 import json
+import logging
 import uuid
 from contextlib import nullcontext
 from typing import Any
@@ -31,6 +32,10 @@ from src.infrastructure.a2a_transport import (
 from src.infrastructure.observability import configure_tracing, get_langfuse_client
 from src.infrastructure.web_search import SearchUnavailableError
 from src.kernel.settings import load_agent_config
+
+# The caller only ever sees the error payload's type tag; without
+# this the provider/tool text that explains the failure is lost.
+logger = logging.getLogger(__name__)
 
 
 class WebSearchExecutor(AgentExecutor):
@@ -72,6 +77,7 @@ class WebSearchExecutor(AgentExecutor):
                     }
                 )
             except (SearchUnavailableError, WebSearchInvalidOutputError) as exc:
+                logger.exception("%s failed: %s", type(exc).__name__, exc)
                 reply_text = json.dumps(
                     {"error_type": type(exc).__name__, "error": str(exc)}
                 )
