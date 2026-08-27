@@ -1,6 +1,6 @@
-"""One-time manual Telegram bot setup check (`docs/telegram_bot_setup.md`
-step 3) — confirms `TELEGRAM_BOT_TOKEN` works and finds the test channel's
-`chat_id` from the bot's recent updates.
+"""One-time manual Telegram bot setup check — confirms `TELEGRAM_BOT_TOKEN`
+works and finds the test channel's `chat_id` from the bot's recent
+updates.
 
 Run once, by the project author, never from application code:
 
@@ -21,7 +21,7 @@ _API_BASE = "https://api.telegram.org"
 
 def main() -> None:
     if not settings.telegram_bot_token:
-        print("TELEGRAM_BOT_TOKEN is not set in .env — see docs/telegram_bot_setup.md.")
+        print("TELEGRAM_BOT_TOKEN is not set in .env.")
         return
 
     me = httpx.get(f"{_API_BASE}/bot{settings.telegram_bot_token}/getMe", timeout=10)
@@ -48,8 +48,7 @@ def main() -> None:
     if not chats:
         print(
             "No recent updates found. Send a message into your test group "
-            "(with this bot added to it), then re-run this script — see "
-            "docs/telegram_bot_setup.md step 2-3."
+            "(with this bot added to it), then re-run this script."
         )
         return
 

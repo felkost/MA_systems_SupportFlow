@@ -1,6 +1,4 @@
-"""Schema bounds and shape (task §6) — the first declared failing tests of
-Stage 1 (docs/decisions.md, Stage 1 file list).
-"""
+"""Schema bounds and shape (task §6)."""
 
 from datetime import datetime, timezone
 
@@ -35,8 +33,8 @@ def test_classification_output_accepts_valid_values() -> None:
 
 @pytest.mark.parametrize("bad_confidence", [-0.01, 1.01, 5.0, -5.0])
 def test_docs_response_rejects_out_of_bounds_confidence(bad_confidence: float) -> None:
-    # docs/decisions.md #12 note (F20): unbounded confidence fails open — a
-    # hallucinated 5.0 would always pass a 0.70 threshold.
+    # Unbounded confidence fails open — a hallucinated 5.0 would always
+    # pass a 0.70 threshold.
     with pytest.raises(ValidationError):
         DocsResponse(answer="x", confidence=bad_confidence)
 
@@ -55,8 +53,8 @@ def test_docs_response_defaults_to_no_sources() -> None:
 
 
 def test_docs_response_carries_structured_sources_with_retrieval_time() -> None:
-    # docs/decisions.md #15: sources are structured, not list[str], so a
-    # retrieval timestamp travels with each one.
+    # Sources are structured, not list[str], so a retrieval timestamp
+    # travels with each one.
     out = DocsResponse(
         answer="x",
         confidence=0.9,

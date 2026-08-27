@@ -1,7 +1,7 @@
-"""Router's fail-closed paths (docs/decisions.md #12, F4/F5): invalid
-output, timeout, and retry exhaustion each end in a `RouterResult` with
-`classification is None`, never an unhandled exception — proven without a
-live model call by faking `call_router`.
+"""Router's fail-closed paths: invalid output, timeout, and retry
+exhaustion each end in a `RouterResult` with `classification is None`,
+never an unhandled exception — proven without a live model call by
+faking `call_router`.
 """
 
 from datetime import datetime, timezone

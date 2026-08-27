@@ -1,6 +1,6 @@
 """Escalation report file writer: one JSON file per request, under a
-directory scoped to its session (docs/decisions.md #19 — never one
-ever-appending path, since an automated run can produce many reports).
+directory scoped to its session — never one ever-appending path, since an
+automated run can produce many reports.
 """
 
 import json

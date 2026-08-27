@@ -3,9 +3,9 @@ PII in it, gate it behind human confirmation (or an explicit bypass), then
 write it to a run-scoped file and optionally send it to the real Telegram
 test channel.
 
-Runs in-process with the Supervisor (docs/decisions.md #1/#8) — unlike
-Docs/Web Search Agent, there is no A2A hop here; the fallback for "tool
-unavailable" must not itself depend on a network call to reach.
+Runs in-process with the Supervisor — unlike Docs/Web Search Agent,
+there is no A2A hop here; the fallback for "tool unavailable" must not
+itself depend on a network call to reach.
 """
 
 import hashlib
@@ -48,9 +48,9 @@ class EscalationContext:
     Parameters
     ----------
     masked_text : str
-        Already PII-masked (docs/decisions.md #14).
+        Already PII-masked.
     classification : ClassificationOutput or None
-        `None` when Router itself failed (docs/decisions.md #12).
+        `None` when Router itself failed.
     confidence : float or None
     errors : list[ErrorType]
     docs_response, web_search_response : ... or None
@@ -76,10 +76,10 @@ class EscalationAgentResult:
         A real Telegram message was actually sent.
     deduplicated : bool
         This session already escalated an identical masked message —
-        write/send were both skipped (docs/decisions.md #19, F2).
+        write/send were both skipped.
     capped : bool
         The session or process send cap was reached — the send (not the
-        write) was skipped (docs/decisions.md #19, F17).
+        write) was skipped.
     """
 
     output: EscalationOutput
@@ -144,7 +144,7 @@ def _compose_escalation_output(compiled_prompt: str) -> EscalationOutput:
             raw = structured_model.invoke(compiled_prompt)
             if generation is not None:
                 usage = getattr(raw.get("raw"), "usage_metadata", None) or {}
-                # See docs_agent.py's identical fix, Stage 4 Wave B D-B2.
+                # See docs_agent.py's identical fix.
                 generation.update(
                     usage_details=dict(usage),
                     input=compiled_prompt,
@@ -161,11 +161,10 @@ def _compose_escalation_output(compiled_prompt: str) -> EscalationOutput:
 
 
 def _default_confirm(output: EscalationOutput) -> bool:
-    """Interactive/demo-mode HITL gate (docs/decisions.md #8) — a CLI
-    prompt. Blocks the calling process until answered; acceptable only
-    because Escalation runs in-process with the Supervisor in this
-    project's single-process demo topology, never inside an unattended web
-    request handler.
+    """Interactive/demo-mode HITL gate — a CLI prompt. Blocks the calling
+    process until answered; acceptable only because Escalation runs
+    in-process with the Supervisor in this project's single-process demo
+    topology, never inside an unattended web request handler.
     """
     print("\n--- Escalation report awaiting confirmation ---")
     print(f"summary: {output.summary}")
@@ -178,9 +177,8 @@ def _default_confirm(output: EscalationOutput) -> bool:
 
 def _mask_output(output: EscalationOutput) -> EscalationOutput:
     """F18: the seeded prompt already forbids full address/phone/email/
-    payment data (docs/decisions.md's own prompt text), but a prompt
-    instruction is bypassable by the same injection it would defend
-    against (docs/decisions.md #18) — the deterministic filter is the
+    payment data, but a prompt instruction is bypassable by the same
+    injection it would defend against — the deterministic filter is the
     actual control.
     """
     return output.model_copy(

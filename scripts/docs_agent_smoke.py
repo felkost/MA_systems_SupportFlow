@@ -3,9 +3,9 @@ a real Silpo MCP OAuth+bootstrap+search call chain, and a real OpenRouter
 LLM call — end to end, in-process (no A2A hop; that plumbing is already
 proven by `tests/infrastructure/test_docs_client.py`'s ASGI round trip).
 
-`pytest --cov=src` never touches the live Silpo MCP account
-(docs/decisions.md #21) — this script is the counterpart, run manually by
-the author after the first phone+OTP login has produced a cached token
+`pytest --cov=src` never touches the live Silpo MCP account — this script
+is the counterpart, run manually by the author after the first phone+OTP
+login has produced a cached token
 (`.venv/Scripts/python scripts/probe_silpo_mcp.py`, or any successful
 prior run of Docs Agent's own process):
 

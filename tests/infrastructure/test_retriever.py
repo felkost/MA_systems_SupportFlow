@@ -1,5 +1,5 @@
 """Knowledge-base loading (pure — no ML) and hybrid retrieval (Chroma +
-BM25 via `EnsembleRetriever`, docs/decisions.md #7). The real embedding
+BM25 via `EnsembleRetriever`). The real embedding
 model is never loaded in `pytest` — a deterministic fake `Embeddings`
 stands in, so this exercises the real `EnsembleRetriever` combination
 logic without the multi-second `sentence-transformers` download/load cost

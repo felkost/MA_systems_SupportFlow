@@ -1,9 +1,8 @@
-"""Regenerable SVG chart of decision #55's Docs Agent meta-prompting
-comparison — per-case Support Resolution Quality, `production` vs
-`candidate`, min-max range (n=3 runs/case, decision #17's own n>=3
-discipline; too few repeats for a real confidence interval, so this
-chart shows the observed range, not a fabricated CI — say so on the
-chart itself, not just here).
+"""Regenerable SVG chart of Docs Agent's meta-prompting comparison —
+per-case Support Resolution Quality, `production` vs `candidate`,
+min-max range (n=3 runs/case; too few repeats for a real confidence
+interval, so this chart shows the observed range, not a fabricated CI —
+say so on the chart itself, not just here).
 
 No plotting library installed in this project's venv (checked before
 adding one, ponytail rung 5) — draws plain SVG directly from
@@ -65,7 +64,7 @@ def main() -> None:
         f'<text x="{width / 2}" y="42" text-anchor="middle" font-size="12" '
         f'fill="#555">production vs candidate, n={n_runs} runs/case, bars show '
         f"min–max range (too few runs for a real CI) — "
-        f"evals/docs_optimization_set.json, decision #55, 2026-08-26</text>",
+        f"evals/docs_optimization_set.json, 2026-08-26</text>",
     ]
 
     # 0-1 axis, never truncated.

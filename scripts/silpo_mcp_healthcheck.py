@@ -1,10 +1,10 @@
 """Preflight check for the live Silpo MCP server, independent of the
 Supervisor/LangGraph stack — no LLM calls, just the four allowlisted
-tools `search_products` actually needs (docs/decisions.md #51 found
-`silpo_get_available_delivery_types` returning an empty response body
-live on 2026-08-26; this script exists to answer "is that still true,
-and does it look like a data-shape change or a transient outage" without
-burning a full golden-dataset run to find out).
+tools `search_products` actually needs. `silpo_get_available_delivery_types`
+was found returning an empty response body live on 2026-08-26; this
+script exists to answer "is that still true, and does it look like a
+data-shape change or a transient outage" without burning a full
+golden-dataset run to find out.
 
     .venv/Scripts/python scripts/silpo_mcp_healthcheck.py
 

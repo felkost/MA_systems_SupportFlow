@@ -1,7 +1,6 @@
-"""Stage 1 Go/No-Go: Router classification accuracy on the held-out gate
-set (docs/decisions.md #17). Makes real OpenRouter calls — a paid,
-budget-consuming step handed over to the author to run, never executed
-automatically.
+"""Go/No-Go: Router classification accuracy on the held-out gate set.
+Makes real OpenRouter calls — a paid, budget-consuming step handed over
+to the author to run, never executed automatically.
 
 >= 3 runs against the n=12 labelled set in
 tests/fixtures/router_classification_cases.json, reporting per-run
@@ -26,7 +25,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 CASES_PATH = PROJECT_ROOT / "tests" / "fixtures" / "router_classification_cases.json"
 OUTPUT_PATH = PROJECT_ROOT / "output" / "router_gate_result.json"
 RUNS = 3
-PASS_THRESHOLD = 10  # of 12 — docs/decisions.md #17, not a literal "10/10"
+PASS_THRESHOLD = 10  # of 12, not a literal "10/10"
 
 
 def _load_env() -> None:
@@ -52,8 +51,7 @@ def _run_once(cases: list[dict]) -> dict:
             request_id=str(uuid.uuid4()),
             session_id="router-gate",
             # 32-char lowercase hex, not a hyphenated uuid4 — Langfuse's
-            # TraceContext mechanism (Stage 4) requires this exact format
-            # (docs/decisions.md Stage 4 decision 32).
+            # TraceContext mechanism requires this exact format.
             trace_id=new_trace_id(),
         )
         correct = (

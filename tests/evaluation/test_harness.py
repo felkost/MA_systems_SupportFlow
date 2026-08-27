@@ -1,5 +1,5 @@
-"""Stage 4 Wave B decision D-B6's dispatch logic and D-B1's post-hoc route
-signal — both pure/mockable, so this file makes no live LLM/Telegram/file
+"""The dispatch logic and the post-hoc route signal — both pure/mockable,
+so this file makes no live LLM/Telegram/file
 call and is safe for the fast `pytest --cov=src` gate. `_run_in_process`/
 `_run_live`'s own real execution is exercised only by the deliberate,
 permission-gated `deepeval test run tests/test_golden_dataset.py` run.
@@ -16,11 +16,11 @@ from tests.evaluation.metrics import RouteCorrectnessMetric
 def test_run_case_sets_bypass_hitl_true_and_never_overrides_allow_real_send(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """FB3 / Lane 4 finding #2: an automated golden-dataset run must not
-    hang on `escalation_agent.py`'s interactive confirm prompt, and must
-    not silently start permitting real Telegram sends either — these are
-    decision #19's two independent flags, and only one of them is this
-    harness's business to touch.
+    """An automated golden-dataset run must not hang on
+    `escalation_agent.py`'s interactive confirm prompt, and must not
+    silently start permitting real Telegram sends either — these are two
+    independent flags, and only one of them is this harness's business
+    to touch.
     """
     from src.kernel.settings import settings
 
@@ -65,8 +65,8 @@ def test_actual_route_reads_reject_directly_from_next_action() -> None:
 
 def test_actual_route_prefers_escalation_output_over_docs_response() -> None:
     """docs_low_confidence → escalate leaves BOTH `docs_response` and
-    `escalation_output` populated (round-2 correction to D-B1's "mutually
-    exclusive" claim, refuted by adversarial review) — escalation must win.
+    `escalation_output` populated (the two are not mutually exclusive,
+    as an earlier assumption had it) — escalation must win.
     """
     from src.domain.schemas import DocsResponse, EscalationOutput
 
@@ -99,8 +99,8 @@ def _test_case(expected_route: str, actual_route: str):
 
 
 def test_case_to_metric_mapping_skips_faithfulness_for_escalation_only_case() -> None:
-    """FB2: attaching `FaithfulnessMetric` to a case whose route never
-    reached Docs/Web Search would only ever score a meaningless claim.
+    """Attaching `FaithfulnessMetric` to a case whose route never reached
+    Docs/Web Search would only ever score a meaningless claim.
     """
     metrics = harness.metrics_for_test_case(
         _test_case(expected_route="escalate", actual_route="escalate")

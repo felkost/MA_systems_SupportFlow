@@ -1,6 +1,6 @@
 """Pure routing rules (task §7 steps 3-6). No I/O, no LLM call — this is
 where route *correctness* is tested exhaustively, independent of the graph
-that later dispatches on it (docs/decisions.md #16).
+that later dispatches on it.
 """
 
 from src.domain.schemas import ClassificationOutput
@@ -15,8 +15,7 @@ def decide_route(classification: ClassificationOutput) -> NextAction:
     classification : ClassificationOutput
         Router's validated output. A classification that failed to
         validate never reaches this function — that is
-        `router_agent.py`'s fail-closed path (docs/decisions.md #12), not
-        a routing decision.
+        `router_agent.py`'s fail-closed path, not a routing decision.
 
     Returns
     -------
@@ -71,10 +70,9 @@ def confidence_below_threshold(confidence: float, threshold: float | None) -> bo
     -----
     This gate rests on a self-reported number the answering LLM invents
     about itself; whether it correlates with actual correctness is an
-    unproven assumption this function cannot resolve, only apply
-    (docs/decisions.md #12's note on the confidence gate, F19 — validating
-    it is Stage 4's job, by plotting reported confidence against judged
-    correctness).
+    unproven assumption this function cannot resolve, only apply —
+    validating it means plotting reported confidence against judged
+    correctness.
     """
     if threshold is None:
         return False

@@ -2,7 +2,7 @@
 Langfuse call (README's Gate section — Langfuse joins the existing
 Silpo MCP/Tavily/OpenRouter/Telegram list this promise already covers).
 
-Found live during Stage 4 Wave A's own observability smoke test: with
+Found live during an observability smoke test: with
 `TRACING_ENABLED=true` genuinely set in the real `.env` (needed for that
 live check), every test that never mocks `get_langfuse_client()` was
 silently sending real spans to the real Langfuse project — one test run's
@@ -15,8 +15,7 @@ Individual tests (e.g. `tests/infrastructure/test_observability.py`) that
 need to exercise the `True` path still can — they monkeypatch it
 themselves, after this fixture's own baseline runs.
 
-`@pytest.mark.eval` tests are exempt (added 2026-08-26, Stage 4 Wave B
-Step 4 prerequisite): they are never collected by the default
+`@pytest.mark.eval` tests are exempt: they are never collected by the default
 `pytest --cov=src` gate (`pyproject.toml`'s own `addopts = "-m 'not eval'"`
 already excludes them), so this exemption cannot affect that promise —
 but forcing tracing off unconditionally here also silently disabled it

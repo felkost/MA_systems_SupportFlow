@@ -1,18 +1,14 @@
 """LangGraph node functions and graph assembly — split out of
-`supervisor.py` (Stage 4 Wave A) as a same-PR file-size prerequisite:
-`supervisor.py` grew past CLAUDE.md's 320-line ceiling once tracing
-instrumentation landed. `supervisor.py` keeps the request-handling
-entrypoint (`handle_request`/`build_initial_state`); this module owns the
-graph's own nodes, conditional edges, and compilation — a genuine
-responsibility split (request orchestration vs. graph definition), not a
+`supervisor.py` as a same-PR file-size prerequisite: `supervisor.py` grew
+past its file-size ceiling once tracing instrumentation landed.
+`supervisor.py` keeps the request-handling entrypoint
+(`handle_request`/`build_initial_state`); this module owns the graph's
+own nodes, conditional edges, and compilation — a genuine responsibility
+split (request orchestration vs. graph definition), not a
 constants-only extraction.
 
-docs/decisions.md #16: the graph wired here is the real one — real Router
-node, real conditional edges dispatching on `decide_route()` — but
-Docs/Web Search/Escalation are not built until Stage 2/3, so their nodes
-raise `NotImplementedError` naming the owning stage rather than returning
-a fabricated result. A graph test can then assert an edge reaches the
-correct (still-unimplemented) node without any stub silently "passing".
+The graph wired here is the real one — real Router node, real
+conditional edges dispatching on `decide_route()`.
 """
 
 from contextlib import nullcontext
@@ -44,18 +40,16 @@ from src.kernel.settings import load_agent_config
 def _current_observation_id() -> str | None:
     """The active Langfuse observation id, or `None` when tracing is
     disabled — read fresh at each A2A call site rather than threaded
-    through `SupportFlowState` (Stage 4 decision 39).
+    through `SupportFlowState`.
     """
     client = get_langfuse_client()
     return client.get_current_observation_id() if client is not None else None
 
 
 def router_node(state: SupportFlowState) -> dict[str, Any]:
-    """The one real agent node in Stage 1.
-
-    Runs `router_agent.run_router`, then either routes via
+    """Runs `router_agent.run_router`, then either routes via
     `decide_route()` on success or fails closed to Escalation on
-    exhaustion (docs/decisions.md #12).
+    exhaustion.
     """
     client = get_langfuse_client()
     span_cm = (
@@ -97,10 +91,9 @@ def router_node(state: SupportFlowState) -> dict[str, Any]:
 
 
 def docs_node(state: SupportFlowState) -> dict[str, Any]:
-    """Calls Docs Agent over A2A (docs/decisions.md #1/#23) and routes on
-    the result: a model failure or a below-threshold confidence both
-    escalate (task §7 step 6). Mirrors `web_search_node` exactly — same
-    no-retry rationale (docs/decisions.md #20's Wave 2a precedent).
+    """Calls Docs Agent over A2A and routes on the result: a model failure
+    or a below-threshold confidence both escalate (task §7 step 6).
+    Mirrors `web_search_node` exactly — same no-retry rationale.
     """
     config = load_agent_config("docs")
     deadline = datetime.now(timezone.utc) + timedelta(seconds=config.timeout_seconds)
@@ -117,8 +110,8 @@ def docs_node(state: SupportFlowState) -> dict[str, Any]:
     except (A2ATimeoutError, A2AClientTimeoutError):
         # A2ATimeoutError: this project's own pre-flight deadline check.
         # A2AClientTimeoutError: the a2a-sdk's own runtime network
-        # read-timeout — found live during Stage 4 Wave A's own smoke
-        # test (Docs Agent's first-request retriever cold-start exceeded
+        # read-timeout — found live during a smoke test (Docs Agent's
+        # first-request retriever cold-start exceeded
         # config/models.yaml's docs.timeout_seconds), never triggered
         # before because no prior live run hit a slow-enough first call.
         return {"next_action": "escalate", "errors": ["docs_timeout"]}
@@ -160,12 +153,11 @@ def docs_node(state: SupportFlowState) -> dict[str, Any]:
 
 
 def web_search_node(state: SupportFlowState) -> dict[str, Any]:
-    """Calls Web Search Agent over A2A (docs/decisions.md #1/#23) and
-    routes on the result: a tool failure or a below-threshold confidence
-    both escalate (task §7 step 6). No retry loop here — unlike Router
-    (docs/decisions.md #12), Web Search does not sit on every request, so
-    one failed attempt escalating directly is the lazy, sufficient default
-    until measurement says otherwise.
+    """Calls Web Search Agent over A2A and routes on the result: a tool
+    failure or a below-threshold confidence both escalate (task §7 step
+    6). No retry loop here — unlike Router, Web Search does not sit on
+    every request, so one failed attempt escalating directly is the lazy,
+    sufficient default until measurement says otherwise.
     """
     config = load_agent_config("web_search")
     deadline = datetime.now(timezone.utc) + timedelta(seconds=config.timeout_seconds)
@@ -215,9 +207,9 @@ def web_search_node(state: SupportFlowState) -> dict[str, Any]:
 def escalate_node(state: SupportFlowState) -> dict[str, Any]:
     """The last step for a critical request, a request Supervisor could
     not resolve confidently, or a request where a tool was unavailable
-    (task §7 step 6). Runs in-process (docs/decisions.md #1/#8) — no A2A
-    hop, so this fallback does not itself depend on the network path it
-    exists to catch a failure of.
+    (task §7 step 6). Runs in-process — no A2A hop, so this fallback does
+    not itself depend on the network path it exists to catch a failure
+    of.
     """
     context = EscalationContext(
         masked_text=state["original_request_masked"],
@@ -263,7 +255,7 @@ def route_after_docs(state: SupportFlowState) -> NextAction:
 
 
 def build_graph() -> Any:
-    """Compile the Stage 1 graph: `router` → conditional edge → one of
+    """Compile the graph: `router` → conditional edge → one of
     `docs` / `web_search` / `escalate`.
 
     Returns

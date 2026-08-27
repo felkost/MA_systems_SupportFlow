@@ -4,8 +4,8 @@ Two kinds of test here, split by cost/speed — `pyproject.toml`'s
 `addopts = "-m 'not eval'"` keeps the second kind out of the default
 `pytest --cov=src` gate (README's Gate promise: never a live call):
 
-- Deterministic checks on `evals/golden_dataset.json` itself (FB8, D-B4) —
-  fast, free, run on every gate.
+- Deterministic checks on `evals/golden_dataset.json` itself — fast, free,
+  run on every gate.
 - `@pytest.mark.eval` — one real end-to-end case per test, real
   OpenRouter/Silpo MCP/Tavily calls (and, for an escalating case, a real
   file write and — only with `ALLOW_REAL_SEND=true` — a real Telegram
@@ -26,7 +26,7 @@ from tests.evaluation import harness
 
 GOLDEN_DATASET_PATH = Path(PROJECT_ROOT) / "evals" / "golden_dataset.json"
 # One tag per pytest process, so this gate run's traces are distinguishable
-# in Langfuse from any other run (author's own request, docs/decisions.md #57).
+# in Langfuse from any other run.
 _RUN_TAG = f"final-gate-{datetime.now(timezone.utc):%Y%m%d-%H%M%S}"
 
 
@@ -35,8 +35,7 @@ def _eval_warm_up() -> None:
     """Absorbs Docs/Web Search Agent's cold start once per pytest session,
     before the first `@pytest.mark.eval` case runs — the same protection
     `scripts/run_golden_dataset_baseline.py` always had, extended to a
-    direct `pytest`/`deepeval test run -m eval` invocation (Stage 4 Wave B
-    Step 4 prerequisite, `docs/decisions.md`).
+    direct `pytest`/`deepeval test run -m eval` invocation.
     """
     harness.warm_up()
 
@@ -47,9 +46,9 @@ def _load_cases() -> list[dict]:
 
 
 def test_golden_dataset_contains_no_pii() -> None:
-    """FB8: task §9's synthetic-users requirement, checked with the same
+    """task §9's synthetic-users requirement, checked with the same
     PII detector already trusted for the input filter and
-    `PrivacySafetyMetric` — reused, not duplicated (ponytail rung 2).
+    `PrivacySafetyMetric` — reused, not duplicated.
     """
     leaks = [
         case["id"]
@@ -61,8 +60,8 @@ def test_golden_dataset_contains_no_pii() -> None:
 
 
 def test_golden_dataset_split_and_injection_counts() -> None:
-    """D-B4: 6/6/6 typical/edge/failure, >=3 injection cases in the edge
-    slice — closes Stage 1's own F1 row. Checked by script, not by eye.
+    """6/6/6 typical/edge/failure, >=3 injection cases in the edge
+    slice. Checked by script, not by eye.
     """
     cases = _load_cases()
     assert len(cases) == 18
@@ -80,7 +79,7 @@ def test_golden_dataset_split_and_injection_counts() -> None:
 
 def test_golden_dataset_failure_slice_covers_all_six_named_scenarios() -> None:
     """§10's own literal list — every one of the 6 must have exactly one
-    case, per D-B3's corrected mapping.
+    case.
     """
     expected_scenarios = {
         "insufficient-evidence",
@@ -107,8 +106,8 @@ def test_golden_dataset_case(case: dict, _eval_warm_up: None) -> None:
         tag_trace(trace_id, [_RUN_TAG])
 
     if case["expected_route"] == "reject":
-        # D-B1's round-2 fix: no response field to derive a route signal
-        # from on this path — asserted directly, not via RouteCorrectnessMetric.
+        # No response field to derive a route signal from on this path —
+        # asserted directly, not via RouteCorrectnessMetric.
         assert test_case.metadata["actual_route"] == "reject"
         return
 

@@ -28,7 +28,7 @@ from src.kernel.settings import settings
 @pytest.fixture(autouse=True)
 def _reset_module_state(monkeypatch: pytest.MonkeyPatch) -> None:
     """Isolate each test from the module-level session/process stores and
-    from real `.env` settings (docs/decisions.md #19's send-safety flags).
+    from real `.env` settings (the send-safety flags).
     """
     monkeypatch.setattr(escalation_agent, "_session_store", {})
     monkeypatch.setattr(escalation_agent, "_process_send_count", 0)
@@ -200,8 +200,8 @@ def test_different_messages_in_same_session_are_not_deduplicated() -> None:
 
 def test_context_with_router_failure_and_prior_agent_attempts_is_rendered() -> None:
     """Exercises every branch of `_render_context`: no classification
-    (Router itself failed, docs/decisions.md #12), a set confidence, a
-    non-empty error list, and both prior agents having been tried.
+    (Router itself failed), a set confidence, a non-empty error list,
+    and both prior agents having been tried.
     """
     context = EscalationContext(
         masked_text="Питання без відповіді",

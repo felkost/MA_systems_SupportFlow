@@ -56,7 +56,7 @@ def test_call_web_search_returns_validated_response(
     assert result.response.answer == "Так, є акція на хліб."
     assert result.response.confidence == 0.9
     assert result.retrieval_context == ["хліб зі знижкою 20%"]
-    assert result.tools_called == ["tavily"]  # Stage 4 Wave B D-B7
+    assert result.tools_called == ["tavily"]
 
 
 def test_call_web_search_forwards_parent_span_id(

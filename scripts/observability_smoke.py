@@ -1,10 +1,9 @@
-"""Manual, live smoke check for Stage 4 Wave A: one full customer request
-through Supervisor -> Router (in-process) -> Docs Agent (A2A hop, a
-second OS process) -> model -> tool, with real Langfuse tracing, then a
-read-back via Langfuse's own REST API confirming task §9's readiness
-criterion (narrowed to Wave A's own scope, docs/decisions.md Stage 4
-decision 38): exactly one trace for this request, spanning both
-processes, with no orphaned records and a final answer.
+"""Manual, live smoke check: one full customer request through
+Supervisor -> Router (in-process) -> Docs Agent (A2A hop, a second OS
+process) -> model -> tool, with real Langfuse tracing, then a read-back
+via Langfuse's own REST API confirming task §9's readiness criterion:
+exactly one trace for this request, spanning both processes, with no
+orphaned records and a final answer.
 
 `pytest --cov=src` never makes a live Langfuse/OpenRouter/Silpo MCP call —
 this script is the counterpart. Requires:
@@ -22,8 +21,8 @@ this script is the counterpart. Requires:
     TRACING_ENABLED=true .venv/Scripts/python scripts/observability_smoke.py
 
 A second run, started with the Docs Agent process killed first, verifies
-decision 39's actual point: a connection failure still produces a
-client-side error span rather than no record at all.
+that a connection failure still produces a client-side error span rather
+than no record at all.
 """
 
 import sys

@@ -18,10 +18,9 @@ from src.domain.schemas import (
 
 NextAction = Literal["router", "docs", "web_search", "escalate", "reject", "respond"]
 
-# docs/decisions.md #14: a fixed vocabulary, never a raw exception string —
-# `errors` must never carry the offending customer text (e.g. a
-# `ValidationError` repr contains its input), which graph-boundary masking
-# does not cover.
+# A fixed vocabulary, never a raw exception string — `errors` must never
+# carry the offending customer text (e.g. a `ValidationError` repr contains
+# its input), which graph-boundary masking does not cover.
 ErrorType = Literal[
     "empty_input",
     "input_too_long",
@@ -49,17 +48,16 @@ class SupportFlowState(TypedDict):
     Parameters
     ----------
     request_id, session_id, trace_id : str
-        docs/decisions.md #19: `session_id` travels in
-        `AcpEnvelope` too — task §9 requires it in observation metadata.
+        `session_id` travels in `AcpEnvelope` too — task §9 requires it in
+        observation metadata.
     original_request_masked : str
-        docs/decisions.md #14: masking happens before this state is built,
-        never as a node inside the traced graph. The unmasked text, if a
-        node genuinely needs it, is never stored here.
+        Masking happens before this state is built, never as a node inside
+        the traced graph. The unmasked text, if a node genuinely needs it,
+        is never stored here.
     classification : ClassificationOutput or None
     docs_response, web_search_response, escalation_output : ... or None
-        Populated by their respective agents once built (Stage 2/3); `None`
-        while a route is unimplemented in Stage 1
-        (docs/decisions.md #16).
+        Populated by their respective agents once built; `None` while a
+        route is unimplemented.
     answer : str or None
         Supervisor's composed final answer (task §7 step 7).
     confidence : float or None
@@ -69,36 +67,33 @@ class SupportFlowState(TypedDict):
         `Annotated` with `operator.add` so parallel branches (if any exist
         later) merge rather than overwrite.
     retry_count : int
-        Compared against `AgentModelConfig.max_retries`
-        (docs/decisions.md #12).
+        Compared against `AgentModelConfig.max_retries`.
     escalation_count : int
         Per-session cap on real escalations, incremented by Supervisor —
         never by an agent prompt, since a prompt instruction is bypassable
-        by the same injection it would defend against
-        (docs/decisions.md #19, F2).
+        by the same injection it would defend against.
     router_prompt_version : int or None
         The resolved Langfuse prompt version actually used for this
-        request's Router call (docs/decisions.md #13) — `label="production"`
-        is mutable, so this is what makes a later before/after comparison
-        attributable to a specific prompt version.
+        request's Router call — `label="production"` is mutable, so this
+        is what makes a later before/after comparison attributable to a
+        specific prompt version.
     retrieval_context : list[str]
-        The retrieved chunk texts Docs/Web Search Agent actually used
-        (docs/decisions.md #22) — state-only, not part of either mandatory
-        response model (task §6 freezes their shape). Stage 4's DeepEval
-        `FaithfulnessMetric` scores against this.
+        The retrieved chunk texts Docs/Web Search Agent actually used —
+        state-only, not part of either mandatory response model (task §6
+        freezes their shape). Scores DeepEval's `FaithfulnessMetric`.
     tools_called : list[str]
         Names of the tools Docs/Web Search Agent actually invoked
-        successfully (Stage 4 Wave B decision D-B7) — same sibling-field
-        pattern as `retrieval_context`. A name is appended only once its
-        call has returned; a mid-call timeout or a swallowed exception
-        never adds one. Scores DeepEval's `ToolCorrectnessMetric`.
+        successfully — same sibling-field pattern as `retrieval_context`.
+        A name is appended only once its call has returned; a mid-call
+        timeout or a swallowed exception never adds one. Scores DeepEval's
+        `ToolCorrectnessMetric`.
     report_written, telegram_sent : bool
-        Stage 5: `escalate_node`'s own `EscalationAgentResult.written`/
-        `.sent`, surfaced so a caller (the API's `ChatResponse`) can show
-        whether the operator report/Telegram send actually happened,
-        rather than only that the case escalated. `False` on every
-        non-escalated request — never inferred from `next_action` alone,
-        since a deduplicated or capped escalation still sets
+        `escalate_node`'s own `EscalationAgentResult.written`/`.sent`,
+        surfaced so a caller (the API's `ChatResponse`) can show whether
+        the operator report/Telegram send actually happened, rather than
+        only that the case escalated. `False` on every non-escalated
+        request — never inferred from `next_action` alone, since a
+        deduplicated or capped escalation still sets
         `next_action="escalate"` without writing or sending anything.
     next_action : NextAction
     """

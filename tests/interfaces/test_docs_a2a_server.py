@@ -1,9 +1,9 @@
-"""`DocsExecutor`'s own exception handling (docs/decisions.md Stage 4
-Wave B D-B3). Round 1 of this wave's kickoff review fixed `docs_agent.py`
-alone; round 2 traced the call chain and found that fix never reached
-`docs_node` — an uncaught `SilpoMcpAuthRequiredError` crashed the request-
-handling task instead of producing the JSON error payload
-`docs_client.py` knows how to read. This test exercises the real chain
+"""`DocsExecutor`'s own exception handling. A first fix addressed
+`docs_agent.py` alone; a follow-up traced the call chain and found that
+fix never reached `docs_node` — an uncaught `SilpoMcpAuthRequiredError`
+crashed the request-handling task instead of producing the JSON error
+payload `docs_client.py` knows how to read. This test exercises the real
+chain
 end to end over an in-process ASGI transport (no real socket), the same
 technique `tests/infrastructure/test_a2a_transport.py` already uses.
 """

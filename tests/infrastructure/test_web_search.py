@@ -2,7 +2,7 @@
 (task §3/§13). The fallback control flow is tested via dependency
 injection so it needs no real Tavily/DuckDuckGo call and no network —
 `_tavily_search`/`_ddgs_search` (the real provider calls) are exercised
-only by the manual smoke path (docs/decisions.md #21), not here.
+only by the manual smoke path, not here.
 """
 
 import pytest
@@ -36,10 +36,9 @@ def test_search_falls_back_to_ddgs_when_tavily_raises() -> None:
 
 
 def test_search_reports_which_provider_served_the_result() -> None:
-    """Stage 4 Wave B decision D-B7.4: `SupportFlowState.tools_called`
-    needs to know which provider actually answered — there is no other
-    signal to infer it from (`Source.ref` is free-form LLM text, not a
-    provider tag).
+    """`SupportFlowState.tools_called` needs to know which provider
+    actually answered — there is no other signal to infer it from
+    (`Source.ref` is free-form LLM text, not a provider tag).
     """
     tavily_result = [SearchResult(title="t", url="https://example.com", content="c")]
     tavily_outcome = search(

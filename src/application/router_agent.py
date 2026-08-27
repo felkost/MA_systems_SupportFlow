@@ -1,7 +1,7 @@
-"""Router Agent orchestration: retry policy and the fail-closed default
-(docs/decisions.md #12). `src.infrastructure.acp.call_router` makes one
-attempt; this module decides what happens when that attempt fails and
-counts the retries against `config/models.yaml`'s `max_retries`.
+"""Router Agent orchestration: retry policy and the fail-closed default.
+`src.infrastructure.acp.call_router` makes one attempt; this module
+decides what happens when that attempt fails and counts the retries
+against `config/models.yaml`'s `max_retries`.
 """
 
 from dataclasses import dataclass, field
@@ -19,7 +19,7 @@ class RouterResult:
     ----------
     classification : ClassificationOutput or None
         `None` means every attempt failed — the caller must route to
-        Escalation (docs/decisions.md #12's fail-closed default).
+        Escalation (the fail-closed default).
     prompt_version : int or None
         Set only when `classification` is set.
     errors : list[ErrorType]
@@ -44,8 +44,7 @@ def run_router(
     Parameters
     ----------
     masked_text : str
-        Already PII-masked (docs/decisions.md #14) — never the raw
-        customer message.
+        Already PII-masked — never the raw customer message.
     request_id, session_id, trace_id : str
 
     Returns
@@ -53,7 +52,7 @@ def run_router(
     RouterResult
         `classification is None` on exhaustion — the caller (Supervisor)
         must fail closed to Escalation, never fail open to a default
-        category (docs/decisions.md #12).
+        category.
     """
     config = load_agent_config("router")
     errors: list[ErrorType] = []

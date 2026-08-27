@@ -1,4 +1,4 @@
-"""Web Search Agent's A2A server entrypoint (docs/decisions.md #1). Hosts
+"""Web Search Agent's A2A server entrypoint. Hosts
 `src.application.web_search_agent.run_web_search` behind the A2A protocol
 so `application/supervisor.py` reaches it only over the network, never by
 direct import (the layer table's single most load-bearing rule,
@@ -42,7 +42,7 @@ class WebSearchExecutor(AgentExecutor):
     caller) reads it and decides the escalation path (task §7 step 6);
     keeping the failure inside the A2A message contract avoids depending
     on `a2a-sdk`'s own exception-to-JSON-RPC-error mapping, which this
-    project's SDK probe did not verify (docs/decisions.md #23).
+    project's SDK probe did not verify.
     """
 
     async def execute(self, context: RequestContext, event_queue: EventQueue) -> None:

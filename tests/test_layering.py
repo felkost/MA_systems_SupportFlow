@@ -1,5 +1,5 @@
-"""Enforce the Clean Architecture layer table from CLAUDE.md by walking
-imports, not by trusting directory placement alone.
+"""Enforce the Clean Architecture layer table by walking imports, not by
+trusting directory placement alone.
 """
 
 import ast
@@ -73,7 +73,7 @@ def test_no_python_files_yet_or_all_respect_layering():
 
 
 def test_application_never_imports_agent_a2a_servers_directly():
-    """The single most load-bearing rule in CLAUDE.md: a Supervisor that
+    """The single most load-bearing layering rule: a Supervisor that
     imports an A2A-hosted agent's module directly can silently degrade a
     network delegation into a local function call while every other test
     still passes.
@@ -99,7 +99,7 @@ def test_application_never_imports_agent_a2a_servers_directly():
 
 def test_supervisor_never_imports_agent_orchestration_modules_directly():
     """A narrower instance of the same rule as above: `docs_agent.py` and
-    `web_search_agent.py` (docs/decisions.md #20) are `application`-layer
+    `web_search_agent.py` are `application`-layer
     modules by file location, but they are only ever meant to run inside
     their own A2A server process (imported by `interfaces/*_a2a_server.py`
     alone). `supervisor.py` importing either directly would be the exact

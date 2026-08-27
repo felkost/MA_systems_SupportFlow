@@ -23,7 +23,7 @@ def get_chat_model(
         When set, replaces `config/models.yaml`'s `timeout_seconds` — used
         by `src.infrastructure.acp.call_router` to bound the remaining
         time on `AcpEnvelope.deadline` rather than the full per-call
-        timeout (docs/decisions.md #19).
+        timeout.
 
     Returns
     -------
@@ -31,9 +31,9 @@ def get_chat_model(
 
     Notes
     -----
-    `max_retries=0`: retry policy is `application` layer's job
-    (docs/decisions.md #12) — a client-level retry here would hide a
-    failure from the fail-closed logic that must count it.
+    `max_retries=0`: retry policy is `application` layer's job — a
+    client-level retry here would hide a failure from the fail-closed
+    logic that must count it.
     """
     config = load_agent_config(role)
     timeout = (

@@ -1,6 +1,5 @@
-"""`AcpEnvelope.deadline` is enforced, not merely carried
-(docs/decisions.md #19: an unenforced field reads as a control during
-review while providing none).
+"""`AcpEnvelope.deadline` is enforced, not merely carried — an unenforced
+field reads as a control during review while providing none.
 """
 
 from datetime import datetime, timedelta, timezone
