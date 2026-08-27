@@ -82,10 +82,203 @@
   color: var(--text-muted);
 }
 
+/* --- Workspace: metrics rail + chat ------------------------------------- */
+
+.workspace {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  min-height: 0;
+}
+
+/* A bounded quarter rather than a raw percentage: the card labels need
+   about 260px to avoid wrapping mid-phrase, and an unbounded 25% would
+   stretch to an unreadable line length on a wide monitor. */
+.sidebar {
+  position: sticky;
+  top: 61px;
+  flex: 0 0 clamp(347px, 33%, 453px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px 16px;
+  border-right: 1px solid var(--border);
+  background: var(--surface);
+  max-height: calc(100svh - 61px);
+  overflow-y: auto;
+}
+
+.sidebar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sidebar-head h2 {
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.status-dot {
+  font-size: 0.95rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.status-dot.loading {
+  color: var(--warn);
+  animation: status-pulse 1s ease-in-out infinite;
+}
+
+.status-dot.ok {
+  color: var(--ok);
+}
+
+.status-dot.error {
+  color: var(--danger);
+}
+
+@keyframes status-pulse {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status-dot.loading {
+    animation: none;
+  }
+}
+
+.pill.run-eval {
+  width: 100%;
+  justify-content: center;
+  margin-top: 9px;
+  font-size: 0.74rem;
+  padding: 7px 10px;
+}
+
+.pill.refresh {
+  justify-content: center;
+  font-size: 0.78rem;
+  padding: 7px 12px;
+}
+
+.score-card {
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-alt);
+}
+
+.score-card h3 {
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.score-judge {
+  margin-top: 3px;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.metric-select {
+  width: 100%;
+  margin-top: 8px;
+  padding: 5px 8px;
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.metric-select:focus-visible {
+  outline: 2px solid var(--brand-orange);
+  outline-offset: 1px;
+}
+
+.score-mean {
+  margin-top: 6px;
+  font-size: 1.85rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--brand-orange);
+  line-height: 1.1;
+}
+
+.score-rows {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.75rem;
+}
+
+.score-rows > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.score-rows dt {
+  color: var(--text-muted);
+}
+
+.score-rows dd {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.score-note {
+  margin-top: 8px;
+  font-size: 0.7rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.sidebar-note {
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+ul.sidebar-note {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  list-style: none;
+}
+
+/* Both notes share one shape so they read as a pair; only the accent
+   colour separates "this comparison is valid" from "this one is not". */
+.sidebar-note.boxed {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--surface-alt);
+  border-left: 3px solid var(--border);
+}
+
+.sidebar-note.compare {
+  border-left-color: var(--ok);
+}
+
+.sidebar-note.caution {
+  border-left-color: var(--warn);
+}
+
+
 /* --- Chat --------------------------------------------------------------- */
 
 .chat {
   flex: 1;
+  min-width: 0;
   width: 100%;
   max-width: 760px;
   margin: 0 auto;
@@ -93,6 +286,7 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  align-self: stretch;
 }
 
 .messages {
@@ -274,6 +468,23 @@
 .composer button:disabled {
   opacity: 0.45;
   cursor: default;
+}
+
+/* Below this the rail would leave the chat too narrow to read, so it
+   stops being a rail and becomes a block above the conversation. */
+@media (max-width: 900px) {
+  .workspace {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    position: static;
+    flex: none;
+    width: 100%;
+    max-height: none;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
 }
 
 @media (max-width: 600px) {

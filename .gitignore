@@ -43,3 +43,8 @@ output/*
 !output/.gitkeep
 !output/router_gate_result.json
 !output/deepeval_baseline.json
+# A measurement result like the two above, and PII-free by construction:
+# metric names, score arrays, a timestamp and a case count — never the
+# customer text those scores were computed from (that stays in the
+# untracked live_cases.jsonl).
+!output/live_eval.json

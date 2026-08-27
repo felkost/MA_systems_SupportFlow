@@ -198,7 +198,22 @@ def _configure(
                 "column": "name",
                 "operator": "any of",
                 "value": span_names,
-            }
+            },
+            # An agent that failed leaves its compose span open with
+            # `input`/`output` never set — the `update()` that fills them
+            # runs after the model call that raised. Measured live
+            # 2026-08-28: two such spans were scored 0.0 with the judge's
+            # own reason "Both the customer message and agent response are
+            # empty", dragging the live mean from 0.78 to 0.60. A judge
+            # cannot tell "answered badly" from "never answered", so the
+            # error case must not reach it at all — and an empty span is a
+            # billed judge call bought for nothing.
+            {
+                "type": "stringOptions",
+                "column": "level",
+                "operator": "any of",
+                "value": ["DEFAULT", "DEBUG", "WARNING"],
+            },
         ],
         "mapping": [
             {"variable": "input", "source": "input"},
