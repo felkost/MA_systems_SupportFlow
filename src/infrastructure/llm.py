@@ -18,7 +18,7 @@ def get_chat_model(
 
     Parameters
     ----------
-    role : {"router", "docs", "web_search", "escalation", "supervisor"}
+    role : {"router", "docs", "web_search", "escalation"}
     timeout_override : float or None
         When set, replaces `config/models.yaml`'s `timeout_seconds` — used
         by `src.infrastructure.acp.call_router` to bound the remaining

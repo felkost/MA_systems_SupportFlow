@@ -30,7 +30,7 @@ def test_load_agent_config_reads_the_real_models_yaml() -> None:
 
 
 def test_load_agent_config_reads_every_declared_role() -> None:
-    for role in ("router", "docs", "web_search", "escalation", "supervisor"):
+    for role in ("router", "docs", "web_search", "escalation"):
         config = load_agent_config(role)  # type: ignore[arg-type]
         assert config.model
 

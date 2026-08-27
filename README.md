@@ -136,9 +136,27 @@ them to answer questions — this is its "knowledge base".
 | `dialogues.json` | Example conversations between a customer and a human operator. |
 
 Every entry has an `id`, the text, a source, and a date. Docs Agent turns
-these files into a search index (Chroma + BM25) the first time it starts,
-and searches it for every customer question. If you add or edit an entry,
+these files into a search index (Chroma + BM25) when it starts, and
+searches it for every customer question. If you add or edit an entry,
 restart the launcher so it rebuilds the index.
+
+**Why the index is built at every start, and not saved to disk.** Docs
+Agent takes about 57 seconds to become ready. Measured, that time is:
+
+| Step | Time |
+|---|---|
+| Load the AI model that turns text into vectors | ~52 s |
+| Build the search index from the 27 knowledge-base entries | ~1 s |
+
+Saving the index to disk would only save that ~1 second. The model itself
+must still be loaded into memory every time, because Docs Agent needs it
+to turn each *customer question* into a vector before it can search. So a
+separate "build the index once" script would not make startup faster
+here.
+
+This answer depends on the size of the knowledge base. With 27 entries,
+building the index is free. With tens of thousands of documents, it would
+not be — and then saving the index to disk would be worth doing.
 
 ## Scripts
 
@@ -161,7 +179,7 @@ check the script's own message about cost before you type "yes".
 | `silpo_mcp_healthcheck.py` | Checks that the saved Silpo MCP login still works. |
 | `probe_silpo_mcp.py` | Lists the tools Silpo MCP offers right now. Used to build `docs/silpo_mcp_allowlist.md`. |
 | `telegram_bot_setup_check.py` | Checks that your Telegram bot and chat settings are correct. |
-| `seed_prompts.py` | Uploads the five agent prompts to Langfuse, under the "production" label. |
+| `seed_prompts.py` | Uploads the four agent prompts to Langfuse, under the "production" label. |
 | `configure_langfuse_evaluator.py` | Sets up two automatic quality checks in Langfuse: one for Docs/Web Search answers, one for Escalation handoffs. |
 | `sync_dataset.py` | Copies the three test-case files (below) to Langfuse. Runs itself after every commit. |
 | `docs_agent_smoke.py`, `escalation_agent_smoke.py`, `observability_smoke.py`, `golden_dataset_smoke.py` | Quick one-case checks against the real services. Run one of these first, before a bigger (and more expensive) run. |
@@ -203,6 +221,6 @@ also have a matching `.svg` file.
   first, then DuckDuckGo if that fails.
 - `langfuse-observability.html` — what SupportFlow sends to Langfuse, and
   how one chat message becomes one trace across three processes.
-- `prompt-architecture.html` (+ `prompt-*.svg`) — the five agent prompts,
+- `prompt-architecture.html` (+ `prompt-*.svg`) — the four agent prompts,
   their structure, and the two prompt experiments run against them (both
   came back "inconclusive" — no prompt was changed because of them).

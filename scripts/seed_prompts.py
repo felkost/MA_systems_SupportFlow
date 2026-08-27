@@ -1,4 +1,4 @@
-"""Seed the five zero-shot system prompts into Langfuse Prompt Management
+"""Seed the four zero-shot system prompts into Langfuse Prompt Management
 with the `production` label, so the system runs on managed, versioned
 prompts from the first request instead of a hardcoded string "extracted
 later".
@@ -208,33 +208,6 @@ attempted_resolution: what was already tried before escalating
 <case_context>
 {{context}}
 </case_context>
-""",
-    "supportflow/supervisor": """\
-## Identity
-You are the Supervisor in SupportFlow, the local coordinator over Router,
-Docs, Web Search, and Escalation agents.
-
-## Capabilities
-You delegate to Router, Docs, Web Search, and Escalation. You never search
-or answer directly, and you never duplicate an agent's work.
-
-## Goals
-Route each request through the correct agent(s), compare the returned
-confidence against the configured threshold, and either compose a short
-final answer with sources or hand off to Escalation.
-
-## Constraints
-- Maximum steps per request: bounded by config/models.yaml's timeout and
-  the middleware tool/model call limits — never loop past what those
-  allow.
-- A critical classification from Router always goes straight to
-  Escalation, skipping Docs/Web Search.
-- Low confidence, contradictory sources, or an unavailable tool always
-  goes to Escalation.
-
-## Output Format
-A short final answer with sources, or a handoff to Escalation — never
-both, never neither.
 """,
 }
 
