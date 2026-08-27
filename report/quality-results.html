@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SupportFlow · Quality results</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:  #f5f5f5;
+      --color-ink:    #333A05;
+      --color-accent: #FCA600;
+      --font-sans: Arial, "Helvetica Neue", Helvetica, sans-serif;
+    }
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+    .frame { max-width: 1060px; width: 100%; }
+    .eyebrow {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #527C23;
+      margin-bottom: 0.5rem;
+    }
+    h1 {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      line-height: 1.25;
+      margin-bottom: 0.4rem;
+    }
+    .subtitle {
+      font-size: 14px;
+      color: #527C23;
+      margin-bottom: 0.6rem;
+    }
+    .measured {
+      font-size: 11px;
+      color: #4f5d75;
+      margin-bottom: 2rem;
+    }
+    h2 {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      margin: 2.2rem 0 0.4rem;
+      padding-top: 1rem;
+      border-top: 2px solid rgba(51,58,5,0.20);
+    }
+    h3 { font-size: 13.5px; font-weight: 700; margin: 1.4rem 0 0.4rem; }
+    p, li { font-size: 12.5px; line-height: 1.65; }
+    p { margin-bottom: 0.6rem; }
+    ul { padding-left: 1.25rem; margin-bottom: 0.6rem; }
+    li { margin-bottom: 0.3rem; }
+    code {
+      font-family: "Courier New", monospace;
+      font-size: 11.5px;
+      background: rgba(51,58,5,0.06);
+      padding: 0.05rem 0.3rem;
+      border-radius: 3px;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 0.7rem 0 1.1rem;
+      font-size: 12px;
+    }
+    th, td {
+      border: 1px solid rgba(51,58,5,0.22);
+      padding: 0.4rem 0.55rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: rgba(51,58,5,0.07); font-weight: 700; }
+    td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    tr.same td { background: rgba(82,124,35,0.06); }
+    .verdict-no { color: #527C23; font-weight: 700; }
+    .verdict-na { color: #4f5d75; }
+    .callout {
+      margin: 1rem 0;
+      padding: 0.9rem 1rem;
+      background: rgba(252,216,99,0.20);
+      border: 1px solid #FCA600;
+      border-radius: 6px;
+      font-size: 12.5px;
+      line-height: 1.65;
+    }
+    .callout.warn {
+      background: rgba(217,45,32,0.06);
+      border-color: rgba(217,45,32,0.5);
+    }
+    .judge-tag {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 0.1rem 0.4rem;
+      border-radius: 3px;
+      margin-right: 0.35rem;
+      vertical-align: 1px;
+    }
+    .judge-lf { background: rgba(27,92,255,0.12); color: #1b3f9e; }
+    .judge-de { background: rgba(82,124,35,0.14); color: #3d5c1a; }
+    .judge-det { background: rgba(51,58,5,0.10); color: #333A05; }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Quality panel · results</p>
+    <h1>What the measured numbers say — and what each one is allowed to say</h1>
+    <p class="subtitle">Two judges, five metrics, three populations. Only one pair of columns in this whole report may be compared with each other; the rest describe separate things that happen to be scored on the same 0–1 scale.</p>
+    <p class="measured">Measured 2026-08-28 against the live system. Live figures move as the demo is used — the panel in the chat page is the current version; this page is the reading of one snapshot.</p>
+
+    <h2>1 · Live answers, scored by the Langfuse judge</h2>
+    <p>One LLM call per answer, scored automatically a few seconds after the customer sees it. Sample restricted to traces tagged <code>baseline-v3</code> — the measurement setup changed that day, so earlier scores belong to a different population.</p>
+    <table>
+      <tr><th>Metric</th><th class="num">Covers</th><th class="num">Mean</th><th class="num">σ</th><th class="num">95% CI</th></tr>
+      <tr><td><code>supportflow-answer-relevance</code></td><td class="num">11</td><td class="num">0.745</td><td class="num">0.273</td><td class="num">[0.58, 0.88]</td></tr>
+      <tr><td><code>supportflow-escalation-quality</code></td><td class="num">9</td><td class="num">0.861</td><td class="num">0.047</td><td class="num">[0.83, 0.89]</td></tr>
+    </table>
+    <p>Handovers to a human are both good and <em>consistent</em> (σ = 0.047 — the tightest spread anywhere in this report). Answering varies far more (σ = 0.273), which is the useful signal here: this metric actually separates a weak answer from a strong one.</p>
+
+    <h2>2 · The one legitimate comparison — DeepEval on two populations</h2>
+    <p>Same judge model, same rubrics, same code path. The only difference is which messages were scored: real chat traffic versus the fixed 18-case golden dataset.</p>
+    <table>
+      <tr><th>Metric</th><th class="num">Live (12 requests)</th><th class="num">Golden dataset (18 cases)</th><th>Difference?</th></tr>
+      <tr class="same"><td>Answer Relevancy</td><td class="num">1.000 (7) [1.00, 1.00]</td><td class="num">0.975 (9) [0.93, 1.00]</td><td class="verdict-no">No — intervals overlap</td></tr>
+      <tr class="same"><td>Faithfulness</td><td class="num">1.000 (7) [1.00, 1.00]</td><td class="num">0.935 (9) [0.84, 1.00]</td><td class="verdict-no">No</td></tr>
+      <tr class="same"><td>Privacy Safety</td><td class="num">1.000 (12)</td><td class="num">1.000 (18)</td><td class="verdict-no">No — both perfect</td></tr>
+      <tr class="same"><td>Support Resolution Quality</td><td class="num">0.600 (12) [0.42, 0.76]</td><td class="num">0.672 (18) [0.58, 0.76]</td><td class="verdict-no">No</td></tr>
+      <tr><td>Route Correctness</td><td class="num">—</td><td class="num">0.889 (18) [0.72, 1.00]</td><td class="verdict-na">Golden dataset only</td></tr>
+    </table>
+    <p>The bracketed number is how many of that population's cases the metric applies to. It is below the total whenever the metric needs something a case does not have — faithfulness grades an answer against retrieved sources, and an escalation has none. Reported rather than levelled: forcing every metric onto every case would produce numbers about nothing.</p>
+    <div class="callout warn">
+      <strong>Caution against the obvious reading.</strong> Support Resolution Quality of 0.600 live versus 0.672 on the dataset looks like real evidence that live traffic is harder. It is not: the bootstrap interval around that difference is <strong>[−0.099, +0.327]</strong>, comfortably spanning zero. At these sample sizes "no difference detected" and "the samples are too small to detect one" are indistinguishable, and only more traffic separates them.
+    </div>
+
+    <h2>3 · What the numbers say about each part of the system</h2>
+
+    <h3>The generation model — strong</h3>
+    <p>Faithfulness 1.000 and Answer Relevancy 1.000 on live traffic mean that when an agent does answer from sources, it does not invent facts and does not drift off topic. That is the model plus its prompt doing their job. The dataset scores slightly lower (0.935) because it deliberately contains harder cases.</p>
+
+    <h3>The agent system — this is the weak link</h3>
+    <p>Support Resolution Quality sits near 0.6 in <em>both</em> populations. That rubric asks whether the response resolves the problem, is honest about its own limits, and proposes a concrete next step. So the system tells the truth but frequently does not carry the case to a resolution — an orchestration and completeness problem, not a hallucination one. Route Correctness 0.889 belongs to the same family: two of eighteen cases went down the wrong branch.</p>
+
+    <h3>The golden dataset — representative, but small</h3>
+    <p>No metric shows a detectable difference between the dataset and live traffic, which is evidence that the dataset is not detached from reality. The coverage gap is by design rather than an omission: Answer Relevancy and Faithfulness apply to 9 of 18 cases because half the dataset is escalation and rejection paths, where there is no sourced answer to grade. The set is built as 6 typical, 6 edge, 6 failure cases.</p>
+
+    <h2>4 · What each metric means — per judge</h2>
+    <p>Two metrics can share a word and still measure differently. This section is the reference for reading any single number above.</p>
+
+    <h3><span class="judge-tag judge-lf">Langfuse</span>Judge inside Langfuse — one holistic call per answer</h3>
+    <ul>
+      <li><strong><code>supportflow-answer-relevance</code></strong> — asks one model for a single 0–1 rating of how well a Docs or Web Search answer addresses the customer's message. Runs on the <code>*_agent.compose</code> observation, skipping any at <code>level=ERROR</code>. <em>Reads the whole compiled agent prompt as its "customer message" and a Pydantic repr as its "agent response"</em>, which depresses its absolute level — its spread is trustworthy, its absolute value is not.</li>
+      <li><strong><code>supportflow-escalation-quality</code></strong> — a separate rubric for handovers, because an escalation cannot score well on "does this answer the customer" by construction. Asks whether the response names why it could not be resolved automatically, states what was already attempted, and tells the customer what happens next.</li>
+    </ul>
+
+    <h3><span class="judge-tag judge-de">DeepEval</span>Offline metrics — same model, different algorithms</h3>
+    <ul>
+      <li><strong>Answer Relevancy</strong> — splits the answer into individual statements, judges each one relevant or not to the question, and reports the share that were relevant. Because it is a ratio over a handful of statements, it clusters at its ceiling.</li>
+      <li><strong>Faithfulness</strong> — extracts the answer's claims and checks each against the retrieved sources; the score is the share supported. Requires sources, so it applies only to Docs and Web Search answers.</li>
+      <li><strong>Support Resolution Quality (GEval)</strong> — the project's own rubric with three explicit steps: does it resolve the problem or explain why not, is it honest about its limits, does it propose a concrete next step. Applies to any case with a customer-facing answer, escalations included — "a human will follow up" is a valid next step.</li>
+    </ul>
+
+    <h3><span class="judge-tag judge-det">Deterministic</span>Not judged by a model at all</h3>
+    <ul>
+      <li><strong>Privacy Safety</strong> — re-runs the project's own personal-data detector over the answer; 1 if clean, 0 if anything leaked. The most reliable number in this report, because no model opinion is involved. Its limit is its pattern list: emails, phone numbers, card numbers. A free-text address or an API token would pass.</li>
+      <li><strong>Route Correctness</strong> — compares the branch actually taken against the branch the dataset expected. Live traffic has no expected branch, so this exists only on the golden dataset; deriving "expected" from what happened would score 1.0 by construction.</li>
+      <li><strong>Tool Correctness</strong> — a list comparison of tools called against tools expected, on the Docs route only. Golden dataset only, for the same reason.</li>
+    </ul>
+
+    <h2>5 · Three caveats without which the numbers read wrong</h2>
+    <ol style="padding-left:1.25rem;">
+      <li style="margin-bottom:0.6rem;"><strong>Answer Relevancy 1.000 with σ = 0.000 is not proof of excellence.</strong> A metric that returns exactly 1.0 on all seven cases is saturated: it cannot separate good from excellent, so it is useless here as a tool for finding problems. Treat it as a floor check ("nothing was wildly off topic"), not as a grade.</li>
+      <li style="margin-bottom:0.6rem;"><strong>Privacy Safety 1.000 across all 30 measured cases</strong> is the strongest evidence in this report, precisely because it is deterministic. It is also the narrowest: it proves the absence of known patterns, not the absence of leaked personal data in general.</li>
+      <li style="margin-bottom:0.6rem;"><strong>The two judges differ by a third on "relevance" (0.745 versus 1.000)</strong> — not a contradiction, two ways of counting. The informative part is which one does work: the holistic score separates cases (σ = 0.27); the statement ratio does not (σ = 0.00).</li>
+    </ol>
+    <div class="callout">
+      <strong>The one conclusion this data supports with confidence:</strong> the system does not fabricate and does not leak personal data, but in roughly a third of cases it fails to carry the request through to a resolution — and that holds equally for live traffic and for the golden dataset. Everything else here is either not yet distinguishable from noise, or a property of the measuring instrument rather than of the system.
+    </div>
+    <p style="margin-top:1rem;font-size:11.5px;color:#4f5d75;">Neither judge has ever been validated against human labels — no agreement statistic exists for either. The intervals above cover sampling uncertainty only; the judges' own repeat-run noise has never been measured, so the true uncertainty is wider than shown.</p>
+  </div>
+</body>
+</html>

@@ -16,11 +16,20 @@ only large effects are detectable. Report an effect size with its interval
 and say what the set cannot detect — never a bare "improved".
 """
 
-import random
+import sys
 from dataclasses import dataclass
 from itertools import product
 from math import comb
+from pathlib import Path
 from statistics import mean, stdev
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+# Moved into `src/domain` once the quality panel needed the same
+# interval: `src` may not import from `scripts`, so the shared helper
+# lives on the importable side and is re-exported here for every caller
+# that already imports it from this module.
+from src.domain.statistics import bootstrap_interval  # noqa: E402,F401
 
 
 @dataclass(frozen=True)
@@ -94,34 +103,6 @@ def exact_permutation_p_value(differences: list[float]) -> float:
         if abs(mean([s * d for s, d in zip(signs, differences)])) >= observed - 1e-12
     )
     return at_least_as_extreme / (2**n)
-
-
-def bootstrap_interval(
-    differences: list[float],
-    *,
-    confidence: float = 0.95,
-    resamples: int = 10_000,
-    seed: int = 0,
-) -> tuple[float, float]:
-    """Percentile bootstrap interval for the mean paired difference.
-
-    Parameters
-    ----------
-    seed : int, default=0
-        Fixed so a reported interval is reproducible. An interval that
-        moves between runs of the same data cannot be cited in a report.
-    """
-    if not differences:
-        raise ValueError("no paired differences to resample")
-
-    rng = random.Random(seed)
-    n = len(differences)
-    means = sorted(
-        mean([differences[rng.randrange(n)] for _ in range(n)])
-        for _ in range(resamples)
-    )
-    tail = (1.0 - confidence) / 2.0
-    return means[int(tail * resamples)], means[int((1.0 - tail) * resamples) - 1]
 
 
 def compare_paired(

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import './App.css'
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
@@ -71,12 +71,142 @@ function groupSources(sources) {
   }))
 }
 
+// Two decimals, or an em dash where the statistic genuinely does not
+// exist — a single score has no spread, and an empty sample has nothing
+// at all. Printing 0.00 there would read as a measured zero.
+function formatScore(value) {
+  return typeof value === 'number' ? value.toFixed(2) : '—'
+}
+
+// Local time, no seconds — the reader needs "was this before or after the
+// last batch of chatting", not a precise instant.
+function formatMoment(iso) {
+  const parsed = new Date(iso)
+  return Number.isNaN(parsed.getTime())
+    ? iso
+    : parsed.toLocaleString('uk-UA', { dateStyle: 'short', timeStyle: 'short' })
+}
+
+const UNAVAILABLE_REASONS = {
+  no_batch_run_yet:
+    'Пакетний прогін ще не виконувався. Запустіть ' +
+    'scripts/eval_live_batch.py, щоб оцінити збережені живі запити.',
+  no_experiment_configured:
+    'EXPERIMENT не заданий у .env, тому живі відповіді неможливо ' +
+    'відокремити від офлайн-прогонів скриптів.',
+  tracing_disabled: 'Трасування вимкнено — оцінки не збираються.',
+  fetch_failed: 'Не вдалося прочитати оцінки з Langfuse.',
+  baseline_unavailable: 'Файл еталонного прогону недоступний.',
+}
+
+// Two metrics can share the word "relevance" and still be different
+// instruments: DeepEval's ratio of statements judged relevant clusters
+// near its ceiling, while a single holistic 0–1 rating spreads much
+// wider. Naming the method next to the number is what stops the two
+// being read as the same measurement.
+const METRIC_METHODS = {
+  'supportflow-answer-relevance':
+    'цілісна оцінка 0–1 одним викликом LLM: наскільки відповідь ' +
+    'Docs/Web Search стосується запиту',
+  'supportflow-escalation-quality':
+    'цілісна оцінка 0–1: наскільки якісно Escalation передає справу ' +
+    'оператору',
+  'Answer Relevancy': 'частка тверджень у відповіді, визнаних релевантними',
+  Faithfulness: 'частка тверджень, підтверджених наданими джерелами',
+  'Support Resolution Quality [GEval]':
+    'авторська рубрика: чи розв’язує відповідь звернення клієнта',
+  'Route Correctness': 'збіг обраного маршруту з очікуваним (0 або 1)',
+  'Privacy Safety': 'відсутність персональних даних у відповіді (0 або 1)',
+  'Tool Correctness': 'збіг викликаних інструментів з очікуваними',
+}
+
+function ScoreCard({ title, judge, source, selected, onSelect, note, action }) {
+  if (!source?.available) {
+    return (
+      <div className="score-card">
+        <h3>{title}</h3>
+        <p className="score-note">
+          {UNAVAILABLE_REASONS[source?.reason] ?? 'Дані недоступні.'}
+        </p>
+        {action}
+      </div>
+    )
+  }
+
+  const names = Object.keys(source.metrics ?? {})
+  const active = names.includes(selected) ? selected : names[0]
+  const stats = source.metrics?.[active]
+
+  return (
+    <div className="score-card">
+      <h3>{title}</h3>
+      <p className="score-judge">Суддя: {judge}</p>
+      <select
+        className="metric-select"
+        value={active ?? ''}
+        onChange={(event) => onSelect(event.target.value)}
+        aria-label={`Метрика — ${title}`}
+      >
+        {names.map((name) => (
+          <option key={name} value={name}>
+            {name}
+          </option>
+        ))}
+      </select>
+      {stats?.n === 0 ? (
+        <p className="score-note">
+          Ще немає оцінок. Поставте запитання в чаті, зачекайте кілька секунд
+          і натисніть «Оновити».
+        </p>
+      ) : (
+        <>
+          <p className="score-mean">{formatScore(stats?.mean)}</p>
+          <dl className="score-rows">
+            <div>
+              <dt>Запитів</dt>
+              <dd>
+                {source.n_cases && stats?.covers != null
+                  ? `${stats.covers} з ${source.n_cases}`
+                  : (stats?.n ?? 0)}
+              </dd>
+            </div>
+            <div>
+              <dt>σ (розкид)</dt>
+              <dd>{formatScore(stats?.std_dev)}</dd>
+            </div>
+            <div>
+              <dt>95% довірчий</dt>
+              <dd>
+                {stats?.ci
+                  ? `${formatScore(stats.ci[0])} – ${formatScore(stats.ci[1])}`
+                  : '—'}
+              </dd>
+            </div>
+          </dl>
+        </>
+      )}
+      {METRIC_METHODS[active] && (
+        <p className="score-note">Як міряється: {METRIC_METHODS[active]}.</p>
+      )}
+      {note && <p className="score-note">{note}</p>}
+      {action}
+    </div>
+  )
+}
+
 function App() {
   const [messages, setMessages] = useState(initialMessages)
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
   const [allowRealSend, setAllowRealSend] = useState(null)
   const [theme, setTheme] = useState(initialTheme)
+  const [quality, setQuality] = useState(null)
+  const [qualityState, setQualityState] = useState('loading')
+  const [liveMetric, setLiveMetric] = useState('supportflow-answer-relevance')
+  // One selector drives both DeepEval cards on purpose: they are the same
+  // instrument on two populations, so showing different metrics in each
+  // would invite exactly the invalid comparison the panel warns against.
+  const [deepevalMetric, setDeepevalMetric] = useState('Answer Relevancy')
 
   useEffect(() => {
     try {
@@ -101,6 +231,42 @@ function App() {
       .then((data) => setAllowRealSend(data.allow_real_send))
       .catch(() => setAllowRealSend(null))
   }, [])
+
+  // Not refetched after each answer: the judge scores a trace
+  // asynchronously, well after /chat has replied, so an automatic
+  // refresh here would reliably miss the answer that triggered it. The
+  // manual button is the honest control.
+  const loadQuality = useCallback(async () => {
+    setQualityState('loading')
+    try {
+      const response = await fetch(`${API_URL}/stats/quality`)
+      setQuality(await response.json())
+      setQualityState('ok')
+    } catch {
+      setQualityState('error')
+    }
+  }, [])
+
+  useEffect(() => {
+    loadQuality()
+  }, [loadQuality])
+
+  // Grading costs money per new case, so this is never automatic: the
+  // button says how many are pending and goes inert at zero.
+  const [evalState, setEvalState] = useState('idle')
+  const pendingCases = quality?.live_deepeval?.pending ?? 0
+
+  async function runLiveEval() {
+    setEvalState('running')
+    try {
+      const response = await fetch(`${API_URL}/stats/eval-live`, { method: 'POST' })
+      const data = await response.json()
+      setQuality((prev) => ({ ...prev, live_deepeval: data.stats }))
+      setEvalState(data.ok ? 'idle' : 'error')
+    } catch {
+      setEvalState('error')
+    }
+  }
 
   function clearChat() {
     setMessages([])
@@ -159,6 +325,10 @@ function App() {
           elapsedMs: data.elapsed_ms,
         },
       ])
+      // The answer just became a recorded case, so the "N pending"
+      // button would otherwise stay inert until someone pressed refresh
+      // — the count it shows would be one request out of date.
+      loadQuality()
     } catch {
       setMessages((prev) => [
         ...prev,
@@ -213,7 +383,123 @@ function App() {
         </div>
       </header>
 
-      <main className="chat">
+      <div className="workspace">
+        <aside className="sidebar">
+          <div className="sidebar-head">
+            <h2>Оцінка якості</h2>
+            <span
+              className={`status-dot ${qualityState}`}
+              title={
+                qualityState === 'loading'
+                  ? 'Завантаження…'
+                  : qualityState === 'ok'
+                    ? 'Дані завантажено'
+                    : 'Помилка завантаження'
+              }
+            >
+              {qualityState === 'loading' ? '◐' : qualityState === 'ok' ? '✓' : '✕'}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            className="pill refresh"
+            onClick={loadQuality}
+            disabled={qualityState === 'loading'}
+          >
+            🔄 Оновити
+          </button>
+
+          <ScoreCard
+            title="Живі відповіді"
+            judge={quality?.live?.judge}
+            source={quality?.live}
+            selected={liveMetric}
+            onSelect={setLiveMetric}
+            note={
+              quality?.live?.experiment
+                ? `Трейси з міткою «${quality.live.experiment}».`
+                : null
+            }
+          />
+
+          <ScoreCard
+            title="Живі запити — офлайн-оцінка"
+            judge={quality?.live_deepeval?.judge}
+            source={quality?.live_deepeval}
+            selected={deepevalMetric}
+            onSelect={setDeepevalMetric}
+            note={
+              quality?.live_deepeval?.measured_at
+                ? `Останній прогін: ${formatMoment(
+                    quality.live_deepeval.measured_at,
+                  )}, оцінено ${quality.live_deepeval.n_cases} запитів.`
+                : null
+            }
+            action={
+              <button
+                type="button"
+                className="pill run-eval"
+                onClick={runLiveEval}
+                disabled={evalState === 'running' || pendingCases === 0}
+                title={
+                  pendingCases === 0
+                    ? 'Немає нових запитів — оцінювати нічого'
+                    : 'Оцінює лише нові запити; уже оцінені не перераховуються'
+                }
+              >
+                {evalState === 'running'
+                  ? '⏳ Оцінюю…'
+                  : pendingCases === 0
+                    ? '✓ Усі оцінені'
+                    : `▶ Оцінити ${pendingCases} нових`}
+              </button>
+            }
+          />
+
+          <ScoreCard
+            title="Еталон — golden dataset"
+            judge={quality?.baseline?.judge}
+            source={quality?.baseline}
+            selected={deepevalMetric}
+            onSelect={setDeepevalMetric}
+            note="Незмінний прогін golden dataset."
+          />
+
+          <ul className="sidebar-note boxed compare">
+            <li>
+              ✅ <strong>Дві нижні картки можна порівнювати</strong> — одна
+              метрика, один суддя, дві вибірки: реальні запити проти еталонного
+              набору.
+            </li>
+            <li>
+              У нижній картці є маршрут і інструменти, у середній немає — для
+              живих запитів не існує «очікуваного» маршруту.
+            </li>
+          </ul>
+
+          <ul className="sidebar-note boxed caution">
+            <li>
+              ⚠️ Верхню картку <strong>не порівнюйте з нижніми</strong>: там інший
+              спосіб обчислення, тому різниця показує метод вимірювання, а не
+              якість відповідей.
+            </li>
+            <li>
+              Жоден суддя не звірявся з людськими оцінками — це орієнтир, а не
+              істина.
+            </li>
+            <li>
+              Коректно порівнювати: одну метрику в часі або дві нижні картки між
+              собою.
+            </li>
+            <li>
+              Бали з’являються із затримкою — суддя оцінює вже після відповіді.
+              Тисніть «Оновити».
+            </li>
+          </ul>
+        </aside>
+
+        <main className="chat">
         <div className="messages">
           {messages.length === 0 && (
             <div className="empty">
@@ -286,7 +572,8 @@ function App() {
             Надіслати
           </button>
         </form>
-      </main>
+        </main>
+      </div>
     </div>
   )
 }

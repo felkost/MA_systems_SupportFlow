@@ -189,6 +189,7 @@ check the script's own message about cost before you type "yes".
 | `compare_prompt_versions.py` | Runs both the old ("production") and new ("candidate") prompt on the same test cases and reports which one scored better, with statistics. Asks you to type "run" before it spends money. |
 | `meta_prompt_docs.py`, `chart_meta_prompt_comparison.py` | An older way of testing a new Docs prompt (an AI model rewrote the prompt itself). Kept for its saved results; the newer way is `seed_candidate_prompts.py` + `compare_prompt_versions.py`. |
 | `experiment_smoke.py` | Sends one real chat message and shows you what Langfuse recorded for it — the fast check before running a big, paid experiment. |
+| `eval_live_batch.py` | Scores the real chat messages the app has recorded, using the same checks as the 18-case test set. It only scores messages it has not scored before, so running it again when nothing new arrived is free. The chat page has a button that runs this for you. |
 
 ## `output/`
 
@@ -199,28 +200,93 @@ except two files:
 |---|---|---|
 | `deepeval_baseline.json` | yes | `run_golden_dataset_baseline.py`. This is the score every future test run is compared against. |
 | `router_gate_result.json` | yes | `run_router_gate.py`. Router's saved accuracy score. |
+| `live_eval.json` | yes | `eval_live_batch.py`. Scores for real chat messages. Holds only numbers and message ids — never the text of what anyone wrote. |
+| `live_cases.jsonl` | no | The app itself, one line per answered message. Holds the message text (with personal data hidden), so it stays out of Git. |
 | `escalations/*.json` | no | Escalation Agent. One file per real escalated case. |
 | Other files (`*-comparison.json`, `*-baseline.json`, …) | no | `compare_prompt_versions.py`, `meta_prompt_docs.py`. One file per manual run — you can delete these any time and make them again by re-running the script. |
 
+## Quality panel
+
+The chat page has a panel on the left with three cards. Each one says
+which measure it shows and which judge produced it, because the numbers
+are **not** all on the same scale.
+
+| Card | Who scores it | When it updates |
+|---|---|---|
+| Live answers | An AI judge inside Langfuse, on every new message | By itself, a few seconds after each message |
+| Live answers, offline check | DeepEval, the same checks used on the test set | When you press its button |
+| Reference | DeepEval, on the fixed 18-case test set | Never — it is a frozen result |
+
+**Only the two lower cards may be compared with each other.** They use
+the same checks in the same way, on two different groups of messages, so
+a difference between them says something about the messages. The top card
+uses a different judge with a different way of counting, so a difference
+between it and the others says nothing about quality — only that the two
+were measured differently. Two measures can even share a name and still
+work differently: the top card asks one AI model for a single 0–1 score,
+while `Answer Relevancy` below splits the answer into separate statements
+and counts how many are on topic.
+
+Each card shows how many messages the number covers ("6 of 10"), because
+a check that needs sources cannot be applied to a message that has none.
+It also shows a 95% interval: with few messages, two numbers that look
+different often are not. Neither judge has been checked against human
+scores, so treat every number as a guide, not a verdict.
+
+**What `EXPERIMENT` in `.env` means.** It is a label you invent for one
+measurement setup, not a version of the code. When set, every new trace
+gets tagged with it, and the "Live answers" card only ever reads traces
+carrying the *current* label — that is what keeps old and new scores from
+mixing into one misleading average. Give it a new value (and bump
+`EXPERIMENT_STARTED_AT`) whenever *how* something is measured changes —
+a new judge rule, a different metric, a changed agent prompt — then
+restart the API so the new label takes effect. Do not change it just
+because time passed or new messages arrived; that is normal growth under
+the same label. Leaving it blank (the default) means traces are not
+tagged at all, and the card reports "not configured" instead of silently
+folding ordinary traffic into some experiment.
+
 ## Diagrams
 
-`report/` holds the project's diagrams. Each file is one `.html` page you
-can open in a browser — it has a picture plus text explaining it. Most
-also have a matching `.svg` file.
+`report/` holds the project's diagrams. Each file is one self-contained
+`.html` page — a picture plus text explaining it, in one file, nothing
+else to load. Most also have a matching `.svg` (the picture alone, no
+explanation, for pasting into a slide or a printed report).
 
-- `architecture.html` — the whole system in one picture: browser → API →
-  Supervisor → Docs/Web Search agents (or straight to Escalation).
-- `supervisor-graph.html` — the steps inside the Supervisor's LangGraph.
-- `router-sequence.html` — how Router classifies one message, and what
-  happens if it fails.
-- `escalation-sequence.html` — Escalation's steps: write the report, hide
-  private data, ask for confirmation, send it, and save the file.
-- `docs-agent-sequence.html` — how Docs Agent searches the knowledge base
-  and the Silpo catalog.
-- `web-search-agent-sequence.html` — how Web Search Agent tries Tavily
-  first, then DuckDuckGo if that fails.
-- `langfuse-observability.html` — what SupportFlow sends to Langfuse, and
-  how one chat message becomes one trace across three processes.
-- `prompt-architecture.html` (+ `prompt-*.svg`) — the four agent prompts,
-  their structure, and the two prompt experiments run against them (both
-  came back "inconclusive" — no prompt was changed because of them).
+| File | Type | What it shows |
+|---|---|---|
+| `architecture.html` | Block diagram | The whole system in one picture: browser → API → Supervisor → Docs/Web Search agents (or straight to Escalation). |
+| `supervisor-graph.html` | Flow diagram | The steps inside the Supervisor's LangGraph — every node and every conditional edge. |
+| `router-sequence.html` | Sequence diagram | How Router classifies one message, and what happens if it fails. |
+| `escalation-sequence.html` | Sequence diagram | Escalation's steps: write the report, hide private data, ask for confirmation, send it, save the file. |
+| `docs-agent-sequence.html` | Sequence diagram | How Docs Agent searches the knowledge base and the Silpo catalog. |
+| `web-search-agent-sequence.html` | Sequence diagram | How Web Search Agent tries Tavily first, then DuckDuckGo if that fails. |
+| `langfuse-observability.html` | Sequence diagram | What SupportFlow sends to Langfuse, and how one chat message becomes one trace across three processes. |
+| `quality-metrics-sequence.html` | Sequence diagram | How the backend produces the numbers in the quality panel: what it records, what it reads, and why the paid scoring step runs in its own process. |
+| `quality-results.html` | Results report | The measured scores, what each metric means for each judge, and which numbers may be compared with which. |
+| `prompt-architecture.html` (+ `prompt-*.svg`) | Structure diagram | The four agent prompts, their structure, and the two prompt experiments run against them (both came back "inconclusive" — no prompt was changed because of them). |
+
+### Opening a diagram
+
+These are plain HTML files, not part of the running app, so there is no
+server or URL for them — you open the file itself, the same way you'd
+open a saved web page.
+
+- **From a file browser:** double-click the `.html` file. It opens in
+  your default browser.
+- **From a terminal:**
+  ```bash
+  start report\architecture.html            # Windows
+  open report/architecture.html             # macOS
+  xdg-open report/architecture.html         # Linux
+  ```
+- **From VS Code (or a similar editor):** right-click the file in the
+  file tree → "Open with Live Server" or "Reveal in File Explorer", or
+  just paste its path into your browser's address bar.
+- **GitHub's own file preview does not run the page** — it shows the raw
+  HTML source, not the rendered diagram. Download the file (or clone the
+  repo) and open it locally to actually see it.
+
+Nothing here needs the app's three services running, an internet
+connection, or a build step — every diagram is one file that opens on
+its own.

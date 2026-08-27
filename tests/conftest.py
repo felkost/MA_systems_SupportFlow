@@ -26,7 +26,7 @@ must be traced end-to-end like every other live run.
 
 import pytest
 
-from src.infrastructure import observability
+from src.infrastructure import live_case_log, observability
 
 
 @pytest.fixture(autouse=True)
@@ -38,3 +38,28 @@ def _tracing_disabled_by_default(
     monkeypatch.setattr(observability.settings, "tracing_enabled", False)
     monkeypatch.setattr(observability, "_client", None)
     monkeypatch.setattr(observability, "_configured", False)
+
+
+@pytest.fixture(autouse=True)
+def _live_case_log_redirected_to_tmp(
+    tmp_path: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Keep the test suite out of the real recorded-cases file.
+
+    Found the same way the tracing fixture above was: a run of the API
+    tests left `masked_text="q"`/`answer="ok"` — `test_api.py`'s own
+    fixture values — sitting in `output/live_cases.jsonl` next to real
+    recorded requests, where the offline batch scorer would have graded
+    them as if a customer had asked them.
+
+    Redirected for every test rather than patched in the one module that
+    posts to `/chat`: any future test that reaches the endpoint would
+    otherwise reintroduce the same pollution silently, and nothing about
+    the failure is visible from inside the test that causes it.
+
+    No `eval` exemption, unlike the tracing fixture: writing test
+    material into the live measurement file is never wanted, and the
+    golden-dataset gate calls the supervisor directly rather than through
+    the endpoint that records.
+    """
+    monkeypatch.setattr(live_case_log, "LIVE_CASES_PATH", tmp_path / "live_cases.jsonl")
