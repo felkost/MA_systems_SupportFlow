@@ -1,5 +1,5 @@
 """Web Search Agent's tool client: Tavily primary, `ddgs` (DuckDuckGo)
-fallback (task §3/§13). `search()`'s fallback control flow takes injected
+fallback. `search()`'s fallback control flow takes injected
 provider callables so it is testable without any network call — the real
 `_tavily_search`/`_ddgs_search` bodies are exercised only by the manual
 smoke path, never by `pytest --cov=src`.
@@ -35,8 +35,8 @@ class SearchResult(BaseModel):
 
 
 class SearchUnavailableError(Exception):
-    """Both Tavily and `ddgs` failed — task §7 step 6's "unavailable tool"
-    escalation trigger.
+    """Both Tavily and `ddgs` failed — an unavailable tool, which
+    escalates.
     """
 
 
@@ -103,7 +103,7 @@ def search(
     Parameters
     ----------
     query : str
-        Already masked/PII-stripped text (task §9) — this function has no
+        Already masked/PII-stripped text — this function has no
         opinion on masking, it only searches.
     tavily_fn, ddgs_fn : callable, optional
         Injected for testing; default to the real providers. Each returns

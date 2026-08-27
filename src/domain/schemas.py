@@ -1,9 +1,9 @@
-"""The four mandatory Pydantic models (task §6) plus `Source`.
+"""The four mandatory Pydantic models plus `Source`.
 
 `Source` is not one of the four mandatory models — it is the element type
 of `DocsResponse.sources` / `WebSearchResponse.sources`, structured instead
-of `list[str]`: task §6 asks only for "sources", but a bare string can
-neither carry a retrieval timestamp (staleness) nor populate DeepEval's
+of `list[str]`: a bare string can neither carry a retrieval timestamp
+(staleness) nor populate DeepEval's
 `retrieval_context` for `FaithfulnessMetric`.
 """
 
@@ -30,10 +30,10 @@ class Source(BaseModel):
         prompt say "станом на …" instead of stating a fact as if it were
         current forever.
     version : str, default=""
-        A rule version or document version, when the source has one (task
-        §5: "every knowledge-base document has a source, retrieval date,
-        rule version"). Empty for sources with no versioning concept (a
-        web search result).
+        A rule version or document version, when the source has one —
+        every knowledge-base document carries a source, a retrieval date
+        and a rule version. Empty for sources with no versioning concept
+        (a web search result).
     """
 
     ref: str
@@ -42,8 +42,8 @@ class Source(BaseModel):
 
 
 class ClassificationOutput(BaseModel):
-    """Router Agent's structured output (task §6). Router has no tools and
-    no confidence field — task §6 defines confidence only on
+    """Router Agent's structured output. Router has no tools and
+    no confidence field — confidence is defined only on
     `DocsResponse`/`WebSearchResponse`.
 
     Parameters
@@ -63,14 +63,14 @@ class ClassificationOutput(BaseModel):
 
 
 class DocsResponse(BaseModel):
-    """Docs Agent's structured output (task §6).
+    """Docs Agent's structured output.
 
     Parameters
     ----------
     answer : str
     sources : list[Source], default=[]
     confidence : float
-        0 to 1 (task §6). Self-reported by the answering LLM — an
+        0 to 1. Self-reported by the answering LLM — an
         unvalidated gate until measured against judged correctness.
     """
 
@@ -80,7 +80,7 @@ class DocsResponse(BaseModel):
 
 
 class WebSearchResponse(BaseModel):
-    """Web Search Agent's structured output (task §6). Same shape as
+    """Web Search Agent's structured output. Same shape as
     `DocsResponse` — both are "grounded answer + its evidence + how sure".
     """
 
@@ -90,7 +90,7 @@ class WebSearchResponse(BaseModel):
 
 
 class EscalationOutput(BaseModel):
-    """Escalation Agent's structured output (task §6).
+    """Escalation Agent's structured output.
 
     Parameters
     ----------

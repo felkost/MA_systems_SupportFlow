@@ -44,7 +44,7 @@ class WebSearchExecutor(AgentExecutor):
     A tool-unavailable or invalid-model-output failure is reported back as
     a JSON error payload in the reply text, not as a transport-level
     error — `src.infrastructure.web_search_client.call_web_search` (the
-    caller) reads it and decides the escalation path (task §7 step 6);
+    caller) reads it and decides the escalation path;
     keeping the failure inside the A2A message contract avoids depending
     on `a2a-sdk`'s own exception-to-JSON-RPC-error mapping, which this
     project's SDK probe did not verify.

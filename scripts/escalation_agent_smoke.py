@@ -1,7 +1,8 @@
 """Manual, live smoke check for Escalation Agent: a real OpenRouter LLM
 call, a real file write, and (only with `ALLOW_REAL_SEND=true`) a real
-Telegram message to the configured test channel — task §10's own live
-verification requirement for Escalation Agent.
+Telegram message to the configured test channel — the live verification
+Escalation Agent needs, since neither the file write nor the send can be
+proven by an offline test.
 
 `pytest --cov=src` never sends a real Telegram message or writes outside
 `tmp_path` — this script is the counterpart. Requires the Telegram bot

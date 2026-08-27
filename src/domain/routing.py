@@ -1,4 +1,5 @@
-"""Pure routing rules (task §7 steps 3-6). No I/O, no LLM call — this is
+"""Pure routing rules: classification in, next action out. No I/O, no
+LLM call — this is
 where route *correctness* is tested exhaustively, independent of the graph
 that later dispatches on it.
 """
@@ -8,7 +9,7 @@ from src.domain.state import NextAction
 
 
 def decide_route(classification: ClassificationOutput) -> NextAction:
-    """Task §7 steps 3-5: where a classified request goes next.
+    """Where a classified request goes next.
 
     Parameters
     ----------
@@ -20,9 +21,9 @@ def decide_route(classification: ClassificationOutput) -> NextAction:
     Returns
     -------
     {"escalate", "docs", "web_search"}
-        `"escalate"` for a critical category or critical urgency (task §7
-        step 3 — checked first and unconditionally, since a missed
-        critical case is worse than an over-escalated one, per the
+        `"escalate"` for a critical category or critical urgency —
+        checked first and unconditionally, since a missed critical case
+        is worse than an over-escalated one, per the
         Router's own seeded prompt). `"docs"` for `category="product"`
         (step 4). `"web_search"` for `category="general"` (step 5).
 
@@ -49,8 +50,8 @@ def decide_route(classification: ClassificationOutput) -> NextAction:
 
 
 def confidence_below_threshold(confidence: float, threshold: float | None) -> bool:
-    """Task §7 step 6, the confidence half: whether a downstream answer's
-    confidence should trigger escalation.
+    """The confidence half of the escalation rule: whether a downstream
+    answer's confidence is too low to return to the customer.
 
     Parameters
     ----------
@@ -59,7 +60,7 @@ def confidence_below_threshold(confidence: float, threshold: float | None) -> bo
     threshold : float or None
         From `AgentModelConfig.confidence_threshold`. `None` means no gate
         is configured for this agent (Router, Escalation, Supervisor all
-        have no confidence output at all — task §6).
+        have no confidence output at all).
 
     Returns
     -------

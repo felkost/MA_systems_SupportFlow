@@ -1,4 +1,4 @@
-"""LangGraph state shape (task §6): "original request, classification,
+"""LangGraph state shape: "original request, classification,
 search results, answer, confidence, errors, session/trace ids, next action".
 
 A `TypedDict`, not a Pydantic model — LangGraph's `StateGraph` is built
@@ -48,7 +48,7 @@ class SupportFlowState(TypedDict):
     Parameters
     ----------
     request_id, session_id, trace_id : str
-        `session_id` travels in `AcpEnvelope` too — task §9 requires it in
+        `session_id` travels in `AcpEnvelope` too — it is required in
         observation metadata.
     original_request_masked : str
         Masking happens before this state is built, never as a node inside
@@ -59,7 +59,7 @@ class SupportFlowState(TypedDict):
         Populated by their respective agents once built; `None` while a
         route is unimplemented.
     answer : str or None
-        Supervisor's composed final answer (task §7 step 7).
+        Supervisor's composed final answer.
     confidence : float or None
         Mirrors whichever downstream response's confidence drove the
         current routing decision.
@@ -79,8 +79,8 @@ class SupportFlowState(TypedDict):
         specific prompt version.
     retrieval_context : list[str]
         The retrieved chunk texts Docs/Web Search Agent actually used —
-        state-only, not part of either mandatory response model (task §6
-        freezes their shape). Scores DeepEval's `FaithfulnessMetric`.
+        state-only, not part of either mandatory response model (their
+        shape is frozen). Scores DeepEval's `FaithfulnessMetric`.
     tools_called : list[str]
         Names of the tools Docs/Web Search Agent actually invoked
         successfully — same sibling-field pattern as `retrieval_context`.

@@ -26,15 +26,15 @@ AcpTask = Literal["classify", "escalate"]
 
 
 class AcpEnvelope(BaseModel):
-    """One in-process delegation call (task §4: "request id, task,
-    deadline, Langfuse trace ids").
+    """One in-process delegation call: request id, task, deadline, and
+    the Langfuse trace ids that keep it on one trace.
 
     Parameters
     ----------
     request_id : str
     session_id : str
-        Task §9 requires it in observation metadata; the draft envelope
-        had no path for it.
+        Required in observation metadata; the draft envelope had no
+        path for it.
     task : {"classify", "escalate"}
     deadline : datetime
         Timezone-aware. `call_router` raises `TimeoutError` if this has
@@ -103,8 +103,8 @@ def call_router(envelope: AcpEnvelope) -> tuple[ClassificationOutput, int]:
     model = get_chat_model("router", timeout_override=remaining)
     start = time.monotonic()
     # include_raw=True: only way to reach the raw AIMessage's usage_metadata
-    # (task §9's "кількість токенів") — with_structured_output's default
-    # returns just the parsed schema, discarding it.
+    # (the token counts every step must record) — with_structured_output's
+    # default returns just the parsed schema, discarding it.
     structured_model = model.with_structured_output(
         ClassificationOutput, include_raw=True
     )

@@ -1,6 +1,6 @@
 """Two hand-written, deterministic `deepeval.metrics.BaseMetric` subclasses.
-Task §10 names "Route Correctness" and "Privacy Safety" as required
-metrics, but no DeepEval class with either
+"Route Correctness" and "Privacy Safety" are both required metrics here,
+but no DeepEval class with either
 name exists (confirmed by SDK probe against the installed `deepeval==4.1.10`)
 — and neither check is fuzzy-judgment shaped, so paying for an LLM call
 would buy nothing while adding judge-repeat-variance where none is needed.

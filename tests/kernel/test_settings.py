@@ -1,6 +1,6 @@
 """`load_agent_config` against the real `config/models.yaml` — this is the
-file task §8 makes mandatory, so parsing it is worth a real test, not only
-a monkeypatched one.
+file every agent's model, timeout and threshold come from, so parsing it
+is worth a real test, not only a monkeypatched one.
 """
 
 from pathlib import Path

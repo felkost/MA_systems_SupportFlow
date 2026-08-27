@@ -1,5 +1,5 @@
 # Per-agent OpenRouter model, temperature, max tokens, timeout, and
-# confidence threshold (task §8). The model-scout agent (agentic-model-
+# confidence threshold. The model-scout agent (agentic-model-
 # selection) resolved these against a live OpenRouter catalogue query on
 # 2026-08-25, per-role candidates, stack costs, and the judge-family-
 # independence check. Re-run model-scout and refresh the price data
@@ -26,7 +26,7 @@ docs:
   # critical path. 75s covers the observed cold path with headroom while
   # still bounding a genuinely hung call.
   timeout_seconds: 75
-  confidence_threshold: 0.70 # orientation value, task §10 — re-set after
+  confidence_threshold: 0.70 # orientation value — re-set after
     # the first full golden-dataset run, not before.
   port: 8801 # this agent runs as its own A2A server process, unlike
     # router/escalation/supervisor.

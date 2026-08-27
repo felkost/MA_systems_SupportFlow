@@ -220,13 +220,13 @@ def run_case(case: dict[str, Any]) -> LLMTestCase:
         return _run_live(case)
 
 
-# THIS is the one place every DeepEval metric threshold lives — task
-# §10's own instruction is that thresholds are set from the first full
-# baseline run, not asserted in advance, so every value below starts as
-# the orientation FLOOR (§10's own wording), not a target. After
+# THIS is the one place every DeepEval metric threshold lives.
+# Thresholds are set from the first full baseline run, not asserted in
+# advance, so every value below starts as an orientation FLOOR, not a
+# target. After
 # `scripts/run_golden_dataset_baseline.py` produces
 # `output/deepeval_baseline.json`, replace these four numbers with the
-# measured baseline (never lower than the floor, per §10) — nowhere else
+# measured baseline (never lower than the floor) — nowhere else
 # in this codebase reads a threshold for these metrics.
 ANSWER_RELEVANCY_THRESHOLD = 0.70
 FAITHFULNESS_THRESHOLD = 0.75
@@ -235,12 +235,12 @@ ROUTE_AND_PRIVACY_THRESHOLD = 1.0  # deterministic metrics — pass means exactl
 
 
 def _support_resolution_quality_metric(model: OpenRouterModel) -> GEval:
-    """Task §10's own custom GEval metric, missing from the first pass of
-    this wave: "чи відповідь вирішує проблему, пояснює обмеження та
+    """A custom GEval metric with no DeepEval equivalent: "чи відповідь
+    вирішує проблему, пояснює обмеження та
     пропонує правильний наступний крок" (does the answer resolve the
     problem, explain limitations, and propose the right next step) —
     applies to any case with a real customer-facing answer, including an
-    escalation's own `customer_message` (task §7: "ми передали ваш запит
+    escalation's own `customer_message` ("ми передали ваш запит
     оператору" is itself a valid resolution — a clear next step, even
     when the system itself couldn't resolve the issue).
     """
@@ -285,8 +285,9 @@ def metrics_for_test_case(test_case: LLMTestCase) -> list[BaseMetric]:
     case's *actual* route (not merely its expected one — a "typical" Docs
     case can still escalate) touched Docs or Web Search —
     `FaithfulnessMetric` hard-requires a non-`None` `retrieval_context`
-    for a case whose route never got that far (§2's SDK table correction:
-    empty, not `None`, is what a Router/Escalation-only case actually
+    for a case whose route never got that far (confirmed against the
+    installed SDK: empty, not `None`, is what a Router/Escalation-only
+    case actually
     produces, but attaching the metric there would still only ever score
     a meaningless vacuous claim).
     """
@@ -317,8 +318,8 @@ def metrics_for_test_case(test_case: LLMTestCase) -> list[BaseMetric]:
         # confirmed by reading the installed deepeval==4.1.10 source; the
         # score itself is a deterministic list comparison, matching this
         # module's own "no fuzzy-judgment metric pays for an LLM" stance).
-        # `should_exact_match=False` default (task §10 names Tool
-        # Correctness) — extra bootstrap tool names in `tools_called`
+        # `should_exact_match=False` default — extra bootstrap tool
+        # names in `tools_called`
         # shouldn't fail a case whose `expected_tools` already matched.
         metrics.append(
             ToolCorrectnessMetric(

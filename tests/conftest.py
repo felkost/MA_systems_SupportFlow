@@ -21,7 +21,7 @@ already excludes them), so this exemption cannot affect that promise —
 but forcing tracing off unconditionally here also silently disabled it
 for the one deliberate run that most needs it, the full golden-dataset
 gate (`deepeval test run tests/test_golden_dataset.py -m eval`), which
-task §9 requires to be traced end-to-end like every other live run.
+must be traced end-to-end like every other live run.
 """
 
 import pytest

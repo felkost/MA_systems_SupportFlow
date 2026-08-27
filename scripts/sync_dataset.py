@@ -87,7 +87,7 @@ SPECS = (
     DatasetSpec(
         path=PROJECT_ROOT / "evals" / "golden_dataset.json",
         dataset_name="supportflow/golden",
-        description="Task §10 golden dataset: 6 typical + 6 edge + 6 failure cases.",
+        description="Golden dataset: 6 typical + 6 edge + 6 failure cases.",
         expected_output=lambda case: case["expected_output"],
         expected_output_schema=_STRING_SCHEMA,
         metadata_excludes=frozenset({"id", "input", "expected_output"}),

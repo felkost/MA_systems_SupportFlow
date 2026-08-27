@@ -240,7 +240,7 @@ def send_a2a_message(
     Opens its own client-side Langfuse span around the network call — a
     connection failure before the callee ever
     opens its own root span (refused connection, timeout, DNS failure —
-    precisely task §7's escalation trigger) would otherwise leave no trace
+    each of which escalates) would otherwise leave no trace
     record at all. The exception always propagates unchanged; Langfuse's
     own span context manager records it as an error observation.
     """

@@ -1,4 +1,4 @@
-"""The input filter (task §7 step 1): language, domain bounds, and
+"""The input filter: language, domain bounds, and
 personal/forbidden data — all three checks, before Router. Pure,
 deterministic, no I/O and no LLM call, so it belongs in `domain`.
 
@@ -214,8 +214,8 @@ class InputFilterResult:
 
 
 def run_input_filter(text: str) -> InputFilterResult:
-    """Task §7 step 1, run as one entry point: empty/whitespace, length
-    cap, domain bounds, then language.
+    """The whole input filter as one entry point: empty/whitespace,
+    length cap, domain bounds, then language.
 
     Domain bounds runs before language deliberately — both catch "no real
     content" from opposite ends (`is_within_domain_bounds` requires at

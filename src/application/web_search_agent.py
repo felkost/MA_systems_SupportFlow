@@ -33,7 +33,7 @@ class WebSearchAgentResult:
     """Parameters
     ----------
     response : WebSearchResponse
-        The mandatory schema (task §6) — this alone crosses back to
+        The mandatory schema — this alone crosses back to
         Supervisor's process as the A2A reply's primary payload.
     retrieval_context : list[str]
         The raw search-result snippets actually used, carried alongside
@@ -61,7 +61,7 @@ def run_web_search(
     ----------
     masked_query : str
         Already PII-masked — Web Search Agent must never receive raw
-        personal data (task §4/§9).
+        personal data.
     search_fn : SearchFn, default=`src.infrastructure.web_search.search`
         Injected for testing the tool-unavailable path without a network
         call; production callers use the default.
@@ -75,8 +75,8 @@ def run_web_search(
     Raises
     ------
     SearchUnavailableError
-        Both Tavily and `ddgs` failed — task §7 step 6's "unavailable
-        tool" escalation trigger; propagated unchanged so the caller
+        Both Tavily and `ddgs` failed — an unavailable tool, which
+        escalates; propagated unchanged so the caller
         (the A2A executor, then Supervisor) can record it.
     WebSearchInvalidOutputError
         The model's output failed `WebSearchResponse` validation.

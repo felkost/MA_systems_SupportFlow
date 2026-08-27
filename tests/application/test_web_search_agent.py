@@ -1,6 +1,6 @@
 """`run_web_search` propagates a tool-unavailable failure without ever
-reaching the model (task §7 step 6's escalation trigger) — the one path
-testable without a live LLM call.
+reaching the model — an unavailable tool escalates, and this is the one
+such path testable without a live LLM call.
 """
 
 import pytest

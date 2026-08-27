@@ -1,4 +1,4 @@
-"""The full golden-dataset run (task §10: `deepeval test run tests/`).
+"""The full golden-dataset run (`deepeval test run tests/`).
 
 Two kinds of test here, split by cost/speed — `pyproject.toml`'s
 `addopts = "-m 'not eval'"` keeps the second kind out of the default
@@ -46,7 +46,7 @@ def _load_cases() -> list[dict]:
 
 
 def test_golden_dataset_contains_no_pii() -> None:
-    """task §9's synthetic-users requirement, checked with the same
+    """Cases must use synthetic users only, checked with the same
     PII detector already trusted for the input filter and
     `PrivacySafetyMetric` — reused, not duplicated.
     """
@@ -78,8 +78,8 @@ def test_golden_dataset_split_and_injection_counts() -> None:
 
 
 def test_golden_dataset_failure_slice_covers_all_six_named_scenarios() -> None:
-    """§10's own literal list — every one of the 6 must have exactly one
-    case.
+    """The six named failure scenarios — every one must have exactly
+    one case.
     """
     expected_scenarios = {
         "insufficient-evidence",

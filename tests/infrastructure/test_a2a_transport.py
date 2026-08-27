@@ -115,7 +115,7 @@ def test_send_a2a_message_omits_parent_span_id_when_not_given() -> None:
 def test_send_a2a_message_client_side_span_does_not_swallow_connection_failure() -> (
     None
 ):
-    """A refused connection (task §7's escalation trigger) must still
+    """A refused connection, which escalates, must still
     raise, not be absorbed by the new client-side span wrapper.
     """
     unreachable_client = httpx.AsyncClient(

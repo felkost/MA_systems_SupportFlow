@@ -8,8 +8,8 @@ directly rather than through `deepeval.evaluate()`'s own bulk API, which
 applies one metric list uniformly to every test case), and writes
 `output/deepeval_baseline.json`. Real thresholds for
 `tests/test_golden_dataset.py`'s `assert_test` calls are set FROM this
-baseline, per task §10's own instruction ("initial thresholds are set
-after the first full run") — this script never asserts pass/fail itself.
+baseline — thresholds are set from the first full run, not asserted in
+advance, so this script never asserts pass/fail itself.
 
 Costs real money and time: 18 cases, at least one real OpenRouter call
 each (Router + Docs/Web Search/Escalation composition), several real
