@@ -1,17 +1,17 @@
 {
   "_comment": "Held-out gate set, n=12, labelled before the Router prompt was ever edited, separate from evals/golden_dataset.json's 18-case set. Decision rules used to label these (fixed before labelling): category=critical only for an immediate safety/health/legal risk needing urgent human attention; category=product for a specific product/price/stock/order/return question; category=general for store info/hours/locations/promotions not tied to one product; urgency=critical only alongside category=critical; urgency=medium for a time-sensitive complaint that is not a safety risk; urgency=low otherwise.",
   "cases": [
-    {"input": "Чи є у вас безлактозне молоко?", "category": "product", "urgency": "low", "language": "uk"},
-    {"input": "Коли ви відкриваєтесь у неділю?", "category": "general", "urgency": "low", "language": "uk"},
-    {"input": "У мене алергічна реакція після вашого продукту, терміново!", "category": "critical", "urgency": "critical", "language": "uk"},
-    {"input": "Скільки коштує хліб бородинський?", "category": "product", "urgency": "low", "language": "uk"},
-    {"input": "Чи можна повернути товар без чека?", "category": "product", "urgency": "medium", "language": "uk"},
-    {"input": "Я знайшов скло в консервах, це небезпечно!", "category": "critical", "urgency": "critical", "language": "uk"},
-    {"input": "Які у вас акції цього тижня?", "category": "general", "urgency": "low", "language": "uk"},
-    {"input": "Де найближчий до мене магазин?", "category": "general", "urgency": "low", "language": "uk"},
-    {"input": "Is the store open on public holidays?", "category": "general", "urgency": "low", "language": "en"},
-    {"input": "Мій замовлення не приїхав вчасно, вже 3 дні затримки", "category": "product", "urgency": "medium", "language": "uk"},
-    {"input": "Ви продаєте безглютенові продукти?", "category": "product", "urgency": "low", "language": "uk"},
-    {"input": "Термінова допомога! У дитини алергічна реакція на морепродукти з вашого магазину!", "category": "critical", "urgency": "critical", "language": "uk"}
+    {"id": "router-01", "input": "Чи є у вас безлактозне молоко?", "category": "product", "urgency": "low", "language": "uk"},
+    {"id": "router-02", "input": "Коли ви відкриваєтесь у неділю?", "category": "general", "urgency": "low", "language": "uk"},
+    {"id": "router-03", "input": "У мене алергічна реакція після вашого продукту, терміново!", "category": "critical", "urgency": "critical", "language": "uk"},
+    {"id": "router-04", "input": "Скільки коштує хліб бородинський?", "category": "product", "urgency": "low", "language": "uk"},
+    {"id": "router-05", "input": "Чи можна повернути товар без чека?", "category": "product", "urgency": "medium", "language": "uk"},
+    {"id": "router-06", "input": "Я знайшов скло в консервах, це небезпечно!", "category": "critical", "urgency": "critical", "language": "uk"},
+    {"id": "router-07", "input": "Які у вас акції цього тижня?", "category": "general", "urgency": "low", "language": "uk"},
+    {"id": "router-08", "input": "Де найближчий до мене магазин?", "category": "general", "urgency": "low", "language": "uk"},
+    {"id": "router-09", "input": "Is the store open on public holidays?", "category": "general", "urgency": "low", "language": "en"},
+    {"id": "router-10", "input": "Мій замовлення не приїхав вчасно, вже 3 дні затримки", "category": "product", "urgency": "medium", "language": "uk"},
+    {"id": "router-11", "input": "Ви продаєте безглютенові продукти?", "category": "product", "urgency": "low", "language": "uk"},
+    {"id": "router-12", "input": "Термінова допомога! У дитини алергічна реакція на морепродукти з вашого магазину!", "category": "critical", "urgency": "critical", "language": "uk"}
   ]
 }

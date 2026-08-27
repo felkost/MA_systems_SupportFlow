@@ -12,6 +12,7 @@ Langfuse's own `TraceContext` (`trace_id`+`parent_span_id`), not OTel
 single-span callback.
 """
 
+import logging
 import uuid
 from typing import Any
 
@@ -26,6 +27,8 @@ from langfuse.types import (
 
 from src.domain.filters import mask_pii
 from src.kernel.settings import settings
+
+logger = logging.getLogger(__name__)
 
 _client: Langfuse | None = None
 _configured = False
@@ -58,7 +61,35 @@ def tag_trace(trace_id: str, tags: list[str]) -> None:
     client = get_langfuse_client()
     if client is None:
         return
-    client._create_trace_tags_via_ingestion(trace_id=trace_id, tags=tags)
+    try:
+        client._create_trace_tags_via_ingestion(trace_id=trace_id, tags=tags)
+    except Exception:  # noqa: BLE001 — a private SDK method, see below
+        # Guarded because this is a *private* method with no public
+        # equivalent in 4.14.4, and it now runs on the live request path
+        # (supervisor tags every trace), not only in offline dataset runs.
+        # An SDK upgrade that renames or drops it would otherwise turn
+        # every customer request into a 500 — a tracing convenience taking
+        # down request handling. A lost tag degrades the measurement; it
+        # must never degrade the service.
+        logger.warning("trace tagging failed for %s", trace_id, exc_info=True)
+
+
+def experiment_tags() -> list[str]:
+    """The current experiment's trace tags, or `[]` when none is set.
+
+    Notes
+    -----
+    The start date is carried as its own `started:<date>` tag rather than
+    trace metadata because Langfuse's Scores > Analytics filters by tag,
+    not by metadata — a date that cannot be filtered on cannot separate a
+    before from an after, which is the whole point of recording it.
+    """
+    if not settings.experiment:
+        return []
+    tags = [f"experiment:{settings.experiment}"]
+    if settings.experiment_started_at:
+        tags.append(f"started:{settings.experiment_started_at}")
+    return tags
 
 
 # Every literal `name=` this project passes to `start_as_current_observation`

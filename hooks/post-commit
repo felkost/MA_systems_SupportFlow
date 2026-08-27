@@ -1,0 +1,35 @@
+#!/bin/sh
+# Mirror the evaluation sets to Langfuse whenever a commit changes one.
+#
+# post-commit, not pre-commit, deliberately: a pre-commit hook would push
+# before the commit exists, so an aborted commit or a later failing hook
+# would leave Langfuse holding content that is in no commit — the content
+# hash would then name a version nobody can check out. Here Langfuse is at
+# worst briefly behind a real commit, and every synced hash corresponds to
+# something reachable in history.
+#
+# Install once:  git config core.hooksPath hooks
+
+changed=$(git diff-tree --no-commit-id --name-only -r HEAD)
+
+case "$changed" in
+  *evals/*.json*|*tests/fixtures/router_classification_cases.json*) ;;
+  *) exit 0 ;;
+esac
+
+if [ -x .venv/Scripts/python.exe ]; then
+    PYTHON=.venv/Scripts/python.exe
+elif [ -x .venv/bin/python ]; then
+    PYTHON=.venv/bin/python
+else
+    echo "post-commit: no .venv found — run scripts/sync_dataset.py yourself." >&2
+    exit 0
+fi
+
+echo "post-commit: evaluation set changed, syncing to Langfuse..."
+# A post-commit hook cannot fail the commit that already happened, so a
+# failure is reported loudly instead of swallowed; the next sync's hash
+# comparison catches the drift.
+if ! "$PYTHON" scripts/sync_dataset.py; then
+    echo "post-commit: dataset sync FAILED — re-run scripts/sync_dataset.py" >&2
+fi

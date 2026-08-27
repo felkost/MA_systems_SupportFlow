@@ -20,7 +20,7 @@ import pytest
 from deepeval import assert_test
 
 from src.domain.filters import contains_forbidden_data
-from src.infrastructure.observability import tag_trace
+from src.infrastructure.observability import experiment_tags, tag_trace
 from src.kernel.settings import PROJECT_ROOT
 from tests.evaluation import harness
 
@@ -103,7 +103,7 @@ def test_golden_dataset_case(case: dict, _eval_warm_up: None) -> None:
     test_case = harness.run_case(case)
     trace_id = (test_case.metadata or {}).get("trace_id")
     if trace_id:
-        tag_trace(trace_id, [_RUN_TAG])
+        tag_trace(trace_id, [_RUN_TAG, *experiment_tags()])
 
     if case["expected_route"] == "reject":
         # No response field to derive a route signal from on this path —

@@ -79,6 +79,10 @@ class ChatResponse(BaseModel):
     telegram_sent: bool = False
     elapsed_ms: int
     session_id: str
+    # Returned so a given answer can be correlated with its own Langfuse
+    # trace — without it, reading back the trace for one specific request
+    # means guessing by timestamp.
+    trace_id: str
 
 
 class RealSendToggleRequest(BaseModel):
@@ -141,4 +145,5 @@ def chat(payload: ChatRequest) -> ChatResponse:
         telegram_sent=state["telegram_sent"],
         elapsed_ms=elapsed_ms,
         session_id=session_id,
+        trace_id=trace_id,
     )
