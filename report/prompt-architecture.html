@@ -47,7 +47,7 @@
   <div class="frame">
     <p class="eyebrow">Prompts</p>
     <h1>Prompt architecture — structure and technique per agent</h1>
-    <p class="subtitle">Five system prompts, one shared skeleton (Identity → Capabilities → Goals → Constraints → Output Format → Input), managed as versioned text prompts in Langfuse Prompt Management (scripts/seed_prompts.py), never hardcoded. Content below is structural — the sections and their key rules, not the full prompt text.</p>
+    <p class="subtitle">Four system prompts, one shared skeleton (Identity → Capabilities → Goals → Constraints → Output Format → Input), managed as versioned text prompts in Langfuse Prompt Management (scripts/seed_prompts.py), never hardcoded. Content below is structural — the sections and their key rules, not the full prompt text.</p>
 
     <!-- ============ ROUTER ============ -->
     <div class="diagram-block">
@@ -337,86 +337,25 @@
       </svg>
     </div>
 
-    <!-- ============ SUPERVISOR ============ -->
-    <div class="diagram-block">
-      <h2>Supervisor — supportflow/supervisor</h2>
-      <p class="diagram-note" style="color:#b03a2e;">Seeded into Langfuse like the other four — but no code path ever fetches or calls it. This is why it shows 0 observations.</p>
-
-      <svg viewBox="0 0 1000 700" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="pr-sup-title pr-sup-desc">
-        <title id="pr-sup-title">Supervisor prompt structure, marked unused</title>
-        <desc id="pr-sup-desc">Layer-stack diagram of the Supervisor prompt's structure, overlaid with a diagonal not-called marking, showing that unlike the other four prompts it has no enforced output schema and is never fetched by get_prompt in the codebase, which is why Langfuse shows zero observations for it — Supervisor's actual routing logic is deterministic Python code, not a model call.</desc>
-        <rect width="100%" height="100%" fill="#f5f5f5"/>
-
-        <rect x="90" y="60" width="780" height="56" fill="#f0f0f0" stroke="#8a8a8a" stroke-width="1" stroke-dasharray="5,4"/>
-        <text x="106" y="82" fill="#8a8a8a" font-size="9" font-family="Arial, sans-serif" letter-spacing="0.1em">01</text>
-        <text x="140" y="84" fill="#666" font-size="13" font-weight="700" font-family="Arial, sans-serif">Identity</text>
-        <text x="864" y="84" fill="#8a8a8a" font-size="10" font-family="Arial, sans-serif" text-anchor="end">"the local coordinator over Router, Docs, Web Search, Escalation"</text>
-
-        <rect x="90" y="116" width="780" height="56" fill="#f0f0f0" stroke="#8a8a8a" stroke-width="1" stroke-dasharray="5,4"/>
-        <text x="106" y="138" fill="#8a8a8a" font-size="9" font-family="Arial, sans-serif" letter-spacing="0.1em">02</text>
-        <text x="140" y="140" fill="#666" font-size="13" font-weight="700" font-family="Arial, sans-serif">Capabilities</text>
-        <text x="864" y="140" fill="#8a8a8a" font-size="10" font-family="Arial, sans-serif" text-anchor="end">delegates only — never searches or answers directly</text>
-
-        <rect x="90" y="172" width="780" height="56" fill="#f0f0f0" stroke="#8a8a8a" stroke-width="1" stroke-dasharray="5,4"/>
-        <text x="106" y="194" fill="#8a8a8a" font-size="9" font-family="Arial, sans-serif" letter-spacing="0.1em">03</text>
-        <text x="140" y="196" fill="#666" font-size="13" font-weight="700" font-family="Arial, sans-serif">Goals</text>
-        <text x="864" y="196" fill="#8a8a8a" font-size="10" font-family="Arial, sans-serif" text-anchor="end">route, compare confidence, compose or hand off</text>
-
-        <rect x="90" y="228" width="780" height="120" fill="#f0f0f0" stroke="#8a8a8a" stroke-width="1" stroke-dasharray="5,4"/>
-        <text x="106" y="250" fill="#8a8a8a" font-size="9" font-family="Arial, sans-serif" letter-spacing="0.1em">04</text>
-        <text x="140" y="252" fill="#666" font-size="13" font-weight="700" font-family="Arial, sans-serif">Constraints</text>
-        <text x="120" y="276" fill="#666" font-size="11" font-family="Arial, sans-serif">• critical classification → straight to Escalation</text>
-        <text x="120" y="296" fill="#666" font-size="11" font-family="Arial, sans-serif">• low confidence, contradictory sources, or unavailable tool → Escalation</text>
-        <text x="120" y="316" fill="#666" font-size="11" font-family="Arial, sans-serif">• step count bounded by config timeouts / middleware call limits</text>
-
-        <rect x="90" y="348" width="780" height="60" fill="#f0f0f0" stroke="#8a8a8a" stroke-width="1" stroke-dasharray="5,4"/>
-        <text x="106" y="370" fill="#8a8a8a" font-size="9" font-family="Arial, sans-serif" letter-spacing="0.1em">05</text>
-        <text x="140" y="372" fill="#666" font-size="13" font-weight="700" font-family="Arial, sans-serif">Output Format</text>
-        <text x="120" y="394" fill="#b03a2e" font-size="11" font-family="Arial, sans-serif">prose only — "a short final answer… or a handoff" — no Pydantic schema</text>
-
-        <rect x="90" y="408" width="780" height="56" fill="#f0f0f0" stroke="#8a8a8a" stroke-width="1" stroke-dasharray="5,4"/>
-        <text x="106" y="430" fill="#8a8a8a" font-size="9" font-family="Arial, sans-serif" letter-spacing="0.1em">06</text>
-        <text x="140" y="432" fill="#b03a2e" font-size="13" font-weight="700" font-family="Arial, sans-serif">Input — none</text>
-        <text x="864" y="432" fill="#b03a2e" font-size="10" font-family="Arial, sans-serif" text-anchor="end">no {{placeholder}} at all — nothing to compile</text>
-
-        <!-- Diagonal NOT CALLED banner — spans Identity/Capabilities/Goals only (y60-228), clear of Constraints below -->
-        <g transform="rotate(-8 480 144)">
-          <rect x="230" y="118" width="500" height="52" fill="rgba(176,58,46,0.14)" stroke="#b03a2e" stroke-width="1.6"/>
-          <text x="480" y="152" fill="#b03a2e" font-size="20" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle" letter-spacing="0.08em">NEVER CALLED</text>
-        </g>
-
-        <line x1="90" y1="494" x2="870" y2="494" stroke="rgba(51,58,5,0.18)" stroke-width="1"/>
-        <text x="90" y="514" fill="#333A05" font-size="10" font-family="Arial, sans-serif" letter-spacing="0.08em">LANGFUSE OBSERVATIONS (7 DAYS)</text>
-        <rect x="90" y="526" width="780" height="42" fill="rgba(176,58,46,0.08)" stroke="#b03a2e" stroke-width="1"/>
-        <text x="480" y="552" fill="#b03a2e" font-size="13" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">docs: 98 · router: 82 · escalation: 46 · web_search: 26 · supervisor: 0</text>
-
-        <text x="90" y="600" fill="#4f5d75" font-size="10" font-family="Arial, sans-serif">no src/ code ever calls get_prompt("supportflow/supervisor") or get_prompt_client() with this name —</text>
-        <text x="90" y="616" fill="#4f5d75" font-size="10" font-family="Arial, sans-serif">Supervisor's real routing is decide_route(), plain deterministic Python, not an LLM call</text>
-      </svg>
-    </div>
 
     <div class="walkthrough">
       <h2>Prompt technique, applied</h2>
 
       <h3>The taxonomy used above</h3>
       <ul>
-        <li><strong>Zero-shot</strong> — instructions and constraints only, no worked examples. What all five prompts actually are.</li>
+        <li><strong>Zero-shot</strong> — instructions and constraints only, no worked examples. What all four prompts actually are.</li>
         <li><strong>Few-shot</strong> — the same, plus 1+ example input/output pairs baked into the prompt, to anchor format or edge-case handling.</li>
         <li><strong>Chain-of-thought</strong> — the prompt asks the model to reason step by step before answering, usually surfacing that reasoning.</li>
         <li><strong>Self-consistency</strong> — sample the model N times, take the majority/most-consistent answer — a decoding strategy layered on top of any of the above, not a prompt structure by itself.</li>
         <li><strong>ReAct / tool loop</strong> — the model itself decides, mid-generation, to call a tool, reads the result, and continues reasoning — an agentic loop where tool use lives inside the model's own turn.</li>
       </ul>
 
-      <h3>Why all five are zero-shot, and why none are ReAct</h3>
+      <h3>Why all four are zero-shot, and why none are ReAct</h3>
       <p>The seeding script says this outright: zero-shot is the deliberate starting point for every prompt in this project; a switch to few-shot or chain-of-thought only happens as a new Langfuse prompt <em>version</em>, and only after a measured golden-dataset run shows the zero-shot baseline actually falling short — never speculatively, never before that evidence exists.</p>
-      <p>None of the five are ReAct-style tool-calling loops either, even though "Docs Agent" and "Web Search Agent" sound like they'd naturally be agentic. Docs Agent's own prompt says it outright: <em>"the tool calls themselves happen in code before you see this prompt, you only read their results below."</em> Web Search Agent's <code>max 5 tool calls</code> constraint isn't a budget for model-initiated calls either — <code>run_web_search()</code> in Python code picks Tavily-then-DuckDuckGo before the prompt ever runs. In every one of the five prompts, "which tool, when" is a decision made by code, never by the model mid-generation.</p>
-
-      <h3>Why the Supervisor prompt shows 0 observations in Langfuse</h3>
-      <p>It's seeded into Prompt Management by the exact same script as the other four (<code>scripts/seed_prompts.py</code>) — same shape, same labels=["production"]. The difference is downstream: grep the entire <code>src/</code> tree for <code>"supportflow/supervisor"</code> and nothing calls it. No <code>get_prompt()</code>, no <code>get_prompt_client()</code>, no generation span. Compare that to the other four, each fetched inside a real function (<code>call_router</code>, <code>_compose_docs_response</code>, <code>run_web_search</code>, <code>_compose_escalation_output</code>) that also opens a Langfuse <code>generation</code> span around the model call.</p>
-      <p>Supervisor's actual behavior — which agent handles a classified request — is <code>decide_route()</code>: three plain <code>if</code>/<code>return</code> statements in <code>src/domain/routing.py</code>, doctested and unit-tested directly, no LLM involved. The prompt also gives itself away structurally: it's the only one of the five with no <code>{{placeholder}}</code> to compile and no Pydantic output schema — "a short final answer… or a handoff" is prose a human would recognize as a job description, not text built to be sent to a model and parsed back.</p>
+      <p>None of the four are ReAct-style tool-calling loops either, even though "Docs Agent" and "Web Search Agent" sound like they'd naturally be agentic. Docs Agent's own prompt says it outright: <em>"the tool calls themselves happen in code before you see this prompt, you only read their results below."</em> Web Search Agent's <code>max 5 tool calls</code> constraint isn't a budget for model-initiated calls either — <code>run_web_search()</code> in Python code picks Tavily-then-DuckDuckGo before the prompt ever runs. In every one of the four prompts, "which tool, when" is a decision made by code, never by the model mid-generation.</p>
 
       <div class="takeaway">
-        <strong>The point of the pattern:</strong> a prompt existing in Prompt Management is not proof it's live. Every prompt that actually runs is wired to exactly one function that both fetches it by name and opens a <code>generation</code> observation around the model call — that pairing is what makes it show up in Langfuse at all. Supervisor's prompt has the shape without the wiring: written, versioned, seeded — and orphaned.
+        <strong>The point of the pattern:</strong> in every one of these four prompts, "which tool, when" is decided by Python before the model is called, never by the model mid-generation. Routing itself is not a prompt at all — <code>decide_route()</code> in <code>src/domain/routing.py</code> is three plain <code>if</code>/<code>return</code> statements, doctested directly, costing no tokens and unable to invent a route. A fifth "Supervisor" prompt describing that same logic in prose was seeded here for a time and never called by any code path; it was removed rather than left to look live.
       </div>
 
       <h2 style="margin-top: 2.5rem;">Experiments run against these baselines</h2>

@@ -14,7 +14,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 MODELS_CONFIG_PATH = PROJECT_ROOT / "config" / "models.yaml"
 
-AgentRole = Literal["router", "docs", "web_search", "escalation", "supervisor"]
+AgentRole = Literal["router", "docs", "web_search", "escalation"]
 
 
 class Settings(BaseSettings):
@@ -130,7 +130,7 @@ def load_agent_config(
 
     Parameters
     ----------
-    role : {"router", "docs", "web_search", "escalation", "supervisor"}
+    role : {"router", "docs", "web_search", "escalation"}
     path : Path, default=MODELS_CONFIG_PATH
 
     Returns

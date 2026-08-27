@@ -48,13 +48,6 @@ escalation:
   timeout_seconds: 15
   confidence_threshold: null
 
-supervisor:
-  model: "google/gemini-3.5-flash-lite"
-  temperature: 0
-  max_tokens: 512
-  timeout_seconds: 10
-  confidence_threshold: null
-
 judge:
   # Different family from every agent role above (Google/OpenAI/DeepSeek) —
   # keeps the judge independent of every model it grades. Anthropic,
