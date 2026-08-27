@@ -33,6 +33,9 @@
     .walkthrough ul { padding-left: 1.25rem; list-style: disc; }
     .walkthrough ul li { margin-bottom: 0.4rem; }
     .walkthrough code { font-family: "Courier New", monospace; font-size: 11px; background: rgba(51,58,5,0.06); padding: 0.05rem 0.3rem; border-radius: 3px; }
+    .walkthrough table { border-collapse: collapse; margin: 0.75rem 0; font-size: 11px; width: 100%; }
+    .walkthrough th, .walkthrough td { text-align: left; padding: 0.4rem 0.6rem; border: 1px solid rgba(51,58,5,0.18); vertical-align: top; }
+    .walkthrough th { background: rgba(51,58,5,0.04); font-weight: 700; }
     .walkthrough .takeaway {
       margin-top: 1.5rem; padding: 0.9rem 1rem;
       background: rgba(252,216,99,0.20); border: 1px solid #FCA600; border-radius: 6px;
@@ -414,6 +417,63 @@
 
       <div class="takeaway">
         <strong>The point of the pattern:</strong> a prompt existing in Prompt Management is not proof it's live. Every prompt that actually runs is wired to exactly one function that both fetches it by name and opens a <code>generation</code> observation around the model call — that pairing is what makes it show up in Langfuse at all. Supervisor's prompt has the shape without the wiring: written, versioned, seeded — and orphaned.
+      </div>
+
+      <h2 style="margin-top: 2.5rem;">Experiments run against these baselines</h2>
+      <p>Few-shot was the one unused technique above with a real candidate — ReAct is architecturally closed, chain-of-thought pays output tokens on tasks with no reasoning steps, and self-consistency has nothing to vote over given free-text answers. Two hand-written few-shot candidates were built and measured against the live <code>production</code> prompts (<code>scripts/seed_candidate_prompts.py</code>, <code>scripts/compare_prompt_versions.py</code>). Both results below say the same thing: <strong>neither candidate was promoted, and both prompts stay zero-shot.</strong> A negative result is still a result — it is why the technique strips above are unchanged.</p>
+
+      <table>
+        <thead>
+          <tr><th>#</th><th>Technique</th><th>Prompt</th><th>Dataset</th><th>Metric</th><th>Result</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>1</td><td>Few-shot</td><td><code>supportflow/docs</code> (v9 → candidate)</td><td><code>evals/docs_optimization_set.json</code>, n=8×3</td><td>Support Resolution Quality (GEval)</td><td>Inconclusive</td></tr>
+          <tr><td>2</td><td>Few-shot</td><td><code>supportflow/router</code> (v8 → candidate)</td><td><code>tests/fixtures/router_classification_cases.json</code>, n=12×3</td><td>Classification accuracy</td><td>Inconclusive</td></tr>
+        </tbody>
+      </table>
+
+      <div class="diagram-block" style="margin-top: 1.5rem;">
+        <svg viewBox="0 0 1000 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="pr-results-title pr-results-desc">
+          <title id="pr-results-title">Few-shot experiment results</title>
+          <desc id="pr-results-desc">Forest plot of candidate-minus-production on two prompt experiments: Docs Agent shows a small negative point estimate with a 95% confidence interval spanning zero, and Router shows a small positive accuracy gain from a single discordant case with an exact McNemar p-value of 1.0 and no computed interval — both read as inconclusive, and the zero-difference reference line crosses or sits beside both points.</desc>
+          <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+          <line x1="500" y1="52" x2="500" y2="268" stroke="rgba(51,58,5,0.35)" stroke-width="1.2" stroke-dasharray="4,3"/>
+          <rect x="472" y="36" width="56" height="14" fill="#f5f5f5"/>
+          <text x="500" y="47" fill="#4f5d75" font-size="9" font-family="Arial, sans-serif" text-anchor="middle" letter-spacing="0.06em">NO DIFFERENCE</text>
+
+          <line x1="120" y1="268" x2="880" y2="268" stroke="rgba(51,58,5,0.25)" stroke-width="1"/>
+          <text x="140" y="288" fill="#4f5d75" font-size="9" font-family="Arial, sans-serif" text-anchor="middle">candidate worse</text>
+          <text x="860" y="288" fill="#4f5d75" font-size="9" font-family="Arial, sans-serif" text-anchor="middle">candidate better</text>
+
+          <!-- Docs: mean_difference=-0.050, 95% CI [-0.113, +0.033] -->
+          <text x="120" y="112" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif">Docs Agent</text>
+          <text x="120" y="128" fill="#4f5d75" font-size="9" font-family="Arial, sans-serif">n=8, GEval, bootstrap 95% CI</text>
+          <line x1="274" y1="132" x2="566" y2="132" stroke="#4f5d75" stroke-width="1.6"/>
+          <line x1="274" y1="124" x2="274" y2="140" stroke="#4f5d75" stroke-width="1.6"/>
+          <line x1="566" y1="124" x2="566" y2="140" stroke="#4f5d75" stroke-width="1.6"/>
+          <circle cx="400" cy="132" r="6" fill="rgba(51,58,5,0.10)" stroke="#333A05" stroke-width="1.4"/>
+          <rect x="368" y="148" width="64" height="14" fill="#f5f5f5"/>
+          <text x="400" y="159" fill="#333A05" font-size="10" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">-0.050</text>
+
+          <!-- Router: accuracy delta=+0.083, McNemar exact p=1.0 on 1 discordant pair, no CI computed -->
+          <text x="120" y="212" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif">Router</text>
+          <text x="120" y="228" fill="#4f5d75" font-size="9" font-family="Arial, sans-serif">n=12, McNemar exact — no CI computed</text>
+          <circle cx="667" cy="212" r="6" fill="rgba(252,216,99,0.30)" stroke="#FCA600" stroke-width="1.4"/>
+          <rect x="631" y="228" width="112" height="14" fill="#f5f5f5"/>
+          <text x="687" y="239" fill="#333A05" font-size="10" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">+0.083, p=1.0</text>
+
+          <line x1="120" y1="30" x2="880" y2="30" stroke="rgba(51,58,5,0.18)" stroke-width="0.8"/>
+          <text x="120" y="20" fill="#4f5d75" font-size="8" font-family="Arial, sans-serif" letter-spacing="0.1em">CANDIDATE − PRODUCTION</text>
+        </svg>
+      </div>
+
+      <h3>How to read this</h3>
+      <p>Both cases are paired by construction — the same cases run under <code>production</code> and <code>candidate</code>, so the comparison is within-case, not two independent samples. <strong>Docs</strong>: exact permutation p=0.297, judge noise floor (spread across 3 repeat runs of <code>production</code> alone) is 0.019 — the point estimate is smaller in magnitude than the noise the judge itself introduces between identical runs. <strong>Router</strong>: only 1 of 12 cases flipped between versions; McNemar's exact test on a single discordant pair returns p=1.0 by construction — the least significant value the test can return, because one flip out of twelve is indistinguishable from a coin toss. Neither whisker (Docs) nor point (Router) clears the zero-difference line by a margin either result's own sample size can actually resolve.</p>
+      <p>A bug was caught while reading the Router result the first time: this project's own verdict script checked whether any cases had flipped at all, not the p-value itself, so it originally printed "a difference was measured" for a result with zero statistical evidence behind it. Fixed and covered by a regression test (<code>tests/infrastructure/test_compare_prompt_versions_verdict.py</code>) before either number reached this page — the concrete reason the paired design and exact tests above exist, not a hypothetical one.</p>
+
+      <div class="takeaway">
+        <strong>n=8 and n=12 detect only large effects.</strong> Neither result should be read as "few-shot doesn't help" in general — it means these two prompts, already carrying explicit zero-shot instructions that had already been tuned once against a measured baseline (Docs v9's own "concrete next step" requirement, promoted after an earlier ≈0.61 → 0.817 measured gain), had little headroom left for a few-shot layer to add to at this sample size. Both candidates stay seeded under the <code>candidate</code> label in Langfuse, unpromoted, for anyone who wants to re-run the comparison on a larger set.
       </div>
     </div>
   </div>

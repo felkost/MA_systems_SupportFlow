@@ -1,16 +1,25 @@
 # SupportFlow
 
-A read-only, multi-agent customer-support assistant. A LangGraph Supervisor
-classifies an incoming customer message, routes it to a Docs, Web Search, or
-Escalation agent, and returns a sourced answer or hands the case to a human
-operator via Telegram.
+SupportFlow is a customer-support chat assistant. It only reads data — it
+never changes an order, a cart, or a customer account.
 
-## Architecture
+A "Supervisor" reads each customer message and decides what to do:
 
-Router and Escalation agents run in-process with the Supervisor. Docs and
-Web Search agents run as separate A2A servers. The React chat UI talks only
-to the FastAPI API (`src/interfaces/api.py`) — CORS restricted to the local
-frontend origin, no direct browser access to any agent or external service.
+- send it to the **Docs Agent** (answers from a knowledge base and the
+  Silpo product catalog),
+- send it to the **Web Search Agent** (answers from a live web search),
+- or **escalate** it to a human operator on Telegram.
+
+The Supervisor uses LangGraph to run this decision as a small graph of
+steps.
+
+## How the parts talk to each other
+
+Router and Escalation run inside the same process as the Supervisor. Docs
+Agent and Web Search Agent run as separate processes and talk over a
+protocol called A2A ("agent to agent"). The browser only talks to the
+FastAPI backend — never straight to an agent or to Silpo, Tavily, or
+Telegram.
 
 ```mermaid
 flowchart LR
@@ -27,15 +36,16 @@ flowchart LR
     Escalation --> Files["output/escalations/*.json"]
 ```
 
-When a case escalates (critical category, low confidence, or a tool
-failure), Escalation Agent writes a file report and notifies a human
-operator through a Telegram bot — a one-way delivery, with no return path
-from Telegram back into the system.
+A case escalates when: the category is critical, the answer's confidence
+is too low, or a tool failed. When that happens, Escalation Agent writes
+a report file and sends one message to a human operator on Telegram. This
+is one-way — nothing comes back from Telegram into the system.
 
-## Usage scenario
+## How one chat message flows through the app
 
-Open the Vite dev server's own printed URL (default `http://localhost:5173`)
-for the chat UI. `POST /chat`'s request/response sequence:
+Open the URL the Vite dev server prints (usually
+`http://localhost:5173`). This is the chat page. Each message you send
+becomes one `POST /chat` call:
 
 ```mermaid
 sequenceDiagram
@@ -59,24 +69,24 @@ sequenceDiagram
 python -m venv .venv
 .venv/Scripts/pip install -r requirements.txt -r requirements-dev.txt
 cp .env.example .env   # fill in OpenRouter, Silpo MCP, Tavily, Telegram, Langfuse keys
-git config core.hooksPath hooks   # mirrors the evaluation sets to Langfuse on commit
+git config core.hooksPath hooks   # after every commit, sends the eval data to Langfuse
 ```
 
-One-time, manual (Silpo's OAuth is phone+OTP against a real account, not
-automatable):
+Do this once, by hand — Silpo's login needs a real phone number and a
+one-time code, so a script cannot do it for you:
 
 ```bash
 python scripts/silpo_mcp_login.py
 ```
 
-One-time, manual — verify the Telegram bot/channel config
-(`TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID`):
+Do this once, by hand, to check your Telegram bot works
+(`TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID` in `.env`):
 
 ```bash
 python -m scripts.telegram_bot_setup_check
 ```
 
-Then, three processes, three terminals:
+Then start three things, each in its own terminal:
 
 ```bash
 python -m src.interfaces.launcher
@@ -90,40 +100,109 @@ python -m src.interfaces.launcher
 cd frontend && npm install && npm run dev
 ```
 
+**Restarting.** The API (`uvicorn`) does not auto-reload every kind of
+change. If you edit code under `src/application/` or `src/interfaces/`,
+or you change `.env`, stop and restart the API terminal. If you edit
+`src/application/docs_agent.py`, `src/application/web_search_agent.py`,
+or the A2A server files, restart the launcher terminal too — it can take
+about 80 seconds to be ready again, because Docs Agent loads its search
+index at startup.
+
 ## Gate
+
+Run this before you say a change is done:
 
 ```bash
 black --check . tests/*.py && flake8 && mypy src && pytest --cov=src
 ```
 
-`pytest --cov=src` never makes a live call to Silpo MCP, Tavily,
-OpenRouter, or Telegram — `scripts/docs_agent_smoke.py`,
-`scripts/run_router_gate.py`, and `scripts/escalation_agent_smoke.py` are
-the manual, live-verification paths.
+This command never calls a real service (no Silpo, Tavily, OpenRouter, or
+Telegram call). To test against the real services, run one of these by
+hand: `scripts/docs_agent_smoke.py`, `scripts/run_router_gate.py`,
+`scripts/escalation_agent_smoke.py`.
 
-Escalation Agent sends a real Telegram message only with
-`ALLOW_REAL_SEND=true`.
+Escalation Agent only sends a real Telegram message when
+`ALLOW_REAL_SEND=true` is set.
+
+## Data
+
+`data/knowledge_base/` holds three small JSON files. Docs Agent reads
+them to answer questions — this is its "knowledge base".
+
+| File | What is inside |
+|---|---|
+| `faq.json` | Common questions and answers (returns, delivery, loyalty program, and so on). |
+| `services.json` | Short descriptions of Silpo's services, like the loyalty program. |
+| `dialogues.json` | Example conversations between a customer and a human operator. |
+
+Every entry has an `id`, the text, a source, and a date. Docs Agent turns
+these files into a search index (Chroma + BM25) the first time it starts,
+and searches it for every customer question. If you add or edit an entry,
+restart the launcher so it rebuilds the index.
+
+## Scripts
+
+`scripts/` holds small programs you run by hand. The test command above
+(the "gate") never runs them. The one exception is
+`scripts/experiment_stats.py` — that file is a helper library, not a
+program you run directly; `compare_prompt_versions.py` uses it. For every
+other file, run it like this:
+
+```bash
+.venv/Scripts/python scripts/<name>.py
+```
+
+Some of these scripts cost real money (they call a paid AI model). Always
+check the script's own message about cost before you type "yes".
+
+| Script | What it does |
+|---|---|
+| `silpo_mcp_login.py` | Logs in to the real Silpo MCP service. Needs a phone and a one-time code, so you do this by hand. |
+| `silpo_mcp_healthcheck.py` | Checks that the saved Silpo MCP login still works. |
+| `probe_silpo_mcp.py` | Lists the tools Silpo MCP offers right now. Used to build `docs/silpo_mcp_allowlist.md`. |
+| `telegram_bot_setup_check.py` | Checks that your Telegram bot and chat settings are correct. |
+| `seed_prompts.py` | Uploads the five agent prompts to Langfuse, under the "production" label. |
+| `configure_langfuse_evaluator.py` | Sets up two automatic quality checks in Langfuse: one for Docs/Web Search answers, one for Escalation handoffs. |
+| `sync_dataset.py` | Copies the three test-case files (below) to Langfuse. Runs itself after every commit. |
+| `docs_agent_smoke.py`, `escalation_agent_smoke.py`, `observability_smoke.py`, `golden_dataset_smoke.py` | Quick one-case checks against the real services. Run one of these first, before a bigger (and more expensive) run. |
+| `run_golden_dataset_baseline.py` | Runs the full 18-case test set for real and saves the score. This score becomes the pass/fail line for future test runs. |
+| `run_router_gate.py` | Runs Router three times on 12 held-out test messages and reports its accuracy. |
+| `seed_candidate_prompts.py` | Builds a new, "candidate" version of one prompt (with extra examples) and uploads it to Langfuse — without changing the live "production" version. |
+| `compare_prompt_versions.py` | Runs both the old ("production") and new ("candidate") prompt on the same test cases and reports which one scored better, with statistics. Asks you to type "run" before it spends money. |
+| `meta_prompt_docs.py`, `chart_meta_prompt_comparison.py` | An older way of testing a new Docs prompt (an AI model rewrote the prompt itself). Kept for its saved results; the newer way is `seed_candidate_prompts.py` + `compare_prompt_versions.py`. |
+| `experiment_smoke.py` | Sends one real chat message and shows you what Langfuse recorded for it — the fast check before running a big, paid experiment. |
+
+## `output/`
+
+Scripts save their results here. Git ignores everything in this folder,
+except two files:
+
+| File | Saved in Git? | Made by |
+|---|---|---|
+| `deepeval_baseline.json` | yes | `run_golden_dataset_baseline.py`. This is the score every future test run is compared against. |
+| `router_gate_result.json` | yes | `run_router_gate.py`. Router's saved accuracy score. |
+| `escalations/*.json` | no | Escalation Agent. One file per real escalated case. |
+| Other files (`*-comparison.json`, `*-baseline.json`, …) | no | `compare_prompt_versions.py`, `meta_prompt_docs.py`. One file per manual run — you can delete these any time and make them again by re-running the script. |
 
 ## Diagrams
 
-`report/` carries the project's diagram documentation — each `.html` is a
-self-contained page (inline SVG plus a prose walkthrough) with a matching
-standalone `.svg` export:
+`report/` holds the project's diagrams. Each file is one `.html` page you
+can open in a browser — it has a picture plus text explaining it. Most
+also have a matching `.svg` file.
 
-- `architecture.html` — the full system: React UI → FastAPI → Supervisor →
-  A2A to Docs/Web Search, or direct Escalation; Langfuse from all three
-  processes.
-- `supervisor-graph.html` — the LangGraph inside Supervisor: Router and
-  Escalation as real nodes, Docs and Web Search as thin A2A call-outs.
-- `router-sequence.html` — Router's single classification call and its
-  retry-then-fail-closed policy.
-- `escalation-sequence.html` — Escalation's compose → mask → confirm →
-  dedup → write → send pipeline.
-- `docs-agent-sequence.html` — Docs Agent's hybrid retrieval (Chroma+BM25)
-  and Silpo MCP call sequence.
-- `web-search-agent-sequence.html` — Web Search Agent's Tavily-then-
-  DuckDuckGo fallback sequence.
-- `langfuse-observability.html` — what reaches Langfuse and how one
-  customer request becomes a single trace across three processes.
-- `prompt-architecture.html` (+ `prompt-*.svg`) — the structure of each of
-  the five system prompts (Router/Docs/Web Search/Escalation/Supervisor).
+- `architecture.html` — the whole system in one picture: browser → API →
+  Supervisor → Docs/Web Search agents (or straight to Escalation).
+- `supervisor-graph.html` — the steps inside the Supervisor's LangGraph.
+- `router-sequence.html` — how Router classifies one message, and what
+  happens if it fails.
+- `escalation-sequence.html` — Escalation's steps: write the report, hide
+  private data, ask for confirmation, send it, and save the file.
+- `docs-agent-sequence.html` — how Docs Agent searches the knowledge base
+  and the Silpo catalog.
+- `web-search-agent-sequence.html` — how Web Search Agent tries Tavily
+  first, then DuckDuckGo if that fails.
+- `langfuse-observability.html` — what SupportFlow sends to Langfuse, and
+  how one chat message becomes one trace across three processes.
+- `prompt-architecture.html` (+ `prompt-*.svg`) — the five agent prompts,
+  their structure, and the two prompt experiments run against them (both
+  came back "inconclusive" — no prompt was changed because of them).
