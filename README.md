@@ -69,6 +69,21 @@ carries the last 5 turns into Router/Docs/Web Search's prompts as
 context — click "🗑️ Нова розмова" to start a genuinely new thread.
 In-memory only: a Backend restart clears every session's history.
 
+**Language filter:** `run_input_filter` runs before Router on every
+message, using a stdlib Unicode-script heuristic (`detect_language`) —
+a gate, not a classifier. It recognizes four values: `uk` (Cyrillic with
+a Ukrainian-only letter, і/ї/є/ґ, or plain Cyrillic with neither
+Ukrainian- nor Russian-only letters), `ru` (Cyrillic with a
+Russian-only letter, ы/ъ/э), `en` (Latin script), and `unsupported`
+(no recognisable letters at all — a different script entirely, e.g.
+Chinese). Only `unsupported` is actually rejected — a `ru`-detected
+message still reaches Router and gets answered normally, the gate does
+not block it. The customer-facing rejection message shown for
+`unsupported` reads "Наразі ми відповідаємо лише українською та
+англійською мовами" — it does not mention Russian, even though the
+detector still recognizes it and the request is not, in fact, blocked
+on that basis.
+
 ## Setup
 
 ```bash
