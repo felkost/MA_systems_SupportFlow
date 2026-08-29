@@ -342,16 +342,11 @@ explanation, for pasting into a slide or a printed report).
 | `router-sequence.html` | Sequence diagram | How Router classifies one message, what happens if it fails, and how `conversation_history` rides along on the call. |
 | `escalation-sequence.html` | Sequence diagram | Escalation's steps: write the report, hide private data, ask for confirmation, send it, save the file. |
 | `docs-agent-sequence.html` | Sequence diagram | How Docs Agent searches the knowledge base and the Silpo catalog, and how `conversation_history` arrives over the A2A hop's metadata, unmasked. |
-| `web-search-agent-sequence.html` | Sequence diagram | How Web Search Agent tries Tavily first, then DuckDuckGo if that fails. |
+| `web-search-agent-sequence.html` | Sequence diagram | How Web Search Agent tries Tavily first, then DuckDuckGo if that fails, and how `conversation_history` arrives over the A2A hop's metadata already PII-masked, unlike Docs Agent's copy. |
 | `langfuse-observability.html` | Sequence diagram | What SupportFlow sends to Langfuse, and how one chat message becomes one trace across three processes. |
 | `quality-metrics-sequence.html` | Sequence diagram | How the backend produces the numbers in the quality panel: what it records, what it reads, and why the paid scoring step runs in its own process. |
 | `quality-results.html` | Results report | The measured scores, what each metric means for each judge, and which numbers may be compared with which. |
 | `prompt-architecture.html` (+ `prompt-*.svg`) | Structure diagram | The four agent prompts, their structure, and the two prompt experiments run against them (both came back "inconclusive" — no prompt was changed because of them). Shows the `{{conversation_history}}` slot on Router/Docs/Web Search and Escalation's constraint against resolving a case itself. |
-
-**Known gap:** `web-search-agent-sequence.html` was never updated to show
-the masked `conversation_history` it now receives over its own A2A hop —
-`session-memory-sequence.html`'s own walkthrough section notes this, since
-it references that file too.
 
 ### Opening a diagram
 
