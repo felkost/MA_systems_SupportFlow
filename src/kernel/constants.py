@@ -32,3 +32,8 @@ MAX_ESCALATION_SENDS_PER_SESSION: int = 2
 # Telegram's own documented per-message character limit (sendMessage) —
 # text is truncated to this before a real send, never rejected outright.
 TELEGRAM_MAX_MESSAGE_CHARS: int = 4096
+
+# A developer-picked cap on session memory, not a task threshold — bounds
+# how many prior turns' worth of tokens ride along on every Router/Docs/
+# Web Search prompt in a long-running session (docs/decisions.md #77).
+MAX_HISTORY_TURNS: int = 5

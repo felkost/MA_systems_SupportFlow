@@ -14,7 +14,7 @@ from langfuse.types import TraceContext
 
 from src.application.graph_nodes import build_graph
 from src.domain.filters import run_input_filter
-from src.domain.state import SupportFlowState
+from src.domain.state import RESET_ERRORS_MARKER, SupportFlowState
 from src.infrastructure.observability import (
     build_callback_handler,
     experiment_tags,
@@ -39,7 +39,12 @@ def build_initial_state(
         escalation_output=None,
         answer=None,
         confidence=None,
-        errors=[],
+        # A plain `errors=[]` seed would not reset a checkpointed thread's
+        # accumulated errors from a prior turn — `_errors_reducer` treats
+        # this exact marker, not emptiness, as "start a new turn". Not a
+        # `list[ErrorType]`; the mismatch is deliberate, see state.py.
+        errors=RESET_ERRORS_MARKER,  # type: ignore[typeddict-item]
+        conversation_history=[],
         retry_count=0,
         escalation_count=0,
         router_prompt_version=None,
@@ -130,6 +135,13 @@ def handle_request(
     )
     result: SupportFlowState = graph.invoke(
         initial_state,
-        config={"recursion_limit": GRAPH_RECURSION_LIMIT, "callbacks": callbacks},
+        config={
+            "recursion_limit": GRAPH_RECURSION_LIMIT,
+            "callbacks": callbacks,
+            # `session_id` as `thread_id`: the checkpointer's own unit of
+            # continuity is exactly this project's existing session
+            # concept, so no new id scheme is introduced.
+            "configurable": {"thread_id": session_id},
+        },
     )
     return result

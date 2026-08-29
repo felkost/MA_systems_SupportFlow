@@ -17,6 +17,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from a2a.client.errors import A2AClientTimeoutError, AgentCardResolutionError
+from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph import END, StateGraph
 
 from src.application.escalation_agent import EscalationContext, run_escalation_agent
@@ -42,6 +43,30 @@ from src.kernel.settings import load_agent_config
 # design. The text goes to the process log only, never to Langfuse or
 # to the customer-facing answer.
 logger = logging.getLogger(__name__)
+
+# Module-level, process-lifetime, single instance — the checkpointed
+# state lives in this object, not in the compiled graph `build_graph()`
+# returns fresh on every request, so it must outlive any one request the
+# same way `escalation_agent.py`'s own `_session_store` does (decision
+# #28). In-memory only, unbounded, no eviction: correct for this
+# project's single-process demo topology, wrong the moment a second
+# worker process or a restart-survival requirement exists — same
+# `# ponytail` ceiling as `_session_store`, upgrade to a shared store
+# (Redis, a DB row) if that changes. See `docs/decisions.md` #77.
+_checkpointer = InMemorySaver()
+
+
+def reset_checkpointer() -> None:
+    """Test-only: replace the module-level checkpointer with a fresh one.
+
+    Without this, every test that calls `handle_request` shares one
+    `session_id`'s worth of accumulated `errors`/`conversation_history`
+    with every other test using the same id — an autouse fixture in
+    `tests/conftest.py` calls this between tests so the suite stays
+    order-independent.
+    """
+    global _checkpointer
+    _checkpointer = InMemorySaver()
 
 
 def _current_observation_id() -> str | None:
@@ -160,6 +185,12 @@ def docs_node(state: SupportFlowState) -> dict[str, Any]:
         "confidence": result.response.confidence,
         "next_action": "respond",
         "errors": errors,
+        "conversation_history": [
+            {
+                "customer": state["original_request_masked"],
+                "answer": result.response.answer,
+            }
+        ],
     }
 
 
@@ -216,6 +247,12 @@ def web_search_node(state: SupportFlowState) -> dict[str, Any]:
         "confidence": result.response.confidence,
         "next_action": "respond",
         "errors": errors,
+        "conversation_history": [
+            {
+                "customer": state["original_request_masked"],
+                "answer": result.response.answer,
+            }
+        ],
     }
 
 
@@ -242,6 +279,12 @@ def escalate_node(state: SupportFlowState) -> dict[str, Any]:
         "escalation_count": state["escalation_count"] + 1,
         "report_written": result.written,
         "telegram_sent": result.sent,
+        "conversation_history": [
+            {
+                "customer": state["original_request_masked"],
+                "answer": result.output.customer_message,
+            }
+        ],
     }
 
 
@@ -299,4 +342,4 @@ def build_graph() -> Any:
         {"respond": END, "escalate": "escalate"},
     )
     graph.add_edge("escalate", END)
-    return graph.compile()
+    return graph.compile(checkpointer=_checkpointer)

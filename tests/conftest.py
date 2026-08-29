@@ -26,6 +26,7 @@ must be traced end-to-end like every other live run.
 
 import pytest
 
+from src.application import graph_nodes
 from src.infrastructure import live_case_log, observability
 
 
@@ -63,3 +64,16 @@ def _live_case_log_redirected_to_tmp(
     the endpoint that records.
     """
     monkeypatch.setattr(live_case_log, "LIVE_CASES_PATH", tmp_path / "live_cases.jsonl")
+
+
+@pytest.fixture(autouse=True)
+def _checkpointer_reset_between_tests() -> None:
+    """`graph_nodes._checkpointer` is a module-level, process-lifetime
+    `InMemorySaver` (docs/decisions.md #77) — without this, every test
+    that calls `supervisor.handle_request` with the same literal
+    `session_id` (most of `tests/application/test_supervisor.py` uses
+    `"s1"`) would share one checkpointed thread's `errors`/
+    `conversation_history` with every other such test, making a currently
+    order-independent suite order-dependent.
+    """
+    graph_nodes.reset_checkpointer()

@@ -203,14 +203,20 @@ def warm_up() -> None:
     run.
     """
     with _bypass_hitl():
-        for query in _WARMUP_QUERIES:
+        for index, query in enumerate(_WARMUP_QUERIES):
             try:
                 # "warmup" is fine for request_id/session_id but not for
                 # trace_id — `new_trace_id()`'s own docstring documents
                 # the 32-hex-char requirement; a literal string there
                 # crashed silently through this same except before this
-                # was understood.
-                supervisor.handle_request(query, "warmup", "warmup", new_trace_id())
+                # was understood. Distinct `session_id` per query
+                # (docs/decisions.md #77): the checkpointer now keys
+                # conversation history by session_id, and these two
+                # throwaway queries are unrelated turns, not a
+                # conversation with each other.
+                supervisor.handle_request(
+                    query, "warmup", f"warmup-{index}", new_trace_id()
+                )
             except Exception as exc:  # noqa: BLE001 — best-effort, never fatal
                 print(f"  warm-up call failed (continuing anyway): {exc}")
 

@@ -329,6 +329,10 @@ def test_graph_invoke_passes_callbacks_when_tracing_enabled(
     )
 
     assert captured_config["callbacks"] == [fake_handler]
+    # `session_id` as `thread_id` — the checkpointer's own continuity key
+    # (docs/decisions.md #77), not a Langfuse concept, so it belongs
+    # alongside `callbacks` in this same spy rather than a new test.
+    assert captured_config["configurable"] == {"thread_id": "s1"}
 
 
 def test_graph_invoke_passes_empty_callbacks_when_tracing_disabled(
