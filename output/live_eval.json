@@ -1,5 +1,5 @@
 {
-  "measured_at": "2026-08-29T06:03:22+00:00",
+  "measured_at": "2026-08-29T06:23:54+00:00",
   "cases": [
     {
       "trace_id": "4c9e41a97f1c4999a1380625b6f008c8",
@@ -130,6 +130,115 @@
         "Faithfulness": 1.0
       },
       "answer_prompt_version": 8
+    },
+    {
+      "trace_id": "85a55e7c569641139dce1762bcdfd71b",
+      "route": "docs",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.7,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 9
+    },
+    {
+      "trace_id": "6600c83ab8c149d6b51b06dee78a310e",
+      "route": "docs",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.6,
+        "Answer Relevancy": 0.8888888888888888,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 9
+    },
+    {
+      "trace_id": "5d1c06538c29407a96c4452b0032e746",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.5
+      },
+      "answer_prompt_version": null
+    },
+    {
+      "trace_id": "5b7b02210c0d4139aefd6de5132e8fb4",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.8
+      },
+      "answer_prompt_version": null
+    },
+    {
+      "trace_id": "c5e03d869d6b4edf8ad99e2acd29ec34",
+      "route": "web_search",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.3,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 0.6666666666666666
+      },
+      "answer_prompt_version": 8
+    },
+    {
+      "trace_id": "33c4aca3da67419485aeb98e9822c9d2",
+      "route": "docs",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.6,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 9
+    },
+    {
+      "trace_id": "4133dd35e40e4111994a8612c218e336",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.6
+      },
+      "answer_prompt_version": null
+    },
+    {
+      "trace_id": "0e6531c21fd94c8bb88b497317a9f915",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.8
+      },
+      "answer_prompt_version": null
+    },
+    {
+      "trace_id": "5d978dc74fd146c8bc1511bbab957297",
+      "route": "web_search",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.2,
+        "Answer Relevancy": 0.8571428571428571,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 8
+    },
+    {
+      "trace_id": "2e56a3bd2f2d4c65824c4cd2640ac4eb",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.7
+      },
+      "answer_prompt_version": null
+    },
+    {
+      "trace_id": "caf581882c6f4ad385d039e6991f01c2",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.7
+      },
+      "answer_prompt_version": null
     }
   ]
 }

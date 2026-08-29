@@ -2,9 +2,12 @@
 + BM25 (keyword) combined via `EnsembleRetriever`.
 
 Heavy ML imports (`langchain_huggingface`'s embedding model, `chromadb`)
-stay inside `build_retriever()`, never at module top level, and the
-retriever itself is built once, lazily, on Docs Agent's first use — not
-at any process's startup. Confirmed against the installed packages:
+stay inside `build_retriever()`, never at module top level. The retriever
+itself is built once per process — via `docs_agent.warm_up_retriever()`,
+called before the A2A server opens its port, not on Docs Agent's first
+request as an earlier version of this module did (that cost, ~72s
+measured, used to land inside whichever customer request happened to
+arrive first). Confirmed against the installed packages:
 `EnsembleRetriever` lives in `langchain_classic.retrievers.ensemble` (not
 `langchain.retrievers` — that module doesn't exist in `langchain==1.3.16`'s
 layout), `BM25Retriever` still comes from `langchain_community.retrievers`.
