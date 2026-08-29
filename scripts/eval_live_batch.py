@@ -104,7 +104,15 @@ def _score_case(case: dict[str, Any], index: int) -> dict[str, Any]:
             continue
         if metric.score is not None:
             scores[str(metric.__name__)] = float(metric.score)
-    return {"trace_id": case["trace_id"], "route": case["route"], "scores": scores}
+    return {
+        "trace_id": case["trace_id"],
+        "route": case["route"],
+        "scores": scores,
+        # `.get()`, not `case[...]`: a case recorded before this field
+        # existed has no key at all, not a `None` value — both must read
+        # as "unknown version" downstream.
+        "answer_prompt_version": case.get("answer_prompt_version"),
+    }
 
 
 def main() -> None:

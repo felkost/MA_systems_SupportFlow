@@ -28,7 +28,18 @@ from typing import Any
 from src.domain.statistics import bootstrap_interval
 from src.infrastructure.live_case_log import read_cases
 from src.infrastructure.observability import experiment_tags, get_langfuse_client
+from src.infrastructure.prompts import get_prompt
 from src.kernel.settings import PROJECT_ROOT, settings
+
+# Which prompt's version a route's answer must be checked against — the
+# same reasoning `live_quality`'s own experiment-tag filter documents
+# above, applied to `live_deepeval`'s pool instead: a case answered by a
+# since-replaced prompt version describes that old version, not the one
+# currently live, no matter how recently it was graded.
+_ROUTE_PROMPT_NAME = {
+    "docs": "supportflow/docs",
+    "web_search": "supportflow/web_search",
+}
 
 # Both live evaluators, each scoped to its own agents: relevance covers
 # Docs/Web Search, handover quality covers Escalation. Escalation cannot
@@ -219,10 +230,43 @@ def live_deepeval() -> dict[str, Any]:
     levelled: forcing every metric onto every case would mean grading
     vacuous claims, and dropping cases to match the smallest metric would
     throw away real measurements.
+
+    A docs/web_search case is dropped from every metric, not levelled
+    either, when its `answer_prompt_version` does not match that route's
+    *current* `production` version — same reasoning as the module
+    docstring's own experiment-tag filter, applied here because a prompt
+    edit is exactly the kind of change that invalidates old answers for
+    describing current quality, and `eval_live_batch.py` never re-scores
+    an already-graded case. `stale_prompt_version` counts what this
+    dropped, so a sudden drop in `n_cases` right after a promotion reads
+    as "waiting for fresh traffic", not as a silent shrink. Escalation
+    cases are never dropped this way — Escalation's own prompt version is
+    not yet recorded (`SupportFlowState.answer_prompt_version` is `None`
+    for that route by design), so there is nothing to check them against.
     """
     cases = _scored_cases()
     if not cases:
         return {"available": False, "reason": "no_batch_run_yet"}
+
+    try:
+        current_versions = {
+            route: get_prompt(name)[1] for route, name in _ROUTE_PROMPT_NAME.items()
+        }
+    except Exception:  # noqa: BLE001 — a cold Langfuse cache is the only
+        # way `get_prompt` raises (its own docstring); a stale cached
+        # version is fine and never reaches here. Fails closed rather than
+        # silently falling back to the unfiltered pool, which is exactly
+        # the mixed-population defect this filter exists to prevent.
+        return {"available": False, "reason": "prompt_version_unresolved"}
+
+    def _is_current(case: dict[str, Any]) -> bool:
+        route = case.get("route")
+        if route not in _ROUTE_PROMPT_NAME:
+            return True
+        return case.get("answer_prompt_version") == current_versions[route]
+
+    current_cases = [case for case in cases if _is_current(case)]
+    stale_prompt_version = len(cases) - len(current_cases)
 
     try:
         measured_at = json.loads(LIVE_EVAL_PATH.read_text(encoding="utf-8")).get(
@@ -232,7 +276,7 @@ def live_deepeval() -> dict[str, Any]:
         measured_at = None
 
     by_metric: dict[str, list[float]] = {}
-    for case in cases:
+    for case in current_cases:
         for name, score in (case.get("scores") or {}).items():
             by_metric.setdefault(name, []).append(score)
 
@@ -240,7 +284,8 @@ def live_deepeval() -> dict[str, Any]:
         "available": True,
         "judge": "DeepEval",
         "measured_at": measured_at,
-        "n_cases": len(cases),
+        "n_cases": len(current_cases),
+        "stale_prompt_version": stale_prompt_version,
         "pending": len(unscored_cases()),
         "metrics": {
             name: {**summarize(values), "covers": len(values)}

@@ -153,8 +153,14 @@ function ScoreCard({ title, judge, source, selected, onSelect, note, action }) {
           </option>
         ))}
       </select>
-      {stats?.n === 0 ? (
+      {!stats?.n ? (
         <p className="score-note">
+          {/* `stats` is undefined whenever `names` is empty — right after
+              a prompt promotion, before any fresh traffic under the new
+              version has been scored, `live_deepeval`'s filter can leave
+              every metric bucket empty even though the file itself has
+              cases in it. Same message either way: there is nothing to
+              show yet, not a broken card. */}
           Ще немає оцінок. Поставте запитання в чаті, зачекайте кілька секунд
           і натисніть «Оновити».
         </p>
@@ -433,7 +439,10 @@ function App() {
               quality?.live_deepeval?.measured_at
                 ? `Останній прогін: ${formatMoment(
                     quality.live_deepeval.measured_at,
-                  )}, оцінено ${quality.live_deepeval.n_cases} запитів.`
+                  )}, оцінено ${quality.live_deepeval.n_cases} запитів.` +
+                  (quality.live_deepeval.stale_prompt_version
+                    ? ` Виключено ${quality.live_deepeval.stale_prompt_version} — відповідали на попередню версію промпту.`
+                    : '')
                 : null
             }
             action={
