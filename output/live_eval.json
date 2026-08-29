@@ -1,5 +1,5 @@
 {
-  "measured_at": "2026-08-27T22:24:20+00:00",
+  "measured_at": "2026-08-29T06:03:22+00:00",
   "cases": [
     {
       "trace_id": "4c9e41a97f1c4999a1380625b6f008c8",
@@ -110,6 +110,26 @@
         "Privacy Safety": 1.0,
         "Support Resolution Quality [GEval]": 0.8
       }
+    },
+    {
+      "trace_id": "4e0a2fc2138b412facdd5370f681e5d6",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.6
+      },
+      "answer_prompt_version": null
+    },
+    {
+      "trace_id": "f4a1453569024962860e422b0bcf1b70",
+      "route": "web_search",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.6,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 8
     }
   ]
 }
