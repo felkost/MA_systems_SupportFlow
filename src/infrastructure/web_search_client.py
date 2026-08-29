@@ -31,12 +31,14 @@ class WebSearchInvalidResponseError(Exception):
 
 @dataclass(frozen=True)
 class WebSearchCallResult:
-    """`response` plus `retrieval_context` and `tools_called` — all cross
-    the A2A hop in the same reply payload.
+    """`response` plus `retrieval_context`, `tools_called`, and the
+    resolved `prompt_version` Web Search Agent actually composed with —
+    all cross the A2A hop in the same reply payload.
     """
 
     response: WebSearchResponse
     retrieval_context: list[str]
+    prompt_version: int
     tools_called: list[str] = field(default_factory=list)
 
 
@@ -106,4 +108,5 @@ def call_web_search(
         response=response,
         retrieval_context=payload.get("retrieval_context", []),
         tools_called=payload.get("tools_called", []),
+        prompt_version=payload["prompt_version"],
     )

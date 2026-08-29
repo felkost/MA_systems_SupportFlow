@@ -225,6 +225,7 @@ def chat(payload: ChatRequest) -> ChatResponse:
                 else _answer_route(state)
             ),
             trace_id=trace_id,
+            answer_prompt_version=state["answer_prompt_version"],
         )
 
     return ChatResponse(

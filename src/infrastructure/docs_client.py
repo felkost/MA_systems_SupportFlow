@@ -30,10 +30,15 @@ class DocsInvalidResponseError(Exception):
 
 @dataclass(frozen=True)
 class DocsCallResult:
-    """`response` plus `retrieval_context` and `tools_called`."""
+    """`response` plus `retrieval_context`, `tools_called`, and the
+    resolved `prompt_version` Docs Agent actually composed with — carried
+    across the A2A hop so a live case logged from this answer can be
+    traced back to its prompt.
+    """
 
     response: DocsResponse
     retrieval_context: list[str]
+    prompt_version: int
     tools_called: list[str] = field(default_factory=list)
 
 
@@ -102,4 +107,5 @@ def call_docs_agent(
         response=response,
         retrieval_context=payload.get("retrieval_context", []),
         tools_called=payload.get("tools_called", []),
+        prompt_version=payload["prompt_version"],
     )

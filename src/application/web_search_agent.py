@@ -45,11 +45,17 @@ class WebSearchAgentResult:
         Which provider actually served the result — `["tavily"]` or
         `["duckduckgo"]`, populated only once `search()` has actually
         returned.
+    prompt_version : int
+        The resolved Langfuse version of `supportflow/web_search` this
+        answer was actually composed with — see `DocsAgentResult`'s
+        identical field for why it travels alongside `response` rather
+        than inside it.
     """
 
     response: WebSearchResponse
     retrieval_context: list[str]
     tools_called: list[str]
+    prompt_version: int
 
 
 def run_web_search(
@@ -88,7 +94,7 @@ def run_web_search(
         f"[{r.title}]({r.url})\n{r.content}" for r in outcome.results
     )
 
-    prompt_text, _prompt_version = get_prompt("supportflow/web_search")
+    prompt_text, prompt_version = get_prompt("supportflow/web_search")
     compiled_prompt = prompt_text.replace("{{customer_message}}", masked_query).replace(
         "{{retrieved_content}}", retrieved_block
     )
@@ -135,4 +141,5 @@ def run_web_search(
         response=result,
         retrieval_context=retrieval_context,
         tools_called=[outcome.provider],
+        prompt_version=prompt_version,
     )

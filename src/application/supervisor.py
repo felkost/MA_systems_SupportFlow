@@ -43,6 +43,7 @@ def build_initial_state(
         retry_count=0,
         escalation_count=0,
         router_prompt_version=None,
+        answer_prompt_version=None,
         retrieval_context=[],
         tools_called=[],
         report_written=False,

@@ -36,6 +36,7 @@ def test_call_docs_agent_returns_validated_response(
         ),
         retrieval_context=["Бонусна картка не має терміну дії."],
         tools_called=["silpo_find_products_batch"],
+        prompt_version=3,
     )
 
     async def fake_run_docs_agent(_query: str) -> DocsAgentResult:
@@ -68,7 +69,10 @@ def test_call_docs_agent_forwards_parent_span_id(
         base_url, text, request_id, session_id, trace_id, deadline, **kwargs
     ):
         captured.update(kwargs)
-        return '{"response": {"answer": "x", "sources": [], "confidence": 1.0}}'
+        return (
+            '{"response": {"answer": "x", "sources": [], "confidence": 1.0}, '
+            '"prompt_version": 3}'
+        )
 
     monkeypatch.setattr(
         "src.infrastructure.docs_client.send_a2a_message", fake_send_a2a_message

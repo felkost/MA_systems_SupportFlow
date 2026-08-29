@@ -34,6 +34,7 @@ def append_case(
     tools_called: list[str],
     route: str,
     trace_id: str,
+    answer_prompt_version: int | None,
 ) -> bool:
     """Record one answered request.
 
@@ -50,6 +51,16 @@ def append_case(
     tools_called, route, trace_id : ...
         Recorded for slicing a later batch by route and for tying a
         score back to its own trace.
+    answer_prompt_version : int or None
+        The resolved Langfuse version of whichever prompt composed
+        `answer` — `SupportFlowState.answer_prompt_version`, `None` for
+        an escalated case. Recorded so a future batch score can be
+        attributed to the prompt version that actually produced it,
+        rather than pooling every version's answers into one running
+        mean with no way to separate them after a prompt changes —
+        `judge_stats.live_deepeval()` does not yet filter by this field,
+        the same way `live_quality()` filters by experiment tag; it only
+        records the fact for now.
 
     Returns
     -------
@@ -66,6 +77,7 @@ def append_case(
             "tools_called": tools_called,
             "route": route,
             "trace_id": trace_id,
+            "answer_prompt_version": answer_prompt_version,
         }
         with LIVE_CASES_PATH.open("a", encoding="utf-8") as handle:
             handle.write(json.dumps(record, ensure_ascii=False) + "\n")
