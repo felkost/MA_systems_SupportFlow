@@ -1,5 +1,5 @@
 {
-  "measured_at": "2026-08-29T06:23:54+00:00",
+  "measured_at": "2026-08-29T08:47:14+00:00",
   "cases": [
     {
       "trace_id": "4c9e41a97f1c4999a1380625b6f008c8",
@@ -237,6 +237,119 @@
       "scores": {
         "Privacy Safety": 1.0,
         "Support Resolution Quality [GEval]": 0.7
+      },
+      "answer_prompt_version": null
+    },
+    {
+      "trace_id": "7da77824fdf0457397fc46433ae202b7",
+      "route": "docs",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.7,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 11
+    },
+    {
+      "trace_id": "3a7154e7a95c41f889bc5c19d54d2f3c",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.8
+      },
+      "answer_prompt_version": null
+    },
+    {
+      "trace_id": "799e718d62a3409aa74e5dbb8d02ae97",
+      "route": "docs",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.4,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 11
+    },
+    {
+      "trace_id": "f58d535e78044027b1e8433582aac094",
+      "route": "docs",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.7,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 11
+    },
+    {
+      "trace_id": "b70c993c9af44b33a49258aed8d2dce0",
+      "route": "docs",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.9,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 12
+    },
+    {
+      "trace_id": "ca9435b94e254af8ba67b291182c22b4",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.8
+      },
+      "answer_prompt_version": null
+    },
+    {
+      "trace_id": "614a27980a2c4b219d9704bb84be4962",
+      "route": "docs",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.9,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 12
+    },
+    {
+      "trace_id": "2cd26fc1abc44e4ca503788dabfaa147",
+      "route": "docs",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.5,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 0.6666666666666666
+      },
+      "answer_prompt_version": 12
+    },
+    {
+      "trace_id": "84b49a79916041b8a47bae8dca97a82a",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.6
+      },
+      "answer_prompt_version": null
+    },
+    {
+      "trace_id": "4efc4a7f16fa4132b005418adeff4db3",
+      "route": "web_search",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.5,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 9
+    },
+    {
+      "trace_id": "1681facc71c0491984587c94071594aa",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.9
       },
       "answer_prompt_version": null
     }
