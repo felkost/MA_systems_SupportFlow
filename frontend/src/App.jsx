@@ -411,7 +411,7 @@ function App() {
           </button>
 
           <ScoreCard
-            title="Живі відповіді"
+            title="Реальні запити — Langfuse"
             judge={quality?.live?.judge}
             source={quality?.live}
             selected={liveMetric}
@@ -424,7 +424,7 @@ function App() {
           />
 
           <ScoreCard
-            title="Живі запити — офлайн-оцінка"
+            title="Реальні запити — DeepEval"
             judge={quality?.live_deepeval?.judge}
             source={quality?.live_deepeval}
             selected={deepevalMetric}
@@ -458,7 +458,7 @@ function App() {
           />
 
           <ScoreCard
-            title="Еталон — golden dataset"
+            title="Еталонний набір — DeepEval"
             judge={quality?.baseline?.judge}
             source={quality?.baseline}
             selected={deepevalMetric}
