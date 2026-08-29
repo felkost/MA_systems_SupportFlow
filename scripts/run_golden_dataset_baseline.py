@@ -73,9 +73,8 @@ def _score_case(case: dict, run_tag: str) -> dict:
         # Which prompt version actually answered this case — recorded so
         # the frozen baseline's comparability with a later live measure
         # is a fact this file states, not an inference someone has to
-        # redo by hand from commit/prompt timestamps (docs/decisions.md
-        # #75). `None` for Escalation (own version not yet tracked) or a
-        # rejected case.
+        # redo by hand from commit/prompt timestamps. `None` for
+        # Escalation (own version not yet tracked) or a rejected case.
         "answer_prompt_version": (test_case.metadata or {}).get(
             "answer_prompt_version"
         ),

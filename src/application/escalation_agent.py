@@ -37,7 +37,7 @@ from src.kernel.settings import settings
 # `EscalationAgentResult` but never logged, never reaching a Langfuse
 # span, and never surfacing in `ChatResponse`. The chat UI showed
 # "Telegram не надсилався", indistinguishable from real sending being
-# switched off entirely. Found live 2026-08-29 (docs/decisions.md #80).
+# switched off entirely. Found live 2026-08-29.
 logger = logging.getLogger(__name__)
 
 

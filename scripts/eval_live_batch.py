@@ -119,7 +119,7 @@ def _score_case(case: dict[str, Any], index: int) -> dict[str, Any]:
         # `.get()`, not `case[...]`: a case recorded before this field
         # existed has no key at all, not a `None` value — both must read
         # as "unknown" downstream. `judge_stats.live_deepeval()` filters
-        # by both this and `experiment` (docs/decisions.md #75).
+        # by both this and `experiment`.
         "answer_prompt_version": case.get("answer_prompt_version"),
         "experiment": case.get("experiment"),
     }

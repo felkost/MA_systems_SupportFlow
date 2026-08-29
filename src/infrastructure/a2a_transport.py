@@ -241,8 +241,8 @@ def send_a2a_message(
         Prior turns in this session, pre-formatted by
         `src.domain.state.format_conversation_history` — carried in
         `SendMessageRequest.metadata`, empty (and therefore omitted from
-        the metadata dict entirely) on a session's first turn
-        (`docs/decisions.md` #77). Never raw/unmasked text — the caller
+        the metadata dict entirely) on a session's first turn. Never
+        raw/unmasked text — the caller
         is responsible for building this string only from masked turns,
         same rule as `text`.
 

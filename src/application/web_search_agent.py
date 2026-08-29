@@ -78,7 +78,7 @@ def run_web_search(
         personal user data", same rule `masked_query` already follows),
         received from `WebSearchExecutor` over the A2A hop's metadata.
         Empty for a session's first turn or against a live prompt seeded
-        before this parameter existed (`docs/decisions.md` #77).
+        before this parameter existed.
     search_fn : SearchFn, default=`src.infrastructure.web_search.search`
         Injected for testing the tool-unavailable path without a network
         call; production callers use the default.

@@ -98,9 +98,9 @@ def test_escalate_route_returns_customer_message_no_sources(
 def test_escalate_route_surfaces_the_send_cap_distinctly_from_telegram_sent(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """docs/decisions.md #80/#82: `telegram_sent=False` alone cannot tell
-    a capped send apart from real sending being switched off or a
-    deduplicated case — `escalation_capped` is the field that can.
+    """`telegram_sent=False` alone cannot tell a capped send apart from
+    real sending being switched off or a deduplicated case —
+    `escalation_capped` is the field that can.
     """
     state = build_initial_state("Ще одна критична проблема", "r4", "s4", "t4" * 8)
     state["next_action"] = "escalate"

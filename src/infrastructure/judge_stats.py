@@ -4,9 +4,9 @@ golden-dataset baseline they are read against.
 
 Kept out of `observability.py` so that module stays about producing
 traces rather than reading them back. That split no longer keeps this
-file under the 250-line band by itself — PR #23's two `experiment`/
-`answer_prompt_version` filter fixes pushed it to 359 lines, a known,
-recorded exception (`CLAUDE.md` §5) pending a follow-up split.
+file under the 250-line band by itself — two `experiment`/
+`answer_prompt_version` filter fixes pushed it to 359 lines, a known
+exception pending a follow-up split.
 
 **Why the live figure is filtered by experiment tag rather than simply
 taking the most recent scores:** measured 2026-08-28, the project's
@@ -247,10 +247,10 @@ def live_deepeval() -> dict[str, Any]:
     2. Any case (including Escalation) whose `experiment` does not match
        `settings.experiment`, checked only when one is actually
        configured — the same "blank means no population break" rule
-       `live_quality`'s own tag filter follows. Added 2026-08-29
-       (`docs/decisions.md` #75) after this card and the Langfuse-scored
-       one above were found counting from two different starting
-       points: this filter used to only ever apply to *that* card.
+       `live_quality`'s own tag filter follows. Added 2026-08-29 after
+       this card and the Langfuse-scored one above were found counting
+       from two different starting points: this filter used to only
+       ever apply to *that* card.
 
     `stale_prompt_version` counts every case dropped by either check
     combined, so a sudden drop in `n_cases` right after a promotion or an
@@ -277,7 +277,7 @@ def live_deepeval() -> dict[str, Any]:
         # per-route (Escalation has none to check); experiment is
         # global — checked only when one is actually configured, the
         # same "blank means no population break" rule `live_quality`'s
-        # own tag filter follows (docs/decisions.md #75).
+        # own tag filter follows.
         route = case.get("route")
         if route in _ROUTE_PROMPT_NAME:
             if case.get("answer_prompt_version") != current_versions[route]:
@@ -312,7 +312,7 @@ def live_deepeval() -> dict[str, Any]:
         # already resolved above for the filter itself, just exposed here
         # so the panel can label a small `n` as "new series started here"
         # instead of it reading as lost history after a deliberate prompt
-        # change (2026-08-29, docs/decisions.md #74).
+        # change (2026-08-29).
         "prompt_versions": current_versions,
         "metrics": {
             name: {**summarize(values), "covers": len(values)}

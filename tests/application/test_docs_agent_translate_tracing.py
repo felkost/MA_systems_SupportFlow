@@ -2,8 +2,8 @@
 
 Regression guard: this call used to make a real paid LLM request with no
 span at all, so its tokens never appeared in any cost figure. It also used
-a hardcoded instruction string, which `CLAUDE.md` forbids. Both are fixed
-by copying the `_compose_docs_response`/`_compose_escalation_output`
+a hardcoded instruction string instead of a versioned prompt. Both are
+fixed by copying the `_compose_docs_response`/`_compose_escalation_output`
 observability shape — this test asserts the span actually gets opened with
 the right name and carries real `usage_details`.
 """

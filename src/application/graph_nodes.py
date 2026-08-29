@@ -58,7 +58,7 @@ logger = logging.getLogger(__name__)
 # project's single-process demo topology, wrong the moment a second
 # worker process or a restart-survival requirement exists — same
 # `# ponytail` ceiling as `_session_store`, upgrade to a shared store
-# (Redis, a DB row) if that changes. See `docs/decisions.md` #77.
+# (Redis, a DB row) if that changes.
 _checkpointer = InMemorySaver()
 
 
@@ -225,7 +225,7 @@ def web_search_node(state: SupportFlowState) -> dict[str, Any]:
             deadline,
             parent_span_id=_current_observation_id(),
             # Masked, not just the plain formatter Router/Docs use: Web
-            # Search "gets no personal user data" (CLAUDE.md invariant) —
+            # Search gets no personal user data —
             # `original_request_masked` already covers each turn's
             # customer half, but a prior turn's `answer` was never masked
             # (Supervisor composes it from grounded, non-personal

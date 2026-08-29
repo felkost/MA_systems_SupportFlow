@@ -84,9 +84,9 @@ async def test_run_docs_agent_combines_kb_and_mcp_sources() -> None:
 
 @pytest.mark.asyncio
 async def test_run_docs_agent_injects_conversation_history_into_the_prompt() -> None:
-    """docs/decisions.md #77: the compiled prompt actually carries prior
-    turns when the caller passes them, not just the customer message and
-    retrieved content the other tests here already cover.
+    """The compiled prompt actually carries prior turns when the caller
+    passes them, not just the customer message and retrieved content the
+    other tests here already cover.
     """
     captured: dict[str, str] = {}
 

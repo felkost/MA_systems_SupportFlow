@@ -1,6 +1,6 @@
-"""Session memory (`docs/decisions.md` #77): does a follow-up
-`handle_request` call in the same `session_id` actually see the prior
-turn, and does a different `session_id` stay isolated from it. The
+"""Session memory: does a follow-up `handle_request` call in the same
+`session_id` actually see the prior turn, and does a different
+`session_id` stay isolated from it. The
 checkpointer itself is reset between tests by `tests/conftest.py`'s
 autouse fixture — without it these tests would leak into each other.
 """

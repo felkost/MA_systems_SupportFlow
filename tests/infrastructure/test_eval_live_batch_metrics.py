@@ -36,9 +36,9 @@ def test_score_case_carries_the_experiment_tag_through(
 ) -> None:
     """The batch score must carry the same `experiment` the case was
     originally recorded under, alongside `answer_prompt_version` — both
-    are `judge_stats.live_deepeval()`'s filter axes (docs/decisions.md
-    #75), and `.get()`, not `case[...]`, so a case recorded before this
-    field existed reads as unknown rather than crashing the batch.
+    are `judge_stats.live_deepeval()`'s filter axes, and `.get()`, not
+    `case[...]`, so a case recorded before this field existed reads as
+    unknown rather than crashing the batch.
     """
     monkeypatch.setattr(eval_live_batch, "_metrics_for", lambda _case: [])
     case = {

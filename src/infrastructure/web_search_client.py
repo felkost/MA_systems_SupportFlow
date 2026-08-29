@@ -71,9 +71,8 @@ def call_web_search(
     conversation_history : str, default=""
         Forwarded to `send_a2a_message` unchanged. The caller
         (`graph_nodes.web_search_node`) is responsible for masking prior
-        answers before this crosses the hop — Web Search Agent "gets no
-        personal user data" (CLAUDE.md invariant), same rule `masked_text`
-        already follows (`docs/decisions.md` #77).
+        answers before this crosses the hop — Web Search Agent gets no
+        personal user data, same rule `masked_text` already follows.
 
     Returns
     -------
