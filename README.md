@@ -213,9 +213,9 @@ are **not** all on the same scale.
 
 | Card | Who scores it | When it updates |
 |---|---|---|
-| Live answers | An AI judge inside Langfuse, on every new message | By itself, a few seconds after each message |
-| Live answers, offline check | DeepEval, the same checks used on the test set | When you press its button |
-| Reference | DeepEval, on the fixed 18-case test set | Never — it is a frozen result |
+| Real requests — Langfuse | An AI judge inside Langfuse, on every new message | By itself, a few seconds after each message |
+| Real requests — DeepEval | DeepEval, the same checks used on the test set | When you press its button |
+| Reference set — DeepEval | DeepEval, on the fixed 18-case test set | Never — it is a frozen result |
 
 **Only the two lower cards may be compared with each other.** They use
 the same checks in the same way, on two different groups of messages, so
@@ -226,6 +226,25 @@ were measured differently. Two measures can even share a name and still
 work differently: the top card asks one AI model for a single 0–1 score,
 while `Answer Relevancy` below splits the answer into separate statements
 and counts how many are on topic.
+
+**The middle card only counts an answer while its prompt is still live.**
+Each real message is stamped, when it is answered, with the exact
+Docs/Web Search prompt version that wrote it. If you promote a new prompt
+version afterward, that old message stops counting toward the middle
+card's mean — it describes the prompt that is live *right now*, not
+every answer ever given. This is separate from, and does not need,
+`EXPERIMENT` below; it happens automatically, keyed off which prompt
+version is actually live in Langfuse. `Answer Relevancy` and
+`Faithfulness` only ever apply to Docs/Web Search messages (never to an
+escalation), so right after a promotion — before any fresh Docs/Web
+Search message has been asked and scored — those two can vanish from the
+dropdown entirely, while `Privacy Safety` and `Support Resolution
+Quality` still show (escalations count toward those). Ask a new
+question, press the card's own scoring button, and they come back. This
+also happens once, the moment this filter itself first shipped: every
+message scored before that point has no recorded prompt version at all,
+so it is excluded the same way, permanently — `eval_live_batch.py` never
+re-scores an already-graded message.
 
 Each card shows how many messages the number covers ("6 of 10"), because
 a check that needs sources cannot be applied to a message that has none.
