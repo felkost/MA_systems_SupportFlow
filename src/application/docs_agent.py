@@ -211,6 +211,7 @@ def _compose_docs_response(compiled_prompt: str, masked_query: str) -> DocsRespo
 async def run_docs_agent(
     masked_query: str,
     *,
+    conversation_history: str = "",
     retriever: Any = None,
     search_products: Any = _default_search_products,
     translate_fn: Any = _translate_to_ukrainian_search_term,
@@ -223,6 +224,12 @@ async def run_docs_agent(
     ----------
     masked_query : str
         Already PII-masked.
+    conversation_history : str, default=""
+        Prior turns in this session, pre-formatted by
+        `src.domain.state.format_conversation_history`, received from
+        `DocsExecutor` over the A2A hop's metadata — empty for a
+        session's first turn or against a live prompt seeded before this
+        parameter existed (`docs/decisions.md` #77).
     retriever : Any, optional
         Injected for testing; defaults to the lazily-built hybrid
         retriever.
@@ -277,8 +284,10 @@ async def run_docs_agent(
 
     retrieved_block = "\n\n".join(kb_texts + mcp_texts)
     prompt_text, prompt_version = prompt_fn("supportflow/docs")
-    compiled_prompt = prompt_text.replace("{{customer_message}}", masked_query).replace(
-        "{{retrieved_content}}", retrieved_block
+    compiled_prompt = (
+        prompt_text.replace("{{customer_message}}", masked_query)
+        .replace("{{retrieved_content}}", retrieved_block)
+        .replace("{{conversation_history}}", conversation_history)
     )
 
     result = compose_fn(compiled_prompt, masked_query)

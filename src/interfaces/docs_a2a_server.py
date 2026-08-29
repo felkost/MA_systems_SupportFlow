@@ -67,7 +67,10 @@ class DocsExecutor(AgentExecutor):
             )
         with span_cm:
             try:
-                result = await run_docs_agent(query)
+                result = await run_docs_agent(
+                    query,
+                    conversation_history=metadata.get("conversation_history", ""),
+                )
                 reply_text = json.dumps(
                     {
                         "response": json.loads(result.response.model_dump_json()),

@@ -22,8 +22,14 @@ from langgraph.graph import END, StateGraph
 
 from src.application.escalation_agent import EscalationContext, run_escalation_agent
 from src.application.router_agent import run_router
+from src.domain.filters import mask_pii
 from src.domain.routing import decide_route
-from src.domain.state import ErrorType, NextAction, SupportFlowState
+from src.domain.state import (
+    ErrorType,
+    NextAction,
+    SupportFlowState,
+    format_conversation_history,
+)
 from src.infrastructure.a2a_transport import A2ATimeoutError
 from src.infrastructure.docs_client import (
     DocsInvalidResponseError,
@@ -95,6 +101,9 @@ def router_node(state: SupportFlowState) -> dict[str, Any]:
             state["request_id"],
             state["session_id"],
             state["trace_id"],
+            conversation_history=format_conversation_history(
+                state["conversation_history"]
+            ),
         )
         if result.classification is None:
             if span is not None:
@@ -138,6 +147,9 @@ def docs_node(state: SupportFlowState) -> dict[str, Any]:
             state["trace_id"],
             deadline,
             parent_span_id=_current_observation_id(),
+            conversation_history=format_conversation_history(
+                state["conversation_history"]
+            ),
         )
     except (A2ATimeoutError, A2AClientTimeoutError) as exc:
         logger.warning("docs_timeout after %ss: %s", config.timeout_seconds, exc)
@@ -212,6 +224,17 @@ def web_search_node(state: SupportFlowState) -> dict[str, Any]:
             state["trace_id"],
             deadline,
             parent_span_id=_current_observation_id(),
+            # Masked, not just the plain formatter Router/Docs use: Web
+            # Search "gets no personal user data" (CLAUDE.md invariant) —
+            # `original_request_masked` already covers each turn's
+            # customer half, but a prior turn's `answer` was never masked
+            # (Supervisor composes it from grounded, non-personal
+            # sources, but nothing guarantees that structurally). Masking
+            # the whole rendered block is defense in depth, not a
+            # per-field split, and idempotent on the already-masked half.
+            conversation_history=mask_pii(
+                format_conversation_history(state["conversation_history"])
+            ),
         )
     except (A2ATimeoutError, A2AClientTimeoutError) as exc:
         logger.warning("web_search_timeout after %ss: %s", config.timeout_seconds, exc)

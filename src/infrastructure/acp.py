@@ -59,7 +59,10 @@ class RouterInvalidOutputError(Exception):
 
 
 def call_router(
-    envelope: AcpEnvelope, *, prompt_label: str = "production"
+    envelope: AcpEnvelope,
+    *,
+    prompt_label: str = "production",
+    conversation_history: str = "",
 ) -> tuple[ClassificationOutput, int]:
     """One attempt to classify `envelope.payload` via the Router Agent.
 
@@ -73,6 +76,14 @@ def call_router(
         label was fixed at `production`, so a `candidate` prompt could be
         seeded but never actually measured — a comparison would have run
         production against itself and reported "no difference".
+    conversation_history : str, default=""
+        Prior turns in this session, pre-formatted by
+        `src.domain.state.format_conversation_history` — empty for a
+        session's first turn, or against a live prompt seeded before this
+        parameter existed (`docs/decisions.md` #77). Not part of
+        `AcpEnvelope`: it is prompt content, not delegation metadata the
+        envelope's own contract (request id, task, deadline, trace ids)
+        is about.
 
     Returns
     -------
@@ -118,7 +129,7 @@ def call_router(
     )
     compiled_prompt = prompt_client.prompt.replace(
         "{{customer_message}}", envelope.payload
-    )
+    ).replace("{{conversation_history}}", conversation_history)
 
     langfuse = get_langfuse_client()
     span_cm = (

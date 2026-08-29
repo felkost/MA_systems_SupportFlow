@@ -39,7 +39,7 @@ def test_call_docs_agent_returns_validated_response(
         prompt_version=3,
     )
 
-    async def fake_run_docs_agent(_query: str) -> DocsAgentResult:
+    async def fake_run_docs_agent(_query: str, **_kw: object) -> DocsAgentResult:
         return fake_result
 
     monkeypatch.setattr(
@@ -93,7 +93,7 @@ def test_call_docs_agent_forwards_parent_span_id(
 def test_call_docs_agent_raises_when_model_output_invalid(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    async def failing_run_docs_agent(_query: str) -> DocsAgentResult:
+    async def failing_run_docs_agent(_query: str, **_kw: object) -> DocsAgentResult:
         raise DocsInvalidOutputError("refused to answer")
 
     monkeypatch.setattr(

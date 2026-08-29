@@ -35,7 +35,10 @@ def test_router_succeeds_on_first_attempt(monkeypatch: pytest.MonkeyPatch) -> No
     expected = ClassificationOutput(category="product", urgency="low", language="uk")
 
     def fake_call_router(
-        envelope: object, *, prompt_label: str = "production"
+        envelope: object,
+        *,
+        prompt_label: str = "production",
+        conversation_history: str = "",
     ) -> tuple[ClassificationOutput, int]:
         return expected, 3
 
@@ -53,7 +56,10 @@ def test_router_retries_once_then_succeeds(monkeypatch: pytest.MonkeyPatch) -> N
     calls = {"n": 0}
 
     def fake_call_router(
-        envelope: object, *, prompt_label: str = "production"
+        envelope: object,
+        *,
+        prompt_label: str = "production",
+        conversation_history: str = "",
     ) -> tuple[ClassificationOutput, int]:
         calls["n"] += 1
         if calls["n"] == 1:
@@ -72,7 +78,10 @@ def test_router_fails_closed_on_invalid_output_exhaustion(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     def always_invalid(
-        envelope: object, *, prompt_label: str = "production"
+        envelope: object,
+        *,
+        prompt_label: str = "production",
+        conversation_history: str = "",
     ) -> tuple[ClassificationOutput, int]:
         raise RouterInvalidOutputError("model refused")
 
@@ -90,7 +99,10 @@ def test_router_fails_closed_on_timeout_exhaustion(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     def always_times_out(
-        envelope: object, *, prompt_label: str = "production"
+        envelope: object,
+        *,
+        prompt_label: str = "production",
+        conversation_history: str = "",
     ) -> tuple[ClassificationOutput, int]:
         raise TimeoutError("deadline passed")
 
@@ -106,7 +118,10 @@ def test_router_mixed_failure_then_exhaustion(monkeypatch: pytest.MonkeyPatch) -
     calls = {"n": 0}
 
     def mixed(
-        envelope: object, *, prompt_label: str = "production"
+        envelope: object,
+        *,
+        prompt_label: str = "production",
+        conversation_history: str = "",
     ) -> tuple[ClassificationOutput, int]:
         calls["n"] += 1
         if calls["n"] == 1:
@@ -151,7 +166,10 @@ def test_prompt_label_reaches_call_router(monkeypatch: pytest.MonkeyPatch) -> No
     seen: list[str] = []
 
     def record(
-        envelope: object, *, prompt_label: str = "production"
+        envelope: object,
+        *,
+        prompt_label: str = "production",
+        conversation_history: str = "",
     ) -> tuple[ClassificationOutput, int]:
         seen.append(prompt_label)
         return ClassificationOutput(category="general", urgency="low", language="uk"), 1
@@ -166,7 +184,10 @@ def test_prompt_label_defaults_to_production(monkeypatch: pytest.MonkeyPatch) ->
     seen: list[str] = []
 
     def record(
-        envelope: object, *, prompt_label: str = "production"
+        envelope: object,
+        *,
+        prompt_label: str = "production",
+        conversation_history: str = "",
     ) -> tuple[ClassificationOutput, int]:
         seen.append(prompt_label)
         return ClassificationOutput(category="general", urgency="low", language="uk"), 1

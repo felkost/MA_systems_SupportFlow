@@ -25,7 +25,7 @@ def _asgi_client(app) -> httpx.AsyncClient:
 
 
 def test_oauth_error_maps_to_distinct_a2a_error_payload(monkeypatch) -> None:
-    async def raising_run_docs_agent(_query: str):
+    async def raising_run_docs_agent(_query: str, **_kw: object):
         raise SilpoMcpAuthRequiredError("no cached token, no automated login")
 
     monkeypatch.setattr(docs_a2a_server, "run_docs_agent", raising_run_docs_agent)

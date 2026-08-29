@@ -42,7 +42,7 @@ def test_call_web_search_returns_validated_response(
     )
     monkeypatch.setattr(
         "src.interfaces.web_search_a2a_server.run_web_search",
-        lambda query: fake_result,
+        lambda query, **_kw: fake_result,
     )
 
     result = call_web_search(
@@ -95,7 +95,7 @@ def test_call_web_search_raises_when_tool_unavailable(
 ) -> None:
     from src.infrastructure.web_search import SearchUnavailableError
 
-    def failing(_query: str) -> WebSearchResponse:
+    def failing(_query: str, **_kw: object) -> WebSearchResponse:
         raise SearchUnavailableError("both providers down")
 
     monkeypatch.setattr("src.interfaces.web_search_a2a_server.run_web_search", failing)

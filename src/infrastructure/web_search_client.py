@@ -51,6 +51,7 @@ def call_web_search(
     *,
     parent_span_id: str | None = None,
     httpx_client: httpx.AsyncClient | None = None,
+    conversation_history: str = "",
 ) -> WebSearchCallResult:
     """One A2A call to Web Search Agent.
 
@@ -67,6 +68,12 @@ def call_web_search(
     httpx_client : httpx.AsyncClient, optional
         Injected for testing against an in-process ASGI app — production
         callers use the default (a real network client).
+    conversation_history : str, default=""
+        Forwarded to `send_a2a_message` unchanged. The caller
+        (`graph_nodes.web_search_node`) is responsible for masking prior
+        answers before this crosses the hop — Web Search Agent "gets no
+        personal user data" (CLAUDE.md invariant), same rule `masked_text`
+        already follows (`docs/decisions.md` #77).
 
     Returns
     -------
@@ -91,6 +98,7 @@ def call_web_search(
         deadline,
         httpx_client=httpx_client,
         parent_span_id=parent_span_id,
+        conversation_history=conversation_history,
     )
     try:
         payload = json.loads(reply_text)
