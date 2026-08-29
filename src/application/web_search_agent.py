@@ -13,6 +13,7 @@ directly (it reaches Web Search Agent only through the A2A client,
 from contextlib import nullcontext
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from typing import Any
 
 from src.domain.schemas import WebSearchResponse
 from src.infrastructure.llm import get_chat_model
@@ -115,17 +116,28 @@ def run_web_search(
     try:
         with span_cm as generation:
             raw = structured_model.invoke(compiled_prompt)
+            result = raw.get("parsed")
+            # See docs_agent.py's identical fix — validated inside the
+            # `with` so a parse failure is marked `level="ERROR"` instead
+            # of leaving a `level=DEFAULT` span the judge evaluator would
+            # otherwise score.
             if generation is not None:
                 usage = getattr(raw.get("raw"), "usage_metadata", None) or {}
-                # See docs_agent.py's identical fix.
-                generation.update(
+                update_kwargs: dict[str, Any] = dict(
                     usage_details=dict(usage),
                     input=compiled_prompt,
-                    output=str(raw.get("parsed")),
+                    output=str(result),
                 )
+                if isinstance(result, WebSearchResponse):
+                    update_kwargs["metadata"] = {
+                        "customer_message": masked_query,
+                        "agent_answer": result.answer,
+                    }
+                else:
+                    update_kwargs["level"] = "ERROR"
+                generation.update(**update_kwargs)
     except Exception as exc:  # noqa: BLE001 — provider errors vary
         raise WebSearchInvalidOutputError(str(exc)) from exc
-    result = raw.get("parsed")
     if not isinstance(result, WebSearchResponse):
         raise WebSearchInvalidOutputError(
             f"model returned no valid WebSearchResponse: {raw.get('parsing_error')}"

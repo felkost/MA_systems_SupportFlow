@@ -179,7 +179,7 @@ check the script's own message about cost before you type "yes".
 | `silpo_mcp_healthcheck.py` | Checks that the saved Silpo MCP login still works. |
 | `probe_silpo_mcp.py` | Lists the tools Silpo MCP offers right now. Used to build `docs/silpo_mcp_allowlist.md`. |
 | `telegram_bot_setup_check.py` | Checks that your Telegram bot and chat settings are correct. |
-| `seed_prompts.py` | Uploads the four agent prompts to Langfuse, under the "production" label. |
+| `seed_prompts.py` | Uploads the four agent prompts plus Docs Agent's internal translation prompt (five total) to Langfuse, under the "production" label. |
 | `configure_langfuse_evaluator.py` | Sets up two automatic quality checks in Langfuse: one for Docs/Web Search answers, one for Escalation handoffs. |
 | `sync_dataset.py` | Copies the three test-case files (below) to Langfuse. Runs itself after every commit. |
 | `docs_agent_smoke.py`, `escalation_agent_smoke.py`, `observability_smoke.py`, `golden_dataset_smoke.py` | Quick one-case checks against the real services. Run one of these first, before a bigger (and more expensive) run. |
@@ -225,7 +225,12 @@ between it and the others says nothing about quality — only that the two
 were measured differently. Two measures can even share a name and still
 work differently: the top card asks one AI model for a single 0–1 score,
 while `Answer Relevancy` below splits the answer into separate statements
-and counts how many are on topic.
+and counts how many are on topic. A third, independent reason: DeepEval's
+judge model has its sampling pinned to `temperature: 0`
+(`config/models.yaml`), so scoring the same answer twice returns the same
+number — the top card's Langfuse judge has no such setting available in
+its API, so when its score moves, that could mean the answers changed or
+just that the judge re-rolled, and nothing here can tell the two apart.
 
 **The middle card only counts an answer while its prompt is still live.**
 Each real message is stamped, when it is answered, with the exact

@@ -47,7 +47,7 @@
   <div class="frame">
     <p class="eyebrow">Prompts</p>
     <h1>Prompt architecture — structure and technique per agent</h1>
-    <p class="subtitle">Four system prompts, one shared skeleton (Identity → Capabilities → Goals → Constraints → Output Format → Input), managed as versioned text prompts in Langfuse Prompt Management (scripts/seed_prompts.py), never hardcoded. Content below is structural — the sections and their key rules, not the full prompt text.</p>
+    <p class="subtitle">Four agent-facing system prompts share one skeleton (Identity → Capabilities → Goals → Constraints → Output Format → Input); a fifth, <code>supportflow/docs-translate</code> — an internal search-term extraction step inside Docs Agent, not diagrammed here — is a plain instruction with no such structure. All five are managed as versioned text prompts in Langfuse Prompt Management (scripts/seed_prompts.py), never hardcoded. Content below is structural — the sections and their key rules, not the full prompt text.</p>
 
     <!-- ============ ROUTER ============ -->
     <div class="diagram-block">

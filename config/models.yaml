@@ -30,6 +30,12 @@ docs:
     # the first full golden-dataset run, not before.
   port: 8801 # this agent runs as its own A2A server process, unlike
     # router/escalation/supervisor.
+  retriever_k: 4 # each of the hybrid retriever's two sub-retrievers
+    # (Chroma, BM25) returns this many chunks before they're merged.
+    # Unreviewed default carried over from the retriever's own original
+    # implementation — moved here so it is at least visible and
+    # reviewable; lowering it needs a measured golden-dataset re-run
+    # (docs/decisions.md), not a guess.
 
 web_search:
   model: "deepseek/deepseek-v4-flash"
@@ -53,3 +59,14 @@ judge:
   # keeps the judge independent of every model it grades. Anthropic,
   # confirmed structured_outputs support in the 2026-08-25 catalogue query.
   model: "anthropic/claude-haiku-4.5"
+  # Pinned harder than the agents it grades: a judge's own score must be
+  # reproducible on the same answer, or a moved number cannot be
+  # attributed to the answer changing versus the judge re-rolling.
+  # Confirmed against the installed DeepEval source: `temperature=None`
+  # already resolves to 0.0 via `OpenRouterModel`'s own default, so this
+  # states the current effective value rather than changing it — no
+  # re-baselining needed. This only reaches DeepEval's offline judge; the
+  # live Langfuse judge has no temperature slot in its evaluator API at
+  # all (`EvaluatorModelConfig` accepts only `provider`/`model`) and
+  # cannot be pinned from here.
+  temperature: 0

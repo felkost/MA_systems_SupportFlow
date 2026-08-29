@@ -92,7 +92,7 @@ def load_knowledge_base() -> list[KnowledgeChunk]:
 
 
 def build_retriever(
-    chunks: list[KnowledgeChunk], embedding_function: Any = None
+    chunks: list[KnowledgeChunk], embedding_function: Any = None, k: int = 4
 ) -> Any:
     """Build the hybrid Chroma+BM25 retriever over `chunks`.
 
@@ -103,6 +103,12 @@ def build_retriever(
         Injected for testing (a cheap deterministic fake, avoiding the
         real model download); production callers omit it to lazily load
         the real `sentence-transformers` model.
+    k : int, default=4
+        How many chunks each of the two sub-retrievers (Chroma, BM25)
+        returns before `EnsembleRetriever` merges them. The production
+        caller (`docs_agent._get_retriever`) reads this from
+        `config/models.yaml`'s `docs.retriever_k` rather than relying on
+        this default — kept here only for direct/test callers.
 
     Returns
     -------
@@ -137,9 +143,9 @@ def build_retriever(
 
     chroma_retriever = Chroma.from_documents(
         documents, embedding=embedding_function
-    ).as_retriever(search_kwargs={"k": 4})
+    ).as_retriever(search_kwargs={"k": k})
     bm25_retriever = BM25Retriever.from_documents(documents)
-    bm25_retriever.k = 4
+    bm25_retriever.k = k
 
     return EnsembleRetriever(
         retrievers=[chroma_retriever, bm25_retriever], weights=[0.5, 0.5]

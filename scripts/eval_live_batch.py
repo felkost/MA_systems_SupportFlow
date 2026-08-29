@@ -75,10 +75,18 @@ def _metrics_for(case: dict[str, Any]) -> list[BaseMetric]:
     if case["route"] in ("docs", "web_search"):
         model = _judge_model()
         metrics.append(
-            AnswerRelevancyMetric(model=model, threshold=ANSWER_RELEVANCY_THRESHOLD)
+            AnswerRelevancyMetric(
+                model=model,
+                threshold=ANSWER_RELEVANCY_THRESHOLD,
+                include_reason=False,
+            )
         )
         metrics.append(
-            FaithfulnessMetric(model=model, threshold=FAITHFULNESS_THRESHOLD)
+            FaithfulnessMetric(
+                model=model,
+                threshold=FAITHFULNESS_THRESHOLD,
+                include_reason=False,
+            )
         )
     return metrics
 

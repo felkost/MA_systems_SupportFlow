@@ -26,6 +26,7 @@ from src.infrastructure.prompts import get_prompt, get_prompt_client
 from src.infrastructure.retriever import build_retriever, load_knowledge_base
 from src.infrastructure.silpo_mcp import search_products as _default_search_products
 from src.infrastructure.silpo_mcp_auth import SilpoMcpAuthRequiredError
+from src.kernel.settings import load_agent_config
 
 
 class DocsInvalidOutputError(Exception):
@@ -82,7 +83,10 @@ def _get_retriever() -> Any:
     """
     global _retriever_singleton
     if _retriever_singleton is None:
-        _retriever_singleton = build_retriever(load_knowledge_base())
+        retriever_k = load_agent_config("docs").retriever_k
+        if retriever_k is None:
+            raise KeyError("config/models.yaml's 'docs' row has no 'retriever_k'")
+        _retriever_singleton = build_retriever(load_knowledge_base(), k=retriever_k)
     return _retriever_singleton
 
 
@@ -104,13 +108,34 @@ def warm_up_retriever() -> None:
 
 def _translate_to_ukrainian_search_term(masked_query: str) -> str:
     model = get_chat_model("docs")
-    structured_model = model.with_structured_output(_SearchTerm)
-    result = structured_model.invoke(
-        "Extract the core product/category search term from this customer "
-        "message and translate it to Ukrainian, 1-4 words, suitable as a "
-        "product catalogue search query. If the message names no product "
-        "or category, return an empty string.\n\nMessage:\n" + masked_query
+    structured_model = model.with_structured_output(_SearchTerm, include_raw=True)
+    prompt_text, _ = get_prompt("supportflow/docs-translate")
+    compiled_prompt = prompt_text.replace("{{customer_message}}", masked_query)
+    client = get_langfuse_client()
+    span_cm = (
+        client.start_as_current_observation(
+            name="docs_agent.translate",
+            as_type="generation",
+            prompt=get_prompt_client("supportflow/docs-translate"),
+            model=model.model_name,
+        )
+        if client is not None
+        else nullcontext()
     )
+    try:
+        with span_cm as generation:
+            raw = structured_model.invoke(compiled_prompt)
+            if generation is not None:
+                usage = getattr(raw.get("raw"), "usage_metadata", None) or {}
+                # See _compose_docs_response's identical fix.
+                generation.update(
+                    usage_details=dict(usage),
+                    input=compiled_prompt,
+                    output=str(raw.get("parsed")),
+                )
+    except Exception as exc:  # noqa: BLE001 — provider errors vary
+        raise DocsInvalidOutputError(str(exc)) from exc
+    result = raw.get("parsed")
     if not isinstance(result, _SearchTerm):
         raise DocsInvalidOutputError("search-term extraction returned no schema")
     return result.search_term_uk
@@ -124,7 +149,7 @@ def _kb_chunk_to_source(chunk_metadata: dict[str, Any]) -> Source:
     )
 
 
-def _compose_docs_response(compiled_prompt: str) -> DocsResponse:
+def _compose_docs_response(compiled_prompt: str, masked_query: str) -> DocsResponse:
     model = get_chat_model("docs")
     structured_model = model.with_structured_output(DocsResponse, include_raw=True)
     client = get_langfuse_client()
@@ -141,6 +166,14 @@ def _compose_docs_response(compiled_prompt: str) -> DocsResponse:
     try:
         with span_cm as generation:
             raw = structured_model.invoke(compiled_prompt)
+            result = raw.get("parsed")
+            # Validated inside the `with`, not after it: a parse failure
+            # used to leave this span at `level=DEFAULT` with `output` the
+            # string "None" — indistinguishable from a real low-quality
+            # answer to the judge evaluator scoped to this span name. Now
+            # it is marked `level="ERROR"`, which the evaluator's own
+            # filter already excludes (the same fix applied to the
+            # empty-span artifact found earlier this session).
             if generation is not None:
                 usage = getattr(raw.get("raw"), "usage_metadata", None) or {}
                 # Live-confirmed 2026-08-26: without this, `input`/`output`
@@ -149,14 +182,25 @@ def _compose_docs_response(compiled_prompt: str) -> DocsResponse:
                 # it means Langfuse's own LLM-as-a-Judge evaluator
                 # scores nothing but "both empty" every time, since its
                 # mapping reads exactly these two fields.
-                generation.update(
+                update_kwargs: dict[str, Any] = dict(
                     usage_details=dict(usage),
                     input=compiled_prompt,
-                    output=str(raw.get("parsed")),
+                    output=str(result),
                 )
+                if isinstance(result, DocsResponse):
+                    # Alongside `input`/`output` above, not replacing them
+                    # — those stay the full compiled prompt/repr for
+                    # debugging (docs/decisions.md 991-1013); this is the
+                    # clean signal a judge evaluator maps to instead.
+                    update_kwargs["metadata"] = {
+                        "customer_message": masked_query,
+                        "agent_answer": result.answer,
+                    }
+                else:
+                    update_kwargs["level"] = "ERROR"
+                generation.update(**update_kwargs)
     except Exception as exc:  # noqa: BLE001 — provider errors vary
         raise DocsInvalidOutputError(str(exc)) from exc
-    result = raw.get("parsed")
     if not isinstance(result, DocsResponse):
         raise DocsInvalidOutputError(
             f"model returned no valid DocsResponse: {raw.get('parsing_error')}"
@@ -237,7 +281,7 @@ async def run_docs_agent(
         "{{retrieved_content}}", retrieved_block
     )
 
-    result = compose_fn(compiled_prompt)
+    result = compose_fn(compiled_prompt, masked_query)
 
     # Authoritative source metadata is what this call actually retrieved,
     # not whatever the model guessed.

@@ -70,6 +70,13 @@ _ESCALATION_EVALUATOR_NAME = "supportflow-escalation-quality"
 # Settings -> LLM Connections (confirmed live: "OpenRouter"). `model` must
 # be one of that connection's own added custom model names — kept in sync
 # with config/models.yaml's `judge` entry.
+# No `temperature` key: `EvaluatorModelConfig` accepts exactly two
+# fields, `provider` and `model` (confirmed against the installed SDK
+# type) — unlike `config/models.yaml`'s `judge.temperature`, this live
+# judge's sampling has no configurable slot at all and cannot be pinned
+# from code. One more reason this judge's numbers and DeepEval's are not
+# directly comparable: scoring the same answer twice, DeepEval is
+# guaranteed to return the same number; this judge is not.
 _JUDGE_MODEL_CONFIG = {"provider": "OpenRouter", "model": "anthropic/claude-haiku-4.5"}
 
 _JUDGE_PROMPT = """\
@@ -216,8 +223,16 @@ def _configure(
             },
         ],
         "mapping": [
-            {"variable": "input", "source": "input"},
-            {"variable": "output", "source": "output"},
+            {
+                "variable": "input",
+                "source": "metadata",
+                "jsonPath": "$.customer_message",
+            },
+            {
+                "variable": "output",
+                "source": "metadata",
+                "jsonPath": "$.agent_answer",
+            },
         ],
     }
 

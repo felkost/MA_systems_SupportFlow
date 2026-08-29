@@ -1,4 +1,4 @@
-"""Seed the four zero-shot system prompts into Langfuse Prompt Management
+"""Seed the five zero-shot system prompts into Langfuse Prompt Management
 with the `production` label, so the system runs on managed, versioned
 prompts from the first request instead of a hardcoded string "extracted
 later".
@@ -116,6 +116,15 @@ confidence: 0 to 1
 <retrieved_content>
 {{retrieved_content}}
 </retrieved_content>
+""",
+    "supportflow/docs-translate": """\
+Extract the core product/category search term from this customer
+message and translate it to Ukrainian, 1-4 words, suitable as a
+product catalogue search query. If the message names no product
+or category, return an empty string.
+
+Message:
+{{customer_message}}
 """,
     "supportflow/web_search": """\
 ## Identity
