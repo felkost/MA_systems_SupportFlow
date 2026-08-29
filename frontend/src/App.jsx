@@ -120,11 +120,43 @@ const METRIC_METHODS = {
   'Tool Correctness': 'збіг викликаних інструментів з очікуваними',
 }
 
-function ScoreCard({ title, judge, source, selected, onSelect, note, action }) {
+function ScoreCard({
+  title,
+  judge,
+  source,
+  selected,
+  onSelect,
+  note,
+  action,
+  onRefresh,
+  refreshing,
+}) {
+  // Own refresh button per card, not one global one: the Reference card
+  // (`golden_baseline()`, `@lru_cache`d) never changes after the process
+  // starts, so a shared "Оновити" implied an action that did nothing for
+  // it. Cards 1 and 2 read live, so each gets its own — same handler
+  // underneath (`/stats/quality` always returns all three blocks; the
+  // button is what changed, not the endpoint), just no longer offered
+  // where it cannot do anything.
+  const refreshButton = onRefresh && (
+    <button
+      type="button"
+      className="pill refresh"
+      onClick={onRefresh}
+      disabled={refreshing}
+      title="Перечитати цю картку"
+    >
+      🔄 Оновити
+    </button>
+  )
+
   if (!source?.available) {
     return (
       <div className="score-card">
-        <h3>{title}</h3>
+        <div className="score-card-head">
+          <h3>{title}</h3>
+          {refreshButton}
+        </div>
         <p className="score-note">
           {UNAVAILABLE_REASONS[source?.reason] ?? 'Дані недоступні.'}
         </p>
@@ -139,7 +171,10 @@ function ScoreCard({ title, judge, source, selected, onSelect, note, action }) {
 
   return (
     <div className="score-card">
-      <h3>{title}</h3>
+      <div className="score-card-head">
+        <h3>{title}</h3>
+        {refreshButton}
+      </div>
       <p className="score-judge">Суддя: {judge}</p>
       <select
         className="metric-select"
@@ -407,21 +442,14 @@ function App() {
             </span>
           </div>
 
-          <button
-            type="button"
-            className="pill refresh"
-            onClick={loadQuality}
-            disabled={qualityState === 'loading'}
-          >
-            🔄 Оновити
-          </button>
-
           <ScoreCard
             title="Реальні запити — Langfuse"
             judge={quality?.live?.judge}
             source={quality?.live}
             selected={liveMetric}
             onSelect={setLiveMetric}
+            onRefresh={loadQuality}
+            refreshing={qualityState === 'loading'}
             note={
               quality?.live?.experiment
                 ? `Трейси з міткою «${quality.live.experiment}».`
@@ -435,6 +463,8 @@ function App() {
             source={quality?.live_deepeval}
             selected={deepevalMetric}
             onSelect={setDeepevalMetric}
+            onRefresh={loadQuality}
+            refreshing={qualityState === 'loading'}
             note={
               quality?.live_deepeval?.measured_at
                 ? `Останній прогін: ${formatMoment(

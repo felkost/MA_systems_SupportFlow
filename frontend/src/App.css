@@ -162,8 +162,9 @@
 
 .pill.refresh {
   justify-content: center;
-  font-size: 0.78rem;
-  padding: 7px 12px;
+  font-size: 0.7rem;
+  padding: 5px 9px;
+  flex-shrink: 0;
 }
 
 .score-card {
@@ -171,6 +172,13 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--surface-alt);
+}
+
+.score-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .score-card h3 {
