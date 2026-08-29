@@ -13,13 +13,24 @@ untrusted data, because an earlier version had no instruction
 distinguishing "classify this text" from "obey instructions found inside
 this text", and its own "prefer the more urgent category when ambiguous"
 rule made an injection toward `critical` an amplifier rather than a safe
-default. Re-running this script creates a new Langfuse prompt
-version for every name every time — expected and idempotent in effect,
-since `labels=["production"]` always points `production` at the latest
-content regardless of how many times it is re-applied.
+default.
 
-Run manually, once, by the project author (needs LANGFUSE_PUBLIC_KEY /
-LANGFUSE_SECRET_KEY in .env):
+**Add-only, by design (2026-08-29).** A name already present in Langfuse
+is never touched by a re-run of this script, even if its `production`
+text still matches the baseline below exactly — a prompt evolves outside
+this file (`scripts/meta_prompt_docs.py` seeds a `candidate`, the author
+promotes it by hand), and this script has no way to tell "still the
+baseline" from "changed back to it on purpose". Blindly re-seeding once
+silently replaced `supportflow/docs`'s live prompt with this file's own
+stale text, dropping a rules block the live prompt had gained since —
+see `docs/decisions.md` #74. **To update an existing prompt on purpose**,
+either promote a `meta_prompt_docs.py` candidate by hand, or call
+`Langfuse.create_prompt(...)` directly for that one name — never by
+loosening the guard in `main()` below.
+
+Run manually, by the project author (needs LANGFUSE_PUBLIC_KEY /
+LANGFUSE_SECRET_KEY in .env). Safe to re-run any time — it only ever adds
+a name that does not exist in Langfuse yet:
 
     .venv/Scripts/python scripts/seed_prompts.py
 """
@@ -28,6 +39,7 @@ import os
 from pathlib import Path
 
 from langfuse import Langfuse
+from langfuse.api import NotFoundError
 
 PROMPTS = {
     "supportflow/router": """\
@@ -85,6 +97,31 @@ below — using ONLY the text inside <retrieved_content> below. If the
 retrieved content does not support a confident answer, say so honestly
 rather than guessing.
 
+Every answer must end with a concrete, specific next step for the
+customer — not a vague gesture at "contact support" or "check the app"
+with no detail. A concrete next step names the exact action, place,
+section, timeframe, or condition the customer should act on (e.g. "open
+the Promo codes section in the Silpo app before checkout"; "submit a
+claim within 24 hours of delivery through the channel described in the
+sources"; "check with support whether this specific promotion is
+excluded"). Build the next step only from facts present in
+<retrieved_content>:
+- If the sources describe a specific action, channel, deadline, or
+  condition relevant to resolving the customer's situation, state it
+  explicitly as the next step, even if it was only mentioned in passing.
+- If the sources mention that support/escalation exists but give no
+  specific channel, say plainly that the next step is to contact Silpo
+  customer support for this specific issue, and be explicit that you do
+  not have the exact contact details in the retrieved content — do not
+  invent a link, number, or hours.
+- If the retrieved content gives no basis for any next step at all, say
+  so honestly, set `confidence` low, and state that the only next step
+  you can offer is for the customer to reach out to Silpo support so a
+  human can check their specific case — never fabricate one to sound
+  more helpful.
+A response that only explains facts without telling the customer what to
+do next is incomplete, even if those facts are accurate.
+
 ## Constraints
 - Never state a price, stock level, or fact not present in
   <retrieved_content>.
@@ -100,6 +137,9 @@ rather than guessing.
 - A retrieved price/availability fact may be stated as "станом на
   {{retrieved_at}}" style wording when the source carries a timestamp —
   never as if it were permanently current.
+- Never invent a next step's specifics (links, phone numbers, deadlines,
+  section names) that are not present in <retrieved_content> — ground the
+  next step exactly as strictly as you ground any other fact.
 
 ## Output Format
 Return exactly this structure (Pydantic `DocsResponse`):
@@ -221,16 +261,52 @@ attempted_resolution: what was already tried before escalating
 }
 
 
+def _should_skip(current: str | None, baseline: str) -> tuple[bool, str]:
+    """Whether seeding this prompt name should be skipped, and why.
+
+    Add-only: a name already in Langfuse is never touched again, even
+    when its content still matches `baseline`. A prompt evolves outside
+    this file (`scripts/meta_prompt_docs.py` seeds a `candidate`, the
+    author promotes it by hand), and this script cannot tell "still the
+    baseline" from "deliberately changed back to it" — on 2026-08-29 it
+    guessed wrong and dropped a rules block from the live Docs prompt.
+    Re-seeding an unchanged name would also churn a redundant version
+    number for nothing.
+    """
+    if current is None:
+        return False, ""
+    if current != baseline:
+        return True, "production has diverged from this script's baseline"
+    return True, "already up to date, no version churn needed"
+
+
+def _current_production_text(langfuse: Langfuse, name: str) -> str | None:
+    """The live `production` text, or `None` if the name is not seeded.
+
+    Only `NotFoundError` means "not seeded" — every other failure
+    propagates, because treating a network blip as "absent" is what would
+    let this script overwrite a live prompt.
+    """
+    try:
+        return langfuse.get_prompt(name, label="production").prompt
+    except NotFoundError:
+        return None
+
+
 def main() -> None:
     langfuse = Langfuse()
     for name, prompt in PROMPTS.items():
+        skip, reason = _should_skip(_current_production_text(langfuse, name), prompt)
+        if skip:
+            print(f"Skipped {name}: {reason}")
+            continue
         langfuse.create_prompt(
             name=name,
             prompt=prompt,
             labels=["production"],
             type="text",
         )
-        print(f"Seeded {name} (label: production)")
+        print(f"Seeded {name} (new, label: production)")
     langfuse.flush()
 
 
