@@ -3,8 +3,10 @@ LLM-as-a-judge scores for the current configuration, and the frozen
 golden-dataset baseline they are read against.
 
 Kept out of `observability.py` so that module stays about producing
-traces rather than reading them back, and so neither file crosses the
-250-line band.
+traces rather than reading them back. That split no longer keeps this
+file under the 250-line band by itself — PR #23's two `experiment`/
+`answer_prompt_version` filter fixes pushed it to 359 lines, a known,
+recorded exception (`CLAUDE.md` §5) pending a follow-up split.
 
 **Why the live figure is filtered by experiment tag rather than simply
 taking the most recent scores:** measured 2026-08-28, the project's

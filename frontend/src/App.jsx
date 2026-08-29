@@ -133,13 +133,11 @@ function ScoreCard({
   onRefresh,
   refreshing,
 }) {
-  // Own refresh button per card, not one global one: the Reference card
-  // (`golden_baseline()`, `@lru_cache`d) never changes after the process
-  // starts, so a shared "Оновити" implied an action that did nothing for
-  // it. Cards 1 and 2 read live, so each gets its own — same handler
-  // underneath (`/stats/quality` always returns all three blocks; the
-  // button is what changed, not the endpoint), just no longer offered
-  // where it cannot do anything.
+  // `onRefresh` is no longer passed by any caller (PR #23 — the shared
+  // "⏱ Авто" toggle in `sidebar-head` replaced per-card refresh for both
+  // live cards), so this always renders null today. Left as a prop rather
+  // than deleted: `ScoreCard` is a reusable component and a future card
+  // needing its own refresh can still pass one.
   const refreshButton = onRefresh && (
     <button
       type="button"
@@ -198,8 +196,8 @@ function ScoreCard({
               every metric bucket empty even though the file itself has
               cases in it. Same message either way: there is nothing to
               show yet, not a broken card. */}
-          Ще немає оцінок. Поставте запитання в чаті, зачекайте кілька секунд
-          і натисніть «Оновити».
+          Ще немає оцінок. Поставте запитання в чаті — з увімкненим «⏱ Авто»
+          картка оновиться сама; DeepEval-картку рахуйте кнопкою «▶ Оцінити».
         </p>
       ) : (
         <>
@@ -489,8 +487,8 @@ function App() {
               onClick={() => setAutoEval((prev) => !prev)}
               title={
                 autoEval
-                  ? 'Автооновлення увімкнено: обидві картки — після кожного повідомлення й кожні 5 хв. Натисніть, щоб вимкнути'
-                  : 'Автоматично оновлювати обидві картки: після кожного повідомлення й кожні 5 хвилин, поки сторінка відкрита'
+                  ? 'Автооновлення увімкнено: обидві картки — після кожного повідомлення й кожні 30с. Натисніть, щоб вимкнути'
+                  : 'Автоматично оновлювати обидві картки: після кожного повідомлення й кожні 30 секунд, поки сторінка відкрита'
               }
             >
               {autoEval ? '⏱ Авто: увімк' : '⏱ Авто: вимк'}
@@ -584,7 +582,7 @@ function App() {
             </li>
             <li>
               Бали з’являються із затримкою — суддя оцінює вже після відповіді.
-              Тисніть «Оновити».
+              Увімкніть «⏱ Авто» або оцініть DeepEval-картку вручну.
             </li>
           </ul>
         </aside>

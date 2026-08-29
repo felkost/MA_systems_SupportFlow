@@ -194,7 +194,7 @@ check the script's own message about cost before you type "yes".
 ## `output/`
 
 Scripts save their results here. Git ignores everything in this folder,
-except two files:
+except three files:
 
 | File | Saved in Git? | Made by |
 |---|---|---|
@@ -227,13 +227,20 @@ Example, `Answer Relevancy = 0.83`:
 - **Langfuse card, same metric name:** one holistic 0–1 score from a
   single LLM call — a different instrument that happens to share a name.
 
-Both live cards filter to the *current* Docs/Web Search prompt version
-and the current `EXPERIMENT` tag (`.env`) — promoting a prompt or
-bumping `EXPERIMENT` starts the count over on purpose, so old and new
-answers never blend into one misleading average. Bump `EXPERIMENT`
-whenever a prompt itself changes, not only when the judge rule does —
-missing that once made the two cards' totals diverge for a reason that
-had nothing to do with either judge.
+The two live cards filter on **different axes, not the same one** — this
+is exactly what made their counts diverge once for a reason that had
+nothing to do with either judge:
+- **DeepEval card:** filters on *both* the current Docs/Web Search prompt
+  version *and* the current `EXPERIMENT` tag (`.env`) — a case counts only
+  if it matches both.
+- **Langfuse card:** filters only by the current `EXPERIMENT` tag; it has
+  no concept of prompt version at all.
+
+Promoting a prompt bumps the DeepEval card's count but not the Langfuse
+one; bumping `EXPERIMENT` starts both over. Bump `EXPERIMENT` whenever a
+prompt itself changes, not only when the judge rule does — that is the one
+axis both cards share, and it is what keeps old and new answers from
+blending into one misleading average on either card.
 
 **"⏱ Авто"** (panel header) refreshes both live cards: on enable, after
 every chat message, and every 30 seconds. It's browser-tab state — it
