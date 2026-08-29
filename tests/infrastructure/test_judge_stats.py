@@ -231,6 +231,7 @@ def test_live_deepeval_drops_cases_from_a_since_replaced_prompt_version(
     assert result["n_cases"] == 1
     assert result["stale_prompt_version"] == 2
     assert result["metrics"]["Answer Relevancy"]["mean"] == 1.0
+    assert result["prompt_versions"]["docs"] == 9
 
 
 def test_live_deepeval_never_filters_escalation_cases_by_prompt_version(

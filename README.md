@@ -251,6 +251,17 @@ message scored before that point has no recorded prompt version at all,
 so it is excluded the same way, permanently — `eval_live_batch.py` never
 re-scores an already-graded message.
 
+**The middle card is one continuous series, not an accumulating total —
+a prompt promotion deliberately starts it over.** The API's
+`/stats/quality` response carries a `prompt_versions` field naming the
+exact Docs/Web Search prompt version(s) the shown numbers are measured
+against, so a small `n` right after a promotion can be told apart from
+"the history disappeared" by anyone reading the raw response, even
+though the panel itself does not render it. Cases from a replaced
+version are not merged in on any assumed equivalence between old and new
+text, even when the promotion fixed a regression back to something close
+to the prior text — only cases answered under the current version count.
+
 Each card shows how many messages the number covers ("6 of 10"), because
 a check that needs sources cannot be applied to a message that has none.
 It also shows a 95% interval: with few messages, two numbers that look

@@ -287,6 +287,12 @@ def live_deepeval() -> dict[str, Any]:
         "n_cases": len(current_cases),
         "stale_prompt_version": stale_prompt_version,
         "pending": len(unscored_cases()),
+        # Which prompt version this series is actually measured against —
+        # already resolved above for the filter itself, just exposed here
+        # so the panel can label a small `n` as "new series started here"
+        # instead of it reading as lost history after a deliberate prompt
+        # change (2026-08-29, docs/decisions.md #74).
+        "prompt_versions": current_versions,
         "metrics": {
             name: {**summarize(values), "covers": len(values)}
             for name, values in sorted(by_metric.items())
