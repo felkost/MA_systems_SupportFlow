@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SupportFlow · Session memory sequence</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:  #f5f5f5;
+      --color-ink:    #333A05;
+      --color-accent: #FCA600;
+      --font-sans: Arial, "Helvetica Neue", Helvetica, sans-serif;
+    }
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+    .frame { max-width: 1150px; width: 100%; }
+    .eyebrow {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #527C23;
+      margin-bottom: 0.5rem;
+    }
+    h1 {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      line-height: 1.2;
+      margin-bottom: 0.4rem;
+    }
+    .subtitle {
+      font-size: 14px;
+      color: #527C23;
+      margin-bottom: 1.5rem;
+      max-width: 980px;
+    }
+    svg { width: 100%; min-width: 1000px; display: block; }
+    .walkthrough { margin-top: 2.5rem; max-width: 980px; }
+    .walkthrough h2 {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      margin-bottom: 0.75rem;
+    }
+    .walkthrough h3 {
+      font-size: 14px;
+      font-weight: 700;
+      margin: 1.5rem 0 0.5rem;
+    }
+    .walkthrough p, .walkthrough li {
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    .walkthrough ul.actors { list-style: none; margin-bottom: 0.5rem; }
+    .walkthrough ul.actors li { margin-bottom: 0.35rem; }
+    .walkthrough ol.steps { padding-left: 1.25rem; }
+    .walkthrough ol.steps li { margin-bottom: 0.6rem; }
+    .walkthrough ol.steps ul { list-style: disc; padding-left: 1.25rem; margin-top: 0.3rem; }
+    .walkthrough ol.steps ul li { font-size: 11px; color: #4f5d75; margin-bottom: 0.2rem; }
+    .walkthrough code {
+      font-family: "Courier New", monospace;
+      font-size: 11px;
+      background: rgba(51,58,5,0.06);
+      padding: 0.05rem 0.3rem;
+      border-radius: 3px;
+    }
+    .walkthrough .takeaway {
+      margin-top: 1.5rem;
+      padding: 0.9rem 1rem;
+      background: rgba(252,216,99,0.20);
+      border: 1px solid #FCA600;
+      border-radius: 6px;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    .walkthrough .plain {
+      margin-bottom: 1.5rem;
+      padding: 0.9rem 1rem;
+      background: rgba(157,177,221,0.20);
+      border: 1px solid #333A05;
+      border-radius: 6px;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    .walkthrough .plain p { margin-bottom: 0.4rem; }
+    .walkthrough .plain p:last-child { margin-bottom: 0; }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Session memory · two turns, one checkpointer</p>
+    <h1>How one turn's answer becomes the next turn's context</h1>
+    <p class="subtitle">Session memory is not a node in the graph — it is an <code>InMemorySaver</code> checkpointer wrapped around every <code>graph.invoke</code> call, keyed by <code>session_id</code> as LangGraph's own <code>thread_id</code>. This diagram shows the one thing that is easy to get wrong about it: what a checkpointed thread actually does to a `TypedDict` field with no reducer versus one that has one — traced across two real turns in the same session.</p>
+    <p style="font-size:11px;color:#527C23;margin-top:-1.1rem;margin-bottom:1.5rem;">Code as of <code>docs/decisions.md</code> #77 and #83, snapshot 2026-08-29 — re-check the source before trusting it again.</p>
+
+    <svg viewBox="0 0 1150 1020" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="mem-seq-title mem-seq-desc">
+      <title id="mem-seq-title">Session memory across two turns of one session</title>
+      <desc id="mem-seq-desc">Sequence diagram in two stacked fragments, Turn 1 and Turn 2, showing the same session_id used as a LangGraph thread_id. In Turn 1 no checkpoint exists yet, so the graph runs with an empty conversation_history and the terminal node that resolves the case (Docs, Web Search, or Escalation) returns one new turn, which the field's own reducer appends to the empty list and the checkpointer saves under the session's thread id. In Turn 2, the same thread_id causes the checkpointer to restore that saved state before the new input is merged in; Router, Docs, and Web Search's prompts read the restored conversation_history as context, and the terminal node's new turn is appended and capped at MAX_HISTORY_TURNS by the same reducer. A closing note explains that a fresh session_id (a new conversation in the UI) has no checkpoint at all, so it behaves exactly like Turn 1 again.</desc>
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#000000"/></marker>
+        <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#FCA600"/></marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+      <!-- Lifelines -->
+      <line x1="130" y1="100" x2="130" y2="990" stroke="rgba(51,58,5,0.25)" stroke-width="1" stroke-dasharray="3,3"/>
+      <line x1="430" y1="100" x2="430" y2="990" stroke="rgba(51,58,5,0.25)" stroke-width="1" stroke-dasharray="3,3"/>
+      <line x1="740" y1="100" x2="740" y2="990" stroke="rgba(51,58,5,0.25)" stroke-width="1" stroke-dasharray="3,3"/>
+      <line x1="1045" y1="100" x2="1045" y2="990" stroke="rgba(51,58,5,0.25)" stroke-width="1" stroke-dasharray="3,3"/>
+
+      <!-- Actor boxes -->
+      <rect x="60" y="40" width="140" height="44" rx="6" fill="rgba(157,177,221,0.30)" stroke="#333A05" stroke-width="1"/>
+      <text x="130" y="58" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">Browser</text>
+      <text x="130" y="72" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">one chat tab</text>
+
+      <rect x="350" y="40" width="160" height="44" rx="6" fill="rgba(252,216,99,0.35)" stroke="#FCA600" stroke-width="1.4"/>
+      <text x="430" y="58" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">Supervisor</text>
+      <text x="430" y="72" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">handle_request</text>
+
+      <rect x="650" y="40" width="180" height="44" rx="6" fill="#ffffff" stroke="#333A05" stroke-width="1"/>
+      <text x="740" y="58" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">LangGraph runtime</text>
+      <text x="740" y="72" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">graph + InMemorySaver</text>
+
+      <rect x="960" y="40" width="170" height="44" rx="6" fill="rgba(82,124,35,0.10)" stroke="#527C23" stroke-width="1"/>
+      <text x="1045" y="58" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">Terminal node</text>
+      <text x="1045" y="72" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">docs | web_search | escalate</text>
+
+      <!-- ================= TURN 1 fragment ================= -->
+      <rect x="100" y="106" width="1010" height="368" rx="4" fill="rgba(51,58,5,0.03)" stroke="rgba(51,58,5,0.22)" stroke-width="1"/>
+      <rect x="100" y="106" width="70" height="16" rx="2" fill="#f5f5f5" stroke="rgba(51,58,5,0.22)" stroke-width="1"/>
+      <text x="135" y="118" fill="#4f5d75" font-size="11" font-family="Arial, sans-serif" text-anchor="middle" letter-spacing="0.08em">TURN 1</text>
+      <text x="182" y="118" fill="#4f5d75" font-size="11" font-family="Arial, sans-serif">[session_id = S, no prior checkpoint]</text>
+
+      <!-- T1-1 Browser -> Supervisor -->
+      <line x1="138" y1="150" x2="426" y2="150" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <rect x="180" y="136" width="210" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="285" y="146" fill="#000000" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">POST /chat {message, session_id=S}</text>
+
+      <!-- T1-2 Supervisor -> Runtime -->
+      <line x1="438" y1="180" x2="736" y2="180" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <rect x="450" y="166" width="270" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="585" y="176" fill="#000000" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">graph.invoke(state, thread_id=S)</text>
+
+      <!-- T1 note: no checkpoint -->
+      <rect x="460" y="204" width="560" height="42" rx="4" fill="rgba(157,177,221,0.20)" stroke="#333A05" stroke-width="0.8"/>
+      <text x="740" y="220" fill="#333A05" font-size="10.5" font-family="Arial, sans-serif" text-anchor="middle">No checkpoint exists yet for thread_id=S — the graph runs with</text>
+      <text x="740" y="234" fill="#333A05" font-size="10.5" font-family="Arial, sans-serif" text-anchor="middle"><tspan font-family="Courier New, monospace">build_initial_state</tspan>'s own seed: <tspan font-family="Courier New, monospace">conversation_history=[]</tspan></text>
+
+      <!-- T1-3 Runtime -> Terminal node (collapsed routing) -->
+      <line x1="750" y1="272" x2="1041" y2="272" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <rect x="770" y="258" width="260" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="900" y="268" fill="#000000" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">router_node → decide_route() → …</text>
+      <text x="900" y="252" fill="#4f5d75" font-size="10" font-family="Arial, sans-serif" text-anchor="middle" font-style="italic">see router-sequence.html / docs-agent-sequence.html for this part</text>
+
+      <!-- T1-4 Terminal node --> Runtime (dashed return) -->
+      <line x1="1045" y1="308" x2="754" y2="308" stroke="#000000" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+      <rect x="774" y="294" width="270" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="909" y="304" fill="#000000" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">{answer, conversation_history: [turn₁]}</text>
+
+      <!-- T1 note: reducer + save -->
+      <rect x="460" y="334" width="560" height="56" rx="4" fill="rgba(252,216,99,0.20)" stroke="#FCA600" stroke-width="0.8"/>
+      <text x="740" y="350" fill="#333A05" font-size="10.5" font-family="Arial, sans-serif" text-anchor="middle"><tspan font-family="Courier New, monospace">_keep_last_n_turns</tspan> reducer: <tspan font-family="Courier New, monospace">[] + [turn₁] = [turn₁]</tspan></text>
+      <text x="740" y="364" fill="#333A05" font-size="10.5" font-family="Arial, sans-serif" text-anchor="middle">New checkpoint saved for <tspan font-family="Courier New, monospace">thread_id=S</tspan> — this is what Turn 2 will restore</text>
+      <text x="740" y="378" fill="#333A05" font-size="10.5" font-family="Arial, sans-serif" text-anchor="middle">(non-reducer fields, e.g. <tspan font-family="Courier New, monospace">classification</tspan>, are simply overwritten, not merged)</text>
+
+      <!-- T1-5 Runtime --> Supervisor -->
+      <line x1="736" y1="416" x2="438" y2="416" stroke="#000000" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+      <rect x="450" y="402" width="270" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="585" y="412" fill="#000000" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">final SupportFlowState</text>
+
+      <!-- T1-6 Supervisor --> Browser -->
+      <line x1="426" y1="448" x2="138" y2="448" stroke="#000000" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+      <rect x="180" y="434" width="210" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="285" y="444" fill="#000000" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">ChatResponse</text>
+
+      <!-- ================= TURN 2 fragment ================= -->
+      <rect x="100" y="494" width="1010" height="430" rx="4" fill="rgba(252,216,99,0.06)" stroke="#FCA600" stroke-width="1"/>
+      <rect x="100" y="494" width="70" height="16" rx="2" fill="#f5f5f5" stroke="#FCA600" stroke-width="1"/>
+      <text x="135" y="506" fill="#FCA600" font-size="11" font-family="Arial, sans-serif" text-anchor="middle" letter-spacing="0.08em">TURN 2</text>
+      <text x="182" y="506" fill="#4f5d75" font-size="11" font-family="Arial, sans-serif">[same session_id = S — this is the turn the diagram exists to show]</text>
+
+      <!-- T2-1 Browser -> Supervisor -->
+      <line x1="138" y1="538" x2="426" y2="538" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <rect x="180" y="524" width="210" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="285" y="534" fill="#000000" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">POST /chat {message₂, session_id=S}</text>
+
+      <!-- T2-2 Supervisor -> Runtime -->
+      <line x1="438" y1="568" x2="736" y2="568" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <rect x="450" y="554" width="270" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="585" y="564" fill="#000000" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">graph.invoke(state, thread_id=S)</text>
+
+      <!-- T2 note: restore + merge (the crux) -->
+      <rect x="450" y="592" width="580" height="56" rx="4" fill="rgba(252,216,99,0.28)" stroke="#FCA600" stroke-width="1"/>
+      <text x="740" y="608" fill="#333A05" font-size="10.5" font-family="Arial, sans-serif" text-anchor="middle">Checkpoint found for <tspan font-family="Courier New, monospace">thread_id=S</tspan> — restored <tspan font-family="Courier New, monospace">[turn₁]</tspan> before the new input is applied</text>
+      <text x="740" y="622" fill="#333A05" font-size="10.5" font-family="Arial, sans-serif" text-anchor="middle">Reducer merges the fresh <tspan font-family="Courier New, monospace">conversation_history=[]</tspan> seed: <tspan font-family="Courier New, monospace">[turn₁] + [] = [turn₁]</tspan> — a no-op, not a reset</text>
+      <text x="740" y="636" fill="#333A05" font-size="10.5" font-family="Arial, sans-serif" text-anchor="middle">(the same reason <tspan font-family="Courier New, monospace">errors</tspan> needed its own reducer — a plain <tspan font-family="Courier New, monospace">[]</tspan> seed does not reset it either)</text>
+
+      <!-- T2-3 Runtime -> Terminal node, accent (the payoff: prompts now see history) -->
+      <line x1="750" y1="680" x2="1041" y2="680" stroke="#FCA600" stroke-width="1.6" marker-end="url(#arrow-accent)"/>
+      <rect x="756" y="666" width="280" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="896" y="676" fill="#FCA600" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">router_node reads [turn₁] → format_conversation_history()</text>
+      <text x="896" y="700" fill="#4f5d75" font-size="10" font-family="Arial, sans-serif" text-anchor="middle" font-style="italic">into Router's prompt directly; into Docs/Web Search's over the A2A hop's</text>
+      <text x="896" y="712" fill="#4f5d75" font-size="10" font-family="Arial, sans-serif" text-anchor="middle" font-style="italic"><tspan font-family="Courier New, monospace">SendMessageRequest.metadata</tspan> — masked with <tspan font-family="Courier New, monospace">mask_pii()</tspan> before reaching Web Search only</text>
+
+      <!-- T2-4 Terminal node --> Runtime (dashed return) -->
+      <line x1="1045" y1="744" x2="754" y2="744" stroke="#000000" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+      <rect x="774" y="730" width="270" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="909" y="740" fill="#000000" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">{answer₂, conversation_history: [turn₂]}</text>
+
+      <!-- T2 note: reducer append + cap + save -->
+      <rect x="450" y="768" width="580" height="56" rx="4" fill="rgba(252,216,99,0.20)" stroke="#FCA600" stroke-width="0.8"/>
+      <text x="740" y="784" fill="#333A05" font-size="10.5" font-family="Arial, sans-serif" text-anchor="middle"><tspan font-family="Courier New, monospace">_keep_last_n_turns</tspan>: <tspan font-family="Courier New, monospace">[turn₁] + [turn₂] = [turn₁, turn₂]</tspan>, capped at <tspan font-family="Courier New, monospace">MAX_HISTORY_TURNS=5</tspan></text>
+      <text x="740" y="798" fill="#333A05" font-size="10.5" font-family="Arial, sans-serif" text-anchor="middle">New checkpoint saved for <tspan font-family="Courier New, monospace">thread_id=S</tspan> — Turn 3 (if any) restores this, oldest turn drops past 5</text>
+      <text x="740" y="812" fill="#333A05" font-size="10.5" font-family="Arial, sans-serif" text-anchor="middle"><tspan font-family="Courier New, monospace">router_node</tspan> itself never writes a turn — it does not resolve the case</text>
+
+      <!-- T2-5 Runtime --> Supervisor -->
+      <line x1="736" y1="850" x2="438" y2="850" stroke="#000000" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+      <rect x="450" y="836" width="270" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="585" y="846" fill="#000000" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">final SupportFlowState</text>
+
+      <!-- T2-6 Supervisor --> Browser, accent -->
+      <line x1="426" y1="882" x2="138" y2="882" stroke="#FCA600" stroke-width="1.6" stroke-dasharray="4,3" marker-end="url(#arrow-accent)"/>
+      <rect x="180" y="868" width="210" height="14" rx="2" fill="#f5f5f5"/>
+      <text x="285" y="878" fill="#FCA600" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">ChatResponse — informed by turn₁</text>
+
+      <!-- Closing note: new conversation -->
+      <rect x="130" y="902" width="960" height="16" rx="2" fill="none"/>
+      <text x="610" y="914" fill="#4f5d75" font-size="10.5" font-family="Arial, sans-serif" text-anchor="middle" font-style="italic">"🗑️ Нова розмова" mints a fresh session_id → a thread_id with no checkpoint → behaves exactly like Turn 1 above, not Turn 2</text>
+
+      <!-- Legend -->
+      <line x1="60" y1="950" x2="1090" y2="950" stroke="rgba(51,58,5,0.14)" stroke-width="0.8"/>
+      <line x1="60" y1="970" x2="88" y2="970" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <text x="96" y="974" fill="#333A05" font-size="11" font-family="Arial, sans-serif">Call</text>
+      <line x1="160" y1="970" x2="188" y2="970" stroke="#000000" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+      <text x="196" y="974" fill="#333A05" font-size="11" font-family="Arial, sans-serif">Return</text>
+      <line x1="280" y1="970" x2="308" y2="970" stroke="#FCA600" stroke-width="1.6" marker-end="url(#arrow-accent)"/>
+      <text x="316" y="974" fill="#333A05" font-size="11" font-family="Arial, sans-serif">Where history actually changes the request</text>
+    </svg>
+
+    <div class="walkthrough">
+      <h2>How to read this diagram — the one thing to take away</h2>
+
+      <div class="plain">
+        <p><strong>In plain terms.</strong> Session memory is not a feature the graph "does" — it is a property of how <code>graph.invoke</code> is called. Every call passes the same four lifelines: the <strong>Browser</strong> sends one message, <strong>Supervisor</strong> starts one graph run, the <strong>LangGraph runtime</strong> (the compiled graph plus its <code>InMemorySaver</code>) owns the checkpoint, and whichever <strong>Terminal node</strong> actually resolves the case (Docs, Web Search, or Escalation) is the only place a new turn gets written.</p>
+        <p>Turn 1 in the same session finds no saved checkpoint, so it behaves exactly like a stateless request always did — empty history in, one new turn out, and a checkpoint is saved for the first time. Turn 2, using the <em>same</em> <code>session_id</code>, is where the mechanism actually does something: the runtime restores Turn 1's saved state before running anything, and the fresh empty seed <code>build_initial_state</code> always sends does not erase it — because <code>conversation_history</code> has its own reducer, not because LangGraph "remembers" by default.</p>
+        <p><strong>The essence in one sentence:</strong> a checkpointed thread does not reset a field on every call — it merges the new call's value into whatever is already saved, through that field's own reducer, and only a field annotated with one behaves that way; everything else is simply overwritten, fresh, every turn.</p>
+      </div>
+
+      <h3>Four lifelines</h3>
+      <ul class="actors">
+        <li><code>Browser</code> — one tab, one <code>session_id</code> for as long as the customer keeps typing in it.</li>
+        <li><code>Supervisor</code> — <code>handle_request()</code>; builds a fresh <code>SupportFlowState</code> every single call and passes <code>session_id</code> as the graph's <code>configurable.thread_id</code>.</li>
+        <li><code>LangGraph runtime</code> — the compiled graph plus the module-level <code>InMemorySaver</code> it was compiled with (<code>graph_nodes.py</code>); this is the only place that actually knows a prior turn exists.</li>
+        <li><code>Terminal node</code> — <code>docs_node</code>, <code>web_search_node</code>, or <code>escalate_node</code>; whichever one sets <code>next_action</code> to a resolving value is the one that appends a turn. <code>router_node</code> never does.</li>
+      </ul>
+
+      <h3>Why this needed its own diagram</h3>
+      <ol class="steps">
+        <li><strong>A `TypedDict` field with no reducer is not "session state" just because a checkpointer is attached.</strong> <code>classification</code>, <code>docs_response</code>, <code>confidence</code> and most of <code>SupportFlowState</code> are overwritten by each turn's fresh <code>build_initial_state</code> output — the checkpointer's merge only matters for the two fields that actually carry a reducer, <code>conversation_history</code> and <code>errors</code>.</li>
+        <li><strong><code>errors</code> needed a bespoke reducer for the opposite reason <code>conversation_history</code> needed one.</strong> <code>conversation_history</code> wants to <em>keep</em> what a plain empty seed would otherwise leave alone. <code>errors</code> wanted the opposite: a live probe found <code>operator.add</code> making a checkpointed thread's error list grow forever across turns, since an empty-list seed merges to <code>existing + [] == existing</code>, never to <code>[]</code>. <code>_errors_reducer</code>'s <code>RESET_ERRORS_MARKER</code> is how <code>build_initial_state</code> tells the reducer "this is a new turn, actually clear it" — see <code>docs/decisions.md</code> #77 for the measured evidence.</li>
+        <li><strong>Escalation reads history but never writes a prompt with it.</strong> It still appends a turn on resolution (so a later Docs/Web Search turn in the same session can reference "what I already told you"), but its own prompt has no <code>{{conversation_history}}</code> slot — it summarises the current case for a human operator, not a conversation.</li>
+      </ol>
+
+      <div class="takeaway">
+        <strong>The point of the connections:</strong> the checkpointer sits entirely outside the graph's own node logic — no node calls it, no node knows it exists. It intercepts exactly two moments, both drawn as notes on the runtime's own lifeline: restoring saved state before the merge at the start of <code>graph.invoke</code>, and saving the merged result after every super-step completes. Everything else in this diagram — Router deciding a route, Docs querying Silpo, Web Search calling Tavily/DuckDuckGo, Escalation writing a report — is unchanged by session memory existing at all; see <code>router-sequence.html</code>, <code>docs-agent-sequence.html</code>, <code>web-search-agent-sequence.html</code>, and <code>escalation-sequence.html</code> for those (<code>web-search-agent-sequence.html</code> has not yet been updated to show the masked <code>conversation_history</code> it now receives — a known gap, not this diagram's job to fix). In-memory only, per <code>docs/decisions.md</code> #77: a Backend restart drops every session's checkpoint, same ceiling as <code>escalation_agent.py</code>'s own <code>_session_store</code>.
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -338,6 +338,7 @@ explanation, for pasting into a slide or a printed report).
 |---|---|---|
 | `architecture.html` | Block diagram | The whole system in one picture: browser → API → Supervisor → Docs/Web Search agents (or straight to Escalation). Notes session memory as a Supervisor-process property, not a box of its own. |
 | `supervisor-graph.html` | Flow diagram | The steps inside the Supervisor's LangGraph — every node and every conditional edge, plus the checkpointer's read-in/write-back around the graph. |
+| `session-memory-sequence.html` | Sequence diagram | Two real turns of one session, side by side: what the checkpointer restores, why `conversation_history` and `errors` each needed their own reducer, and how a fresh "🗑️ Нова розмова" session differs from a follow-up turn. |
 | `router-sequence.html` | Sequence diagram | How Router classifies one message, what happens if it fails, and how `conversation_history` rides along on the call. |
 | `escalation-sequence.html` | Sequence diagram | Escalation's steps: write the report, hide private data, ask for confirmation, send it, save the file. |
 | `docs-agent-sequence.html` | Sequence diagram | How Docs Agent searches the knowledge base and the Silpo catalog, and how `conversation_history` arrives over the A2A hop's metadata, unmasked. |
@@ -347,14 +348,10 @@ explanation, for pasting into a slide or a printed report).
 | `quality-results.html` | Results report | The measured scores, what each metric means for each judge, and which numbers may be compared with which. |
 | `prompt-architecture.html` (+ `prompt-*.svg`) | Structure diagram | The four agent prompts, their structure, and the two prompt experiments run against them (both came back "inconclusive" — no prompt was changed because of them). Shows the `{{conversation_history}}` slot on Router/Docs/Web Search and Escalation's constraint against resolving a case itself. |
 
-**Known gap:** `router-sequence.html` and `supervisor-graph.html` both
-point to a `session-memory-sequence.html` for "where the checkpointer's
-history comes from" — that dedicated diagram was approved but never
-built; the file does not exist. Until it does, the checkpointer's own
-mechanics are only in `supervisor-graph.html`'s subtitle/legend, not a
-sequence of their own. `web-search-agent-sequence.html` was also never
-updated to show the masked `conversation_history` it now receives over
-its own A2A hop.
+**Known gap:** `web-search-agent-sequence.html` was never updated to show
+the masked `conversation_history` it now receives over its own A2A hop —
+`session-memory-sequence.html`'s own walkthrough section notes this, since
+it references that file too.
 
 ### Opening a diagram
 
