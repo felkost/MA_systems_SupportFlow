@@ -68,7 +68,10 @@ class WebSearchExecutor(AgentExecutor):
             )
         with span_cm:
             try:
-                result = run_web_search(query)
+                result = run_web_search(
+                    query,
+                    conversation_history=metadata.get("conversation_history", ""),
+                )
                 reply_text = json.dumps(
                     {
                         "response": json.loads(result.response.model_dump_json()),

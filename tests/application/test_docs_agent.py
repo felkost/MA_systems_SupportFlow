@@ -35,6 +35,15 @@ def _fake_prompt_fn(_name: str) -> tuple[str, int]:
     )
 
 
+def _fake_prompt_fn_with_history(_name: str) -> tuple[str, int]:
+    return (
+        "<customer_message>{{customer_message}}</customer_message>\n"
+        "<retrieved_content>{{retrieved_content}}</retrieved_content>\n"
+        "<conversation_history>{{conversation_history}}</conversation_history>",
+        1,
+    )
+
+
 @pytest.mark.asyncio
 async def test_run_docs_agent_combines_kb_and_mcp_sources() -> None:
     kb_doc = _FakeDocument(
@@ -71,6 +80,36 @@ async def test_run_docs_agent_combines_kb_and_mcp_sources() -> None:
         "Молоко безлактозне: 45.5 грн",
     ]
     assert result.tools_called == ["silpo_find_products_batch"]
+
+
+@pytest.mark.asyncio
+async def test_run_docs_agent_injects_conversation_history_into_the_prompt() -> None:
+    """docs/decisions.md #77: the compiled prompt actually carries prior
+    turns when the caller passes them, not just the customer message and
+    retrieved content the other tests here already cover.
+    """
+    captured: dict[str, str] = {}
+
+    def fake_compose(compiled_prompt: str, _masked_query: str) -> DocsResponse:
+        captured["prompt"] = compiled_prompt
+        return DocsResponse(answer="Відповідь", sources=[], confidence=0.9)
+
+    await run_docs_agent(
+        "як мене звати",
+        conversation_history="Клієнт: Мене звати Фелікс\nАсистент: Приємно!",
+        retriever=_FakeRetriever([]),
+        search_products=lambda _q: _empty_search(),
+        translate_fn=lambda _q: "",
+        compose_fn=fake_compose,
+        prompt_fn=_fake_prompt_fn_with_history,
+    )
+
+    assert "Клієнт: Мене звати Фелікс" in captured["prompt"]
+    assert "Асистент: Приємно!" in captured["prompt"]
+
+
+async def _empty_search() -> tuple[list[dict], list[str]]:
+    return [], []
 
 
 @pytest.mark.asyncio

@@ -140,6 +140,7 @@ def _build_request(
     trace_id: str,
     deadline: datetime,
     parent_span_id: str | None = None,
+    conversation_history: str = "",
 ) -> SendMessageRequest:
     message = Message(
         message_id=str(uuid.uuid4()), role=Role.ROLE_USER, parts=[Part(text=text)]
@@ -151,6 +152,12 @@ def _build_request(
     request.metadata["deadline"] = deadline.isoformat()
     if parent_span_id is not None:
         request.metadata["parent_span_id"] = parent_span_id
+    # Same optional-metadata pattern as `parent_span_id` above: omitted
+    # entirely on a session's first turn rather than sent as an empty
+    # string, so the server side's `.get(...)` default (also "") covers
+    # both "no history yet" and "caller predates this field" identically.
+    if conversation_history:
+        request.metadata["conversation_history"] = conversation_history
     return request
 
 
@@ -163,6 +170,7 @@ async def _send_async(
     deadline: datetime,
     httpx_client: httpx.AsyncClient | None,
     parent_span_id: str | None,
+    conversation_history: str = "",
 ) -> str:
     remaining = (deadline - datetime.now(timezone.utc)).total_seconds()
     if remaining <= 0:
@@ -180,7 +188,13 @@ async def _send_async(
     config = ClientConfig(streaming=False, httpx_client=client_for_call)
     client = await ClientFactory(config).create_from_url(base_url)
     request = _build_request(
-        text, request_id, session_id, trace_id, deadline, parent_span_id
+        text,
+        request_id,
+        session_id,
+        trace_id,
+        deadline,
+        parent_span_id,
+        conversation_history,
     )
     async for event in client.send_message(request):
         if event.WhichOneof("payload") == "message":
@@ -200,6 +214,7 @@ def send_a2a_message(
     *,
     httpx_client: httpx.AsyncClient | None = None,
     parent_span_id: str | None = None,
+    conversation_history: str = "",
 ) -> str:
     """One A2A call: enforce `deadline`, send `text`, return the remote
     agent's reply text.
@@ -222,6 +237,14 @@ def send_a2a_message(
         `SendMessageRequest.metadata` alongside `trace_id` so
         the callee's own root span parents onto this trace. `None` when
         tracing is disabled.
+    conversation_history : str, default=""
+        Prior turns in this session, pre-formatted by
+        `src.domain.state.format_conversation_history` — carried in
+        `SendMessageRequest.metadata`, empty (and therefore omitted from
+        the metadata dict entirely) on a session's first turn
+        (`docs/decisions.md` #77). Never raw/unmasked text — the caller
+        is responsible for building this string only from masked turns,
+        same rule as `text`.
 
     Returns
     -------
@@ -265,5 +288,6 @@ def send_a2a_message(
                 deadline,
                 httpx_client,
                 parent_span_id,
+                conversation_history,
             )
         )

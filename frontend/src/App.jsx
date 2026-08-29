@@ -393,6 +393,7 @@ function App() {
           escalated: data.escalated,
           reportWritten: data.report_written,
           telegramSent: data.telegram_sent,
+          escalationCapped: data.escalation_capped,
           category: data.category,
           elapsedMs: data.elapsed_ms,
         },
@@ -611,7 +612,9 @@ function App() {
                     <span className={`badge ${message.telegramSent ? 'ok' : ''}`}>
                       {message.telegramSent
                         ? '✓ Надіслано в Telegram'
-                        : '— Telegram не надсилався'}
+                        : message.escalationCapped
+                          ? '⚠ Ліміт відправок вичерпано'
+                          : '— Telegram не надсилався'}
                     </span>
                   </p>
                 </div>

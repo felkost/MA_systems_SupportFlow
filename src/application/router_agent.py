@@ -43,6 +43,7 @@ def run_router(
     trace_id: str,
     *,
     prompt_label: str = "production",
+    conversation_history: str = "",
 ) -> RouterResult:
     """Classify `masked_text`, retrying once on failure before giving up.
 
@@ -54,6 +55,9 @@ def run_router(
     prompt_label : str, default="production"
         Forwarded to `call_router`; only a prompt-comparison run passes
         anything else.
+    conversation_history : str, default=""
+        Forwarded to `call_router` unchanged on every retry — see its own
+        docstring (`docs/decisions.md` #77).
 
     Returns
     -------
@@ -77,7 +81,9 @@ def run_router(
         )
         try:
             classification, prompt_version = call_router(
-                envelope, prompt_label=prompt_label
+                envelope,
+                prompt_label=prompt_label,
+                conversation_history=conversation_history,
             )
             return RouterResult(classification, prompt_version, errors, attempt)
         except TimeoutError:

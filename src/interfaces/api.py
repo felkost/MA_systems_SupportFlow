@@ -83,6 +83,10 @@ class ChatResponse(BaseModel):
     escalated: bool
     report_written: bool = False
     telegram_sent: bool = False
+    # Distinguishes "not sent because the send cap was reached" from every
+    # other reason telegram_sent can be False (real sending is off,
+    # duplicate escalation) — docs/decisions.md #80/#82.
+    escalation_capped: bool = False
     elapsed_ms: int
     session_id: str
     # Returned so a given answer can be correlated with its own Langfuse
@@ -237,6 +241,7 @@ def chat(payload: ChatRequest) -> ChatResponse:
         escalated=state["next_action"] == "escalate",
         report_written=state["report_written"],
         telegram_sent=state["telegram_sent"],
+        escalation_capped=state["escalation_capped"],
         elapsed_ms=elapsed_ms,
         session_id=session_id,
         trace_id=trace_id,

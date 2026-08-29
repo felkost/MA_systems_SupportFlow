@@ -1,5 +1,5 @@
 {
-  "measured_at": "2026-08-29T10:15:41+00:00",
+  "measured_at": "2026-08-29T16:08:30+00:00",
   "cases": [
     {
       "trace_id": "4c9e41a97f1c4999a1380625b6f008c8",
@@ -605,6 +605,1226 @@
       },
       "answer_prompt_version": 12,
       "experiment": "baseline-v5"
+    },
+    {
+      "trace_id": "b2b998850e5545d5bb17fe7e82623ab4",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.5
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v6"
+    },
+    {
+      "trace_id": "c5206da4a35f4bb285942ffaf98a37ff",
+      "route": "docs",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.5,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 13,
+      "experiment": "baseline-v6"
+    },
+    {
+      "trace_id": "ee50a576ee084d67bc407c14f5ddbe86",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.9
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v6"
+    },
+    {
+      "trace_id": "7c2ce6d6bb2c4030a2733fc0f0c6d87c",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.5
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v6"
+    },
+    {
+      "trace_id": "8fc8099971504a38b8081d75f1889d96",
+      "route": "docs",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.4,
+        "Answer Relevancy": 0.6666666666666666,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 13,
+      "experiment": "baseline-v6"
+    },
+    {
+      "trace_id": "86b7d90a39ad49409d45ec372902807d",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.7
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v6"
+    },
+    {
+      "trace_id": "de8bf1c6867f4bb9b6affdf0022242ff",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.7
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v7"
+    },
+    {
+      "trace_id": "0ed6c3f20f98466a9ebbf105a994ffc8",
+      "route": "docs",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.7,
+        "Answer Relevancy": 0.7142857142857143,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 14,
+      "experiment": "baseline-v7"
+    },
+    {
+      "trace_id": "2a87b379b2b04ff893dcec1996aa7d4d",
+      "route": "web_search",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.1,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 0.0
+      },
+      "answer_prompt_version": 11,
+      "experiment": "baseline-v7"
+    },
+    {
+      "trace_id": "a2f92b1eea08411b82a0509966560ade",
+      "route": "docs",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.9,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 14,
+      "experiment": "baseline-v7"
+    },
+    {
+      "trace_id": "093590e645194b1b8f61907cc668902f",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.6
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v7"
+    },
+    {
+      "trace_id": "998b5063031e490c852622f90f08ae1b",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.5
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v7"
+    },
+    {
+      "trace_id": "2967295c41014048a6450c866392feeb",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.6
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v7"
+    },
+    {
+      "trace_id": "ce08a08ea21f4c01aa3554532cf98c02",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.9
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v7"
+    },
+    {
+      "trace_id": "990bfaef7a614ca387a9e5f42b434e1f",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.4
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v7"
+    },
+    {
+      "trace_id": "5cf086e24864490b8462411e84b08e3c",
+      "route": "docs",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.9,
+        "Answer Relevancy": 0.7142857142857143,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 14,
+      "experiment": "baseline-v7"
+    },
+    {
+      "trace_id": "73aa926a1e1b400cb04f22a1dbb3b048",
+      "route": "web_search",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.0,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 11,
+      "experiment": "baseline-v7"
+    },
+    {
+      "trace_id": "7bb48179e610424980c1ffb5a30a281a",
+      "route": "web_search",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.1,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 11,
+      "experiment": "baseline-v7"
+    },
+    {
+      "trace_id": "4d55e8ca646e44608ec3212fd9857e86",
+      "route": "docs",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.4,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 14,
+      "experiment": "baseline-v7"
+    },
+    {
+      "trace_id": "6b6c738e5c5e4335895098d834024e6f",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.8
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v7"
+    },
+    {
+      "trace_id": "9cb0535ec2c045f98e9375a2e0a97196",
+      "route": "docs",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.9,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 14,
+      "experiment": "baseline-v7"
+    },
+    {
+      "trace_id": "edbe6e344d484d369817b3832bfa1883",
+      "route": "docs",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.9,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 14,
+      "experiment": "baseline-v7"
+    },
+    {
+      "trace_id": "5a640691f77342f280b6e241dd5ca775",
+      "route": "docs",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.8,
+        "Answer Relevancy": 0.8333333333333334,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 14,
+      "experiment": "baseline-v7"
+    },
+    {
+      "trace_id": "a113b8060cbe4892b87d856707dceecc",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.3
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v7"
+    },
+    {
+      "trace_id": "29509461ea4243e9a127219ee886dfae",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.7
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v7"
+    },
+    {
+      "trace_id": "9558e5da015e4cdca796eb296b6ec8dd",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.3
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v7"
+    },
+    {
+      "trace_id": "667663fa46ab48aa86512a316444cc3e",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.7
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v7"
+    },
+    {
+      "trace_id": "47df68819ce84464a935093201ab4319",
+      "route": "docs",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.9,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 15,
+      "experiment": "baseline-v8"
+    },
+    {
+      "trace_id": "81cfa00c1dfe4c788758a7486f5f6b8c",
+      "route": "docs",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.9,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 15,
+      "experiment": "baseline-v8"
+    },
+    {
+      "trace_id": "61a951077ec3411bbff8a41c85b390c4",
+      "route": "web_search",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.6,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 12,
+      "experiment": "baseline-v8"
+    },
+    {
+      "trace_id": "e7439327d31944e69f6146f9ef735aa9",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.3
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v8"
+    },
+    {
+      "trace_id": "41ea4ff6faac4f5584132dcc7eceeb4a",
+      "route": "web_search",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.4,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 12,
+      "experiment": "baseline-v8"
+    },
+    {
+      "trace_id": "5be1257459734252b701af75d45305dd",
+      "route": "web_search",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.7,
+        "Answer Relevancy": 0.8888888888888888,
+        "Faithfulness": 0.8333333333333334
+      },
+      "answer_prompt_version": 12,
+      "experiment": "baseline-v8"
+    },
+    {
+      "trace_id": "25ece1436d7848218526f72b9273f85a",
+      "route": "docs",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.5,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 15,
+      "experiment": "baseline-v8"
+    },
+    {
+      "trace_id": "379986b26dd34db5b89f877cc3d53198",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.7
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v8"
+    },
+    {
+      "trace_id": "fbb862def1424d78811d7b64f983db0e",
+      "route": "web_search",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.1,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 0.0
+      },
+      "answer_prompt_version": 12,
+      "experiment": "baseline-v8"
+    },
+    {
+      "trace_id": "321275e4770d4d459c594ea8ca7e3c25",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.7
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v8"
+    },
+    {
+      "trace_id": "639204c747a840f28be1fceee85c1e41",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.7
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v8"
+    },
+    {
+      "trace_id": "525cc0cb8f9d43618ac4fa5c512a0a25",
+      "route": "docs",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.9,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 15,
+      "experiment": "baseline-v8"
+    },
+    {
+      "trace_id": "0ce902de3cdc4bf197b94b2d76bee1c2",
+      "route": "docs",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.9,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 15,
+      "experiment": "baseline-v8"
+    },
+    {
+      "trace_id": "9975c9df874b40198bc253bc9a40a2bc",
+      "route": "docs",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.9,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 15,
+      "experiment": "baseline-v8"
+    },
+    {
+      "trace_id": "c8476292d57747b99e078b04a2b7e0a4",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.6
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v8"
+    },
+    {
+      "trace_id": "ef6e991a81f34ce1841c3e0fd8c07820",
+      "route": "docs",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.9,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 15,
+      "experiment": "baseline-v8"
+    },
+    {
+      "trace_id": "5d08248394754814b33f2806f1077def",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.9
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v8"
+    },
+    {
+      "trace_id": "c7e469aab7b546efb5506ce84dc34532",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.9
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v8"
+    },
+    {
+      "trace_id": "e8ba389128c0478c8f56a4ecbdce7331",
+      "route": "web_search",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.3,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 12,
+      "experiment": "baseline-v8"
+    },
+    {
+      "trace_id": "b20eca50ac6a4f1c9d4cf516f81d458e",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.5
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v8"
+    },
+    {
+      "trace_id": "d548f80db31d46dcb9ee06d4727cd0ab",
+      "route": "docs",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.8,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 15,
+      "experiment": "baseline-v8"
+    },
+    {
+      "trace_id": "a93c2ef7dfef49009c8738fb16bda295",
+      "route": "docs",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.6,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 15,
+      "experiment": "baseline-v8"
+    },
+    {
+      "trace_id": "eb6ae515a50041b68be8630e50daf016",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.6
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v8"
+    },
+    {
+      "trace_id": "36b21808f7b642a787edfab677860b13",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 1.0
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "7fde37650692460abaf34e2bf83fff77",
+      "route": "docs",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.9,
+        "Answer Relevancy": 0.8571428571428571,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 16,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "6c2db4e106b94255b88321ebaeff38ad",
+      "route": "web_search",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.6,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 13,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "40bb1ec8c98e4d368b69ebdd022e9440",
+      "route": "web_search",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.6,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 13,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "c5cfcc6c3e1d4857bba42f84b4e5ce8c",
+      "route": "web_search",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.5,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 13,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "e3c36930dcf544769187fb14fe74bbe9",
+      "route": "web_search",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.5,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 13,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "98744e6d033b4396aac586468d4f9fe7",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.5
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "78886cbd97fe46cca3bbb76109be9cd3",
+      "route": "docs",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.7,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 16,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "fd4d3f92d92243658856f891df6ce2b5",
+      "route": "web_search",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.0,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 13,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "009506b1a7a9482dbdc37c1d2df5c02a",
+      "route": "web_search",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.1,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 0.0
+      },
+      "answer_prompt_version": 13,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "d314cb6fc1c240f79cdac73a24ef294f",
+      "route": "docs",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.2,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 16,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "3ca4b88c8a8745c1b241d01a66ce6fec",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.3
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "d32f423eff914d59a0d072f87b10c7e7",
+      "route": "docs",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.9,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 16,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "2adc12f5e9084046a293722b9c0f8b1c",
+      "route": "docs",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.9,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 16,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "eccd04322c8b44e899dd8206954dfb08",
+      "route": "docs",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.9,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 16,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "91ece6eefd564d91a8e5ef96e9c4be66",
+      "route": "docs",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.9,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 16,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "583e82c4c9204d05be73dab207a94052",
+      "route": "docs",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.9,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 16,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "f242c6cffee04ff5a09984f4ce4153e0",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.7
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "4ecfe83831524c5dab265b05a61d7e23",
+      "route": "web_search",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.3,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 13,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "e69dacdd8fc745ce9a5d4ff0f281ab06",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.7
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "06fe763f1c344f2b90ee5d9d948d6b94",
+      "route": "docs",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.8,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 16,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "4ecfe83831524c5dab265b05a61d7e23",
+      "route": "web_search",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.3,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 13,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "e69dacdd8fc745ce9a5d4ff0f281ab06",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.7
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "06fe763f1c344f2b90ee5d9d948d6b94",
+      "route": "docs",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.8,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 16,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "d24f7f3d5b0b40c3a5e897452770e5b0",
+      "route": "docs",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.5,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 16,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "90291f646af94180a2a2836fc2238594",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.9
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "dfb487141fde42f981334f2d15d74f33",
+      "route": "docs",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.9,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 16,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "69307da9c4d140438364419f0d8e86dd",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.7
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "e943bdb67ae64e13a2542e02f8109b80",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.9
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "c1e1e3cb84294a99adc58d9542f77e3b",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.5
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "12c679a3d5f34f9fa467bbe884b43802",
+      "route": "web_search",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.1,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 13,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "45b58e9aef574d7086087fc9d93d517b",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.8
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "a617f2da0834406e889abdffb49ff4a4",
+      "route": "web_search",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.9,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 13,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "5fa86b5d63f54b3cbccd29ab52d1a6b7",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.9
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "24622322436944fdb26043b0ec1fae24",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.9
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "1196fd09b16845fdb1267911897dcbab",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.1
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "d0e46d9ff370491b892e9eed890a508c",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.6
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "250fbba3d27f4371b388a865ec3d676c",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.2
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "7d662ae51a124bda90fd2dd2a490eb5d",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.3
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "1c456c5024d9426e8bdb4d64ab051431",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.6
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "2bbb076ac6f8426db32641a5a6aea9b2",
+      "route": "web_search",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.5,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 13,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "1c0de71caaed465382cb2418cdc9a69b",
+      "route": "web_search",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.6,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 13,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "29eef1d6adf44e568819026f0f5a27fc",
+      "route": "web_search",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.6,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 13,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "de63f0c28dfe494db3493951b4ad0a64",
+      "route": "web_search",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.7,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 13,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "ab304f503ce3467f9700ca598ea85d60",
+      "route": "web_search",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.9,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 13,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "bd996a0d0d354da5a5b5c7a056be4ccc",
+      "route": "web_search",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.7,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 13,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "4c5c51af12c143dcbbfe809d97f87fe1",
+      "route": "docs",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.4,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 16,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "2e2d77a2dc88470592d5a2ff9a62b263",
+      "route": "web_search",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.6,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 13,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "7362576dbfb94cda9b76a759cb574c11",
+      "route": "web_search",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.6,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 13,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "d833d174d24640afab133f933b0b5661",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.6
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "1ac37855ccd14b038210c27e777d901b",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.5
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "8e7664409560424fb256733ac0a475b0",
+      "route": "web_search",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.6,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 13,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "4fa2c28639474825a4d90c9511359610",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.5
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "44665f99508c4b2abbc9007deedd1690",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.1
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v9"
+    },
+    {
+      "trace_id": "4e0aec637b134cb8a964962b9716bb20",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.8
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v10"
+    },
+    {
+      "trace_id": "ded693fa981d44929b78757807cf5311",
+      "route": "web_search",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.6,
+        "Answer Relevancy": 1.0,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 13,
+      "experiment": "baseline-v10"
+    },
+    {
+      "trace_id": "6bc5eb61fa624b73a8f0a67f7372eeae",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.6
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v10"
+    },
+    {
+      "trace_id": "2097d20173cd41f99844cd7a8cd0b707",
+      "route": "web_search",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.1,
+        "Answer Relevancy": 0.8,
+        "Faithfulness": 1.0
+      },
+      "answer_prompt_version": 13,
+      "experiment": "baseline-v10"
+    },
+    {
+      "trace_id": "a4bc2a917ac24032aeeb52c7ec214010",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.1
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v10"
+    },
+    {
+      "trace_id": "0a4fc6e6641d466f88b04c8c856a2558",
+      "route": "escalate",
+      "scores": {
+        "Privacy Safety": 1.0,
+        "Support Resolution Quality [GEval]": 0.9
+      },
+      "answer_prompt_version": null,
+      "experiment": "baseline-v10"
     }
   ]
 }

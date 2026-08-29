@@ -51,6 +51,7 @@ def call_docs_agent(
     *,
     parent_span_id: str | None = None,
     httpx_client: httpx.AsyncClient | None = None,
+    conversation_history: str = "",
 ) -> DocsCallResult:
     """One A2A call to Docs Agent.
 
@@ -66,6 +67,9 @@ def call_docs_agent(
         to `send_a2a_message`. `None` when tracing is disabled.
     httpx_client : httpx.AsyncClient, optional
         Injected for testing against an in-process ASGI app.
+    conversation_history : str, default=""
+        Forwarded to `send_a2a_message` unchanged — see its own docstring
+        (`docs/decisions.md` #77).
 
     Returns
     -------
@@ -90,6 +94,7 @@ def call_docs_agent(
         deadline,
         httpx_client=httpx_client,
         parent_span_id=parent_span_id,
+        conversation_history=conversation_history,
     )
     try:
         payload = json.loads(reply_text)

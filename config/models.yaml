@@ -40,7 +40,18 @@ docs:
 web_search:
   model: "deepseek/deepseek-v4-flash"
   temperature: 0
-  max_tokens: 1024
+  # Raised 1024 -> 2048 on measurement, 2026-08-29, not on a guess: live
+  # `/chat` requests on the web_search route were failing with
+  # `Could not parse response content as the length limit was reached -
+  # CompletionUsage(completion_tokens=1024, ...)` — the model was being
+  # cut off mid-JSON while composing an answer plus its source list, and
+  # the unparseable result surfaced to the customer as "the search tool
+  # is unavailable", which it was not. This *saves* tokens rather than
+  # spending them: a truncated call burns its full 1024-token completion
+  # producing nothing, then costs a second paid call when the request
+  # escalates. max_tokens is a ceiling, not a spend — a short answer
+  # still costs what it costs.
+  max_tokens: 2048
   # Same measured basis as `docs` above — a real search + compose round
   # trip was seen at 38.1s through the live UI, over the old 30s bound.
   timeout_seconds: 75

@@ -9,6 +9,7 @@ itself depend on a network call to reach.
 """
 
 import hashlib
+import logging
 from contextlib import nullcontext
 from dataclasses import dataclass, field
 from typing import Any
@@ -31,6 +32,13 @@ from src.kernel.constants import (
     MAX_ESCALATION_SENDS_PER_SESSION,
 )
 from src.kernel.settings import settings
+
+# `capped=True` used to be invisible past this module — recorded on
+# `EscalationAgentResult` but never logged, never reaching a Langfuse
+# span, and never surfacing in `ChatResponse`. The chat UI showed
+# "Telegram не надсилався", indistinguishable from real sending being
+# switched off entirely. Found live 2026-08-29 (docs/decisions.md #80).
+logger = logging.getLogger(__name__)
 
 
 class EscalationInvalidOutputError(Exception):
@@ -267,6 +275,17 @@ def run_escalation_agent(
         session.count > MAX_ESCALATION_SENDS_PER_SESSION
         or _process_send_count >= MAX_ESCALATION_SENDS_PER_PROCESS
     )
+    if capped:
+        logger.warning(
+            "escalation send capped for session=%s: session_count=%d "
+            "(limit %d), process_count=%d (limit %d) — report written, "
+            "no real Telegram send",
+            session_id,
+            session.count,
+            MAX_ESCALATION_SENDS_PER_SESSION,
+            _process_send_count,
+            MAX_ESCALATION_SENDS_PER_PROCESS,
+        )
     # F17's "assert the target equals the configured test channel": this
     # agent never accepts an externally supplied chat_id (nothing in
     # `EscalationOutput` carries one), so the only thing to assert is that

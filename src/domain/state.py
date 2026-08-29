@@ -6,7 +6,6 @@ around `TypedDict` plus reducers (`Annotated[list, operator.add]`), and
 wrapping it in Pydantic buys nothing here while complicating that pattern.
 """
 
-import operator
 from typing import Annotated, Literal, TypedDict
 
 from src.domain.schemas import (
@@ -15,6 +14,7 @@ from src.domain.schemas import (
     EscalationOutput,
     WebSearchResponse,
 )
+from src.kernel.constants import MAX_HISTORY_TURNS
 
 NextAction = Literal["router", "docs", "web_search", "escalate", "reject", "respond"]
 
@@ -41,6 +41,55 @@ ErrorType = Literal[
     "docs_low_confidence",
 ]
 
+# A checkpointed thread's `graph.invoke` input is combined with whatever
+# the checkpointer already holds through the field's own reducer, same as
+# any node's return value — confirmed by direct probe against the
+# installed `langgraph==1.2.11`: an empty-list seed on turn 2 still
+# produced `existing + [] == existing`, i.e. a plain `errors=[]` seed
+# never resets anything once a checkpointer is attached. This marker,
+# passed only by `build_initial_state`, is how `_errors_reducer` tells
+# "a new turn is starting" apart from a node's own legitimate (possibly
+# empty) error list — see `docs/decisions.md` #77. Must be JSON/msgpack
+# serializable (a custom sentinel object is not — `InMemorySaver` persists
+# every pending write, not just the reduced result, and rejected one live).
+RESET_ERRORS_MARKER: list[str] = ["__reset_turn__"]
+
+
+def _errors_reducer(existing: list[ErrorType], new: list[ErrorType]) -> list[ErrorType]:
+    """Accumulates within one graph run like `operator.add` (Router and
+    Docs/Web Search can each contribute an entry in the same turn — e.g.
+    a recovered Router retry followed by a Docs low-confidence escalation,
+    both worth keeping in the escalation report), but a fresh turn's own
+    `RESET_ERRORS_MARKER` seed discards whatever a prior turn in this
+    session's checkpointed thread left behind instead of adding to it.
+    """
+    if new == RESET_ERRORS_MARKER:
+        return []
+    return existing + new
+
+
+class ConversationTurn(TypedDict):
+    """One resolved turn, kept only for the *next* turn's prompts to read
+    as context — never a transcript feature in its own right. `customer`
+    is always `original_request_masked`, already PII-masked; `answer` is
+    Supervisor's composed final answer for that turn, `None` on the rare
+    turn a rejection short-circuits before the graph runs (never added to
+    history — see `build_initial_state`).
+    """
+
+    customer: str
+    answer: str
+
+
+def _keep_last_n_turns(
+    existing: list[ConversationTurn], new: list[ConversationTurn]
+) -> list[ConversationTurn]:
+    """Appends like `operator.add`, then trims to the newest
+    `MAX_HISTORY_TURNS` — bounding growth here, once, rather than at each
+    of the three prompt-assembly call sites that read this field.
+    """
+    return (existing + new)[-MAX_HISTORY_TURNS:]
+
 
 class SupportFlowState(TypedDict):
     """One request's state as it moves through the graph.
@@ -64,8 +113,20 @@ class SupportFlowState(TypedDict):
         Mirrors whichever downstream response's confidence drove the
         current routing decision.
     errors : list[ErrorType]
-        `Annotated` with `operator.add` so parallel branches (if any exist
-        later) merge rather than overwrite.
+        `Annotated` with `_errors_reducer` so parallel branches (if any
+        exist later) merge rather than overwrite *within one turn*, while
+        a new turn's `RESET_ERRORS_MARKER` seed starts the list over
+        instead of inheriting the previous turn's entries from the
+        session's checkpointed thread.
+    conversation_history : list[ConversationTurn]
+        The session's last `MAX_HISTORY_TURNS` resolved turns, read by
+        Router/Docs/Web Search's prompts as context for a follow-up
+        message — see `docs/decisions.md` #77. `Annotated` with
+        `_keep_last_n_turns`: `docs_node`/`web_search_node`/`escalate_node`
+        each append their own turn's `{customer, answer}` pair;
+        `router_node` never does (it does not resolve the case). Empty on
+        `build_initial_state`'s own seed so the reducer only ever adds to
+        what the checkpointer already holds, never duplicates it.
     retry_count : int
         Compared against `AgentModelConfig.max_retries`.
     escalation_count : int
@@ -105,6 +166,12 @@ class SupportFlowState(TypedDict):
         request — never inferred from `next_action` alone, since a
         deduplicated or capped escalation still sets
         `next_action="escalate"` without writing or sending anything.
+    escalation_capped : bool
+        `EscalationAgentResult.capped` — `telegram_sent=False` on its own
+        does not say *why*: a deduplicated case, a disabled
+        `ALLOW_REAL_SEND`, and a capped send cap all look identical
+        without this field (docs/decisions.md #80/#82). `False` on every
+        non-escalated request, same rule as `report_written`.
     next_action : NextAction
     """
 
@@ -118,7 +185,8 @@ class SupportFlowState(TypedDict):
     escalation_output: EscalationOutput | None
     answer: str | None
     confidence: float | None
-    errors: Annotated[list[ErrorType], operator.add]
+    errors: Annotated[list[ErrorType], _errors_reducer]
+    conversation_history: Annotated[list[ConversationTurn], _keep_last_n_turns]
     retry_count: int
     escalation_count: int
     router_prompt_version: int | None
@@ -127,4 +195,26 @@ class SupportFlowState(TypedDict):
     tools_called: list[str]
     report_written: bool
     telegram_sent: bool
+    escalation_capped: bool
     next_action: NextAction
+
+
+def format_conversation_history(turns: list[ConversationTurn]) -> str:
+    """Render prior turns for a prompt's `{{conversation_history}}` slot.
+
+    Parameters
+    ----------
+    turns : list of ConversationTurn
+
+    Returns
+    -------
+    str
+        Empty when there is no history yet — a session's first turn, or a
+        prompt that predates this field being seeded. Never `None`: the
+        prompt template's placeholder is always replaced with something.
+    """
+    if not turns:
+        return ""
+    return "\n".join(
+        f"Клієнт: {turn['customer']}\nАсистент: {turn['answer']}" for turn in turns
+    )

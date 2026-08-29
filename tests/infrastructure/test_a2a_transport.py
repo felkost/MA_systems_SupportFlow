@@ -112,6 +112,50 @@ def test_send_a2a_message_omits_parent_span_id_when_not_given() -> None:
     assert "parent_span_id" not in payload["metadata"]
 
 
+def test_send_a2a_message_carries_conversation_history_when_given() -> None:
+    """docs/decisions.md #77: session memory reaching Docs/Web Search
+    depends on this metadata key surviving the A2A hop, same as
+    `parent_span_id` already does above.
+    """
+    agent_card = build_agent_card("echo", "test agent", "http://testserver")
+    app = build_server_app(_EchoExecutor(), agent_card)
+
+    reply = send_a2a_message(
+        "http://testserver",
+        "text",
+        request_id="r1",
+        session_id="s1",
+        trace_id="0123456789abcdef0123456789abcdef",
+        deadline=datetime.now(timezone.utc) + timedelta(seconds=10),
+        httpx_client=_asgi_client(app),
+        conversation_history="Клієнт: Мене звати Фелікс\nАсистент: Приємно!",
+    )
+
+    payload = json.loads(reply)
+    assert (
+        payload["metadata"]["conversation_history"]
+        == "Клієнт: Мене звати Фелікс\nАсистент: Приємно!"
+    )
+
+
+def test_send_a2a_message_omits_conversation_history_when_empty() -> None:
+    agent_card = build_agent_card("echo", "test agent", "http://testserver")
+    app = build_server_app(_EchoExecutor(), agent_card)
+
+    reply = send_a2a_message(
+        "http://testserver",
+        "text",
+        request_id="r1",
+        session_id="s1",
+        trace_id="0123456789abcdef0123456789abcdef",
+        deadline=datetime.now(timezone.utc) + timedelta(seconds=10),
+        httpx_client=_asgi_client(app),
+    )
+
+    payload = json.loads(reply)
+    assert "conversation_history" not in payload["metadata"]
+
+
 def test_send_a2a_message_client_side_span_does_not_swallow_connection_failure() -> (
     None
 ):

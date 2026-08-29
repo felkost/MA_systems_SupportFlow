@@ -60,7 +60,10 @@ class WebSearchAgentResult:
 
 
 def run_web_search(
-    masked_query: str, *, search_fn: SearchFn = _default_search
+    masked_query: str,
+    *,
+    conversation_history: str = "",
+    search_fn: SearchFn = _default_search,
 ) -> WebSearchAgentResult:
     """Search, then compose a sourced, confidence-scored answer.
 
@@ -69,6 +72,13 @@ def run_web_search(
     masked_query : str
         Already PII-masked — Web Search Agent must never receive raw
         personal data.
+    conversation_history : str, default=""
+        Prior turns in this session, pre-formatted and PII-masked by the
+        caller (`graph_nodes.web_search_node` — Web Search "gets no
+        personal user data", same rule `masked_query` already follows),
+        received from `WebSearchExecutor` over the A2A hop's metadata.
+        Empty for a session's first turn or against a live prompt seeded
+        before this parameter existed (`docs/decisions.md` #77).
     search_fn : SearchFn, default=`src.infrastructure.web_search.search`
         Injected for testing the tool-unavailable path without a network
         call; production callers use the default.
@@ -96,8 +106,10 @@ def run_web_search(
     )
 
     prompt_text, prompt_version = get_prompt("supportflow/web_search")
-    compiled_prompt = prompt_text.replace("{{customer_message}}", masked_query).replace(
-        "{{retrieved_content}}", retrieved_block
+    compiled_prompt = (
+        prompt_text.replace("{{customer_message}}", masked_query)
+        .replace("{{retrieved_content}}", retrieved_block)
+        .replace("{{conversation_history}}", conversation_history)
     )
 
     model = get_chat_model("web_search")
