@@ -47,7 +47,7 @@
   <div class="frame">
     <p class="eyebrow">Prompts</p>
     <h1>Prompt architecture — structure and technique per agent</h1>
-    <p class="subtitle">Four agent-facing system prompts share one skeleton (Identity → Capabilities → Goals → Constraints → Output Format → Input). Three of them — Router, Docs and Web Search — carry an extra <code>Conversation history</code> section ahead of Input, holding the session's last five turns; Escalation does not, because it summarises the current case for an operator rather than continuing a conversation. A fifth prompt, <code>supportflow/docs-translate</code> — an internal search-term extraction step inside Docs Agent, not diagrammed here — is a plain instruction with no such structure. All five are managed as versioned text prompts in Langfuse Prompt Management (scripts/seed_prompts.py), never hardcoded. Content below is structural — the sections and their key rules, not the full prompt text.</p>
+    <p class="subtitle">Four agent-facing system prompts share one skeleton (Identity → Capabilities → Goals → Constraints → Output Format → Input). Three of them — Router, Docs and Web Search — nest a <code>## Conversation history</code> sub-heading right under <code>## Input</code>, holding the session's last five turns ahead of the <code>&lt;conversation_history&gt;</code> and <code>&lt;customer_message&gt;</code> tags — not a separate top-level layer, which is why it is shown inside the Input box below rather than as its own numbered box. Escalation carries no such sub-heading, because it summarises the current case for an operator rather than continuing a conversation. A fifth prompt, <code>supportflow/docs-translate</code> — an internal search-term extraction step inside Docs Agent, not diagrammed here — is a plain instruction with no such structure. All five are managed as versioned text prompts in Langfuse Prompt Management (scripts/seed_prompts.py), never hardcoded. Content below is structural — the sections and their key rules, not the full prompt text.</p>
 
     <!-- ============ ROUTER ============ -->
     <div class="diagram-block">
@@ -97,10 +97,10 @@
         <text x="120" y="414" fill="#333A05" font-size="11" font-family="Arial, sans-serif">ClassificationOutput — category: product|general|critical</text>
         <text x="120" y="430" fill="#333A05" font-size="11" font-family="Arial, sans-serif">urgency: low|medium|critical · language: ISO 639-1</text>
 
-        <!-- L6 Input -->
+        <!-- L6 Input (nests a "## Conversation history" sub-heading, not a separate top-level layer) -->
         <rect x="90" y="444" width="780" height="56" fill="rgba(157,177,221,0.25)" stroke="#333A05" stroke-width="1"/>
         <text x="106" y="466" fill="#4f5d75" font-size="9" font-family="Arial, sans-serif" letter-spacing="0.1em">06</text>
-        <text x="140" y="468" fill="#333A05" font-size="13" font-weight="700" font-family="Arial, sans-serif">Input</text>
+        <text x="140" y="468" fill="#333A05" font-size="13" font-weight="700" font-family="Arial, sans-serif">Input (nests Conversation history)</text>
         <text x="864" y="464" fill="#4f5d75" font-size="10" font-family="Courier New, monospace" text-anchor="end">{{customer_message}}</text>
         <text x="864" y="482" fill="#4f5d75" font-size="10" font-family="Courier New, monospace" text-anchor="end">{{conversation_history}} — prior turns, empty on turn 1</text>
 
@@ -174,7 +174,7 @@
 
         <rect x="90" y="480" width="780" height="56" fill="rgba(157,177,221,0.25)" stroke="#333A05" stroke-width="1"/>
         <text x="106" y="502" fill="#4f5d75" font-size="9" font-family="Arial, sans-serif" letter-spacing="0.1em">06</text>
-        <text x="140" y="504" fill="#333A05" font-size="13" font-weight="700" font-family="Arial, sans-serif">Input</text>
+        <text x="140" y="504" fill="#333A05" font-size="13" font-weight="700" font-family="Arial, sans-serif">Input (nests Conversation history)</text>
         <text x="864" y="500" fill="#4f5d75" font-size="10" font-family="Courier New, monospace" text-anchor="end">{{customer_message}} + {{retrieved_content}}</text>
         <text x="864" y="518" fill="#4f5d75" font-size="10" font-family="Courier New, monospace" text-anchor="end">{{conversation_history}} — prior turns, over the A2A hop</text>
 
@@ -245,7 +245,7 @@
 
         <rect x="90" y="500" width="780" height="56" fill="rgba(157,177,221,0.25)" stroke="#333A05" stroke-width="1"/>
         <text x="106" y="522" fill="#4f5d75" font-size="9" font-family="Arial, sans-serif" letter-spacing="0.1em">06</text>
-        <text x="140" y="524" fill="#333A05" font-size="13" font-weight="700" font-family="Arial, sans-serif">Input</text>
+        <text x="140" y="524" fill="#333A05" font-size="13" font-weight="700" font-family="Arial, sans-serif">Input (nests Conversation history)</text>
         <text x="864" y="520" fill="#4f5d75" font-size="10" font-family="Courier New, monospace" text-anchor="end">{{customer_message}} + {{retrieved_content}}</text>
         <text x="864" y="538" fill="#4f5d75" font-size="10" font-family="Courier New, monospace" text-anchor="end">{{conversation_history}} — PII-masked before this hop</text>
 
@@ -420,6 +420,77 @@
       </div>
 
       <p style="margin-top: 1rem;"><strong>Re-checked live 2026-08-29:</strong> all four prompts have moved past the versions these two experiments ran against — Router v8→v14, Docs v9→v16, Web Search →v13, Escalation →v10, mostly for session memory and the handover fix above, not for technique. Fetched the current <code>production</code> text of all four directly from Langfuse and searched for anything resembling a worked input/output pair: none found — the zero-shot classification above still holds, it was not just true when these experiments ran.</p>
+
+      <h2 style="margin-top: 2.5rem;">A sixth, separate prompt family: the judge</h2>
+      <p>None of the five prompts above ever grade anything — they only produce a customer-facing or operator-facing answer. Scoring those answers is a separate prompt family, configured once via <code>scripts/configure_langfuse_evaluator.py</code> as two Langfuse LLM-as-a-judge evaluators, not a Prompt Management text prompt like the five above — different mechanism, same fencing discipline. Both run on <code>anthropic/claude-haiku-4.5</code> via OpenRouter — the one model family with no agent role above built on it, so the judge's own scoring never shares a blind spot with what it grades.</p>
+      <p>Fetched live 2026-08-29 alongside the five prompts: <code>supportflow-answer-relevance</code> is at version 9, <code>supportflow-escalation-quality</code> at version 2 — the prompt wording of each has not moved since the seeding script; the version increments came from re-tuning the evaluation rule around them (span filters, variable mapping), not the grading text itself.</p>
+
+      <div class="diagram-block">
+        <h2>Judge evaluators — two rubrics, disjoint spans</h2>
+        <p class="diagram-note">One rubric across all three answer-producing agents was the original design and measured wrong: an escalation ("we passed this to an operator") cannot score well on "does this answer the customer" by construction, so a single number averaged two incomparable populations (mean 0.80, std 0.27 over the first 87 scores). Split into two evaluators, each bound to its own generation spans only — not the ~20+ internal LangGraph spans a request otherwise produces.</p>
+
+        <svg viewBox="0 0 1000 460" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="pr-judge-title pr-judge-desc">
+          <title id="pr-judge-title">Judge evaluator structure</title>
+          <desc id="pr-judge-desc">Two Langfuse LLM-as-a-judge evaluators shown side by side: supportflow-answer-relevance, scoped to the Docs and Web Search compose spans, scoring 0 to 1 how directly the response answers the customer; and supportflow-escalation-quality, scoped to the Escalation compose span alone, scoring 0 to 1 how well the response hands the case to a human operator instead of answering it. Both share the same input/output data fencing against prompt injection and both run on Claude Haiku 4.5 via OpenRouter, a model family independent of every graded agent.</desc>
+          <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+          <!-- Answer relevance card -->
+          <rect x="70" y="50" width="410" height="330" fill="#ffffff" stroke="#333A05" stroke-width="1"/>
+          <text x="90" y="76" fill="#333A05" font-size="13" font-weight="700" font-family="Arial, sans-serif">supportflow-answer-relevance</text>
+          <text x="90" y="94" fill="#4f5d75" font-size="10" font-family="Arial, sans-serif">version 9</text>
+
+          <rect x="90" y="108" width="370" height="40" fill="rgba(157,177,221,0.25)" stroke="#333A05" stroke-width="1"/>
+          <text x="100" y="124" fill="#333A05" font-size="10" font-weight="700" font-family="Arial, sans-serif">SCOPE (target: observation, filtered)</text>
+          <text x="100" y="140" fill="#333A05" font-size="10" font-family="Arial, sans-serif">docs_agent.compose · web_search_agent.compose only</text>
+
+          <rect x="90" y="156" width="370" height="60" fill="rgba(252,216,99,0.20)" stroke="#FCA600" stroke-width="1.4"/>
+          <text x="100" y="172" fill="#333A05" font-size="10" font-weight="700" font-family="Arial, sans-serif">DATA FENCING</text>
+          <text x="100" y="188" fill="#333A05" font-size="10" font-family="Arial, sans-serif">&lt;customer_message&gt;{{input}}&lt;/customer_message&gt;</text>
+          <text x="100" y="204" fill="#333A05" font-size="10" font-family="Arial, sans-serif">&lt;agent_response&gt;{{output}}&lt;/agent_response&gt; — data, not instructions</text>
+
+          <rect x="90" y="224" width="370" height="60" fill="#ffffff" stroke="#333A05" stroke-width="1"/>
+          <text x="100" y="240" fill="#333A05" font-size="10" font-weight="700" font-family="Arial, sans-serif">GRADING QUESTION</text>
+          <text x="100" y="256" fill="#333A05" font-size="10" font-family="Arial, sans-serif">0.0 (irrelevant) to 1.0 (directly and fully answers the</text>
+          <text x="100" y="272" fill="#333A05" font-size="10" font-family="Arial, sans-serif">customer's message) — numeric score only</text>
+
+          <rect x="90" y="292" width="370" height="36" fill="rgba(157,177,221,0.25)" stroke="#333A05" stroke-width="1"/>
+          <text x="100" y="308" fill="#333A05" font-size="10" font-weight="700" font-family="Arial, sans-serif">OUTPUT</text>
+          <text x="100" y="322" fill="#333A05" font-size="10" font-family="Arial, sans-serif">NUMERIC score + short reasoning string</text>
+
+          <text x="100" y="352" fill="#4f5d75" font-size="9" font-family="Arial, sans-serif">mapping: input ← metadata.customer_message</text>
+          <text x="100" y="366" fill="#4f5d75" font-size="9" font-family="Arial, sans-serif">output ← metadata.agent_answer</text>
+
+          <!-- Escalation quality card -->
+          <rect x="520" y="50" width="410" height="330" fill="#ffffff" stroke="#333A05" stroke-width="1"/>
+          <text x="540" y="76" fill="#333A05" font-size="13" font-weight="700" font-family="Arial, sans-serif">supportflow-escalation-quality</text>
+          <text x="540" y="94" fill="#4f5d75" font-size="10" font-family="Arial, sans-serif">version 2</text>
+
+          <rect x="540" y="108" width="370" height="40" fill="rgba(157,177,221,0.25)" stroke="#333A05" stroke-width="1"/>
+          <text x="550" y="124" fill="#333A05" font-size="10" font-weight="700" font-family="Arial, sans-serif">SCOPE (target: observation, filtered)</text>
+          <text x="550" y="140" fill="#333A05" font-size="10" font-family="Arial, sans-serif">escalation_agent.compose only</text>
+
+          <rect x="540" y="156" width="370" height="60" fill="rgba(252,216,99,0.20)" stroke="#FCA600" stroke-width="1.4"/>
+          <text x="550" y="172" fill="#333A05" font-size="10" font-weight="700" font-family="Arial, sans-serif">DATA FENCING</text>
+          <text x="550" y="188" fill="#333A05" font-size="10" font-family="Arial, sans-serif">&lt;customer_message&gt;{{input}}&lt;/customer_message&gt;</text>
+          <text x="550" y="204" fill="#333A05" font-size="10" font-family="Arial, sans-serif">&lt;agent_response&gt;{{output}}&lt;/agent_response&gt; — data, not instructions</text>
+
+          <rect x="540" y="224" width="370" height="60" fill="#ffffff" stroke="#333A05" stroke-width="1"/>
+          <text x="550" y="240" fill="#333A05" font-size="10" font-weight="700" font-family="Arial, sans-serif">GRADING QUESTION</text>
+          <text x="550" y="256" fill="#333A05" font-size="10" font-family="Arial, sans-serif">NOT expected to answer the question — 0.0 to 1.0 how well it</text>
+          <text x="550" y="272" fill="#333A05" font-size="10" font-family="Arial, sans-serif">names the blocker, states what was tried, says what's next</text>
+
+          <rect x="540" y="292" width="370" height="36" fill="rgba(157,177,221,0.25)" stroke="#333A05" stroke-width="1"/>
+          <text x="550" y="308" fill="#333A05" font-size="10" font-weight="700" font-family="Arial, sans-serif">OUTPUT</text>
+          <text x="550" y="322" fill="#333A05" font-size="10" font-family="Arial, sans-serif">NUMERIC score + short reasoning string</text>
+
+          <text x="550" y="352" fill="#4f5d75" font-size="9" font-family="Arial, sans-serif">mapping: input ← metadata.customer_message</text>
+          <text x="550" y="366" fill="#4f5d75" font-size="9" font-family="Arial, sans-serif">output ← metadata.agent_answer</text>
+
+          <line x1="70" y1="404" x2="930" y2="404" stroke="rgba(51,58,5,0.18)" stroke-width="1"/>
+          <text x="70" y="424" fill="#333A05" font-size="10" font-family="Arial, sans-serif">shared judge model: anthropic/claude-haiku-4.5 via OpenRouter — no agent role above is built on Anthropic</text>
+          <text x="70" y="440" fill="#4f5d75" font-size="10" font-family="Arial, sans-serif">error spans (level ≠ DEFAULT/DEBUG/WARNING) are excluded from both rules — an unset input/output would score 0.0 for "never answered", not "answered badly"</text>
+        </svg>
+      </div>
     </div>
   </div>
 </body>
