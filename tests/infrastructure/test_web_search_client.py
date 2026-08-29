@@ -38,6 +38,7 @@ def test_call_web_search_returns_validated_response(
         ),
         retrieval_context=["хліб зі знижкою 20%"],
         tools_called=["tavily"],
+        prompt_version=3,
     )
     monkeypatch.setattr(
         "src.interfaces.web_search_a2a_server.run_web_search",
@@ -68,7 +69,10 @@ def test_call_web_search_forwards_parent_span_id(
         base_url, text, request_id, session_id, trace_id, deadline, **kwargs
     ):
         captured.update(kwargs)
-        return '{"response": {"answer": "x", "sources": [], "confidence": 1.0}}'
+        return (
+            '{"response": {"answer": "x", "sources": [], "confidence": 1.0}, '
+            '"prompt_version": 3}'
+        )
 
     monkeypatch.setattr(
         "src.infrastructure.web_search_client.send_a2a_message", fake_send_a2a_message

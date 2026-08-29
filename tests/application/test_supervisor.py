@@ -73,6 +73,7 @@ def test_product_classification_with_confident_answer_responds(
             confidence=0.9,
         ),
         retrieval_context=["безлактозне молоко в наявності"],
+        prompt_version=9,
     )
     monkeypatch.setattr(graph_nodes, "call_docs_agent", lambda *a, **kw: fake_result)
 
@@ -82,6 +83,7 @@ def test_product_classification_with_confident_answer_responds(
 
     assert result["next_action"] == "respond"
     assert result["answer"] == "Так, є безлактозне молоко."
+    assert result["answer_prompt_version"] == 9
 
 
 def test_product_classification_with_unavailable_docs_escalates(
@@ -125,6 +127,7 @@ def test_general_classification_with_confident_answer_responds(
             confidence=0.9,
         ),
         retrieval_context=["магазин відкривається у грудні"],
+        prompt_version=8,
     )
     monkeypatch.setattr(graph_nodes, "call_web_search", lambda *a, **kw: fake_result)
 
@@ -138,6 +141,7 @@ def test_general_classification_with_confident_answer_responds(
     assert result["next_action"] == "respond"
     assert result["answer"] == "Новий магазин відкривається у грудні."
     assert result["retrieval_context"] == ["магазин відкривається у грудні"]
+    assert result["answer_prompt_version"] == 8
 
 
 def test_general_classification_with_low_confidence_escalates(
@@ -149,6 +153,7 @@ def test_general_classification_with_low_confidence_escalates(
     fake_result = WebSearchCallResult(
         response=WebSearchResponse(answer="Не впевнений.", sources=[], confidence=0.2),
         retrieval_context=[],
+        prompt_version=8,
     )
     monkeypatch.setattr(graph_nodes, "call_web_search", lambda *a, **kw: fake_result)
     monkeypatch.setattr(
@@ -163,6 +168,10 @@ def test_general_classification_with_low_confidence_escalates(
 
     assert result["next_action"] == "escalate"
     assert result["escalation_output"] is not None
+    # web_search_response is still set (the low-confidence path), but the
+    # customer-facing answer came from Escalation, not this prompt — must
+    # not be attributed to it.
+    assert result["answer_prompt_version"] is None
 
 
 def test_general_classification_with_unavailable_search_escalates(
@@ -362,6 +371,7 @@ def test_docs_node_passes_parent_span_id_when_tracing_enabled(
         return DocsCallResult(
             response=DocsResponse(answer="x", sources=[], confidence=0.9),
             retrieval_context=[],
+            prompt_version=9,
         )
 
     monkeypatch.setattr(graph_nodes, "call_docs_agent", fake_call_docs_agent)

@@ -74,6 +74,7 @@ class WebSearchExecutor(AgentExecutor):
                         "response": json.loads(result.response.model_dump_json()),
                         "retrieval_context": result.retrieval_context,
                         "tools_called": result.tools_called,
+                        "prompt_version": result.prompt_version,
                     }
                 )
             except (SearchUnavailableError, WebSearchInvalidOutputError) as exc:

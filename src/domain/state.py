@@ -77,6 +77,16 @@ class SupportFlowState(TypedDict):
         request's Router call — `label="production"` is mutable, so this
         is what makes a later before/after comparison attributable to a
         specific prompt version.
+    answer_prompt_version : int or None
+        The resolved Langfuse version of whichever prompt (`supportflow/
+        docs` or `supportflow/web_search`) actually composed
+        `answer` — `None` whenever the case escalated instead, since an
+        escalated request's customer-facing text was not composed by
+        either of those prompts even when `docs_response`/
+        `web_search_response` is still set (the low-confidence path).
+        Set only on the two "respond" branches in `graph_nodes.py`, so it
+        travels alongside `answer` rather than alongside a response
+        object that may be orphaned by a later escalation.
     retrieval_context : list[str]
         The retrieved chunk texts Docs/Web Search Agent actually used —
         state-only, not part of either mandatory response model (their
@@ -112,6 +122,7 @@ class SupportFlowState(TypedDict):
     retry_count: int
     escalation_count: int
     router_prompt_version: int | None
+    answer_prompt_version: int | None
     retrieval_context: list[str]
     tools_called: list[str]
     report_written: bool

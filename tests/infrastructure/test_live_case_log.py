@@ -26,6 +26,7 @@ def test_append_then_read_round_trips_one_case(
         tools_called=["silpo_find_products_batch"],
         route="docs",
         trace_id="abc",
+        answer_prompt_version=9,
     )
 
     cases = live_case_log.read_cases()
@@ -44,6 +45,7 @@ def test_read_cases_keeps_only_the_last_n(monkeypatch: Any, tmp_path: Path) -> N
             tools_called=[],
             route="docs",
             trace_id="t",
+            answer_prompt_version=9,
         )
 
     assert [c["masked_text"] for c in live_case_log.read_cases(limit=2)] == ["q3", "q4"]
@@ -59,6 +61,7 @@ def test_read_cases_skips_a_malformed_line(monkeypatch: Any, tmp_path: Path) -> 
         tools_called=[],
         route="docs",
         trace_id="t",
+        answer_prompt_version=9,
     )
     with path.open("a", encoding="utf-8") as handle:
         handle.write("{ not json\n")
@@ -95,6 +98,7 @@ def test_append_reports_failure_instead_of_raising(
             tools_called=[],
             route="docs",
             trace_id="t",
+            answer_prompt_version=9,
         )
         is False
     )

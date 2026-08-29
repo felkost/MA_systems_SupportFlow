@@ -49,11 +49,18 @@ class DocsAgentResult:
         Silpo MCP tool names actually invoked, in call order — `[]` when
         the MCP call was never attempted or failed before any tool
         returned.
+    prompt_version : int
+        The resolved Langfuse version of `supportflow/docs` this answer
+        was actually composed with — carried alongside `response` (not
+        inside it, since the model never sees or reports its own prompt
+        version) so a live case recorded from this answer can later be
+        traced back to the prompt that produced it.
     """
 
     response: DocsResponse
     retrieval_context: list[str]
     tools_called: list[str]
+    prompt_version: int
 
 
 class _SearchTerm(BaseModel):
@@ -225,7 +232,7 @@ async def run_docs_agent(
     ]
 
     retrieved_block = "\n\n".join(kb_texts + mcp_texts)
-    prompt_text, _prompt_version = prompt_fn("supportflow/docs")
+    prompt_text, prompt_version = prompt_fn("supportflow/docs")
     compiled_prompt = prompt_text.replace("{{customer_message}}", masked_query).replace(
         "{{retrieved_content}}", retrieved_block
     )
@@ -239,4 +246,5 @@ async def run_docs_agent(
         response=result,
         retrieval_context=kb_texts + mcp_texts,
         tools_called=tools_called,
+        prompt_version=prompt_version,
     )
