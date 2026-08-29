@@ -49,7 +49,7 @@ def _context(text: str = "У мене алергія на молоко!") -> Esc
     )
 
 
-def _fake_compose(_prompt: str) -> EscalationOutput:
+def _fake_compose(_prompt: str, _masked_text: str = "") -> EscalationOutput:
     return EscalationOutput(
         summary="Алергічна реакція",
         category="critical",
@@ -139,7 +139,7 @@ def test_missing_chat_id_refuses_send_even_when_allowed(
 def test_pii_is_masked_before_write_or_send(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(settings, "allow_real_send", True)
 
-    def compose_with_pii(_prompt: str) -> EscalationOutput:
+    def compose_with_pii(_prompt: str, _masked_text: str) -> EscalationOutput:
         return EscalationOutput(
             summary="Клієнт: test@example.com",
             category="critical",
@@ -220,9 +220,9 @@ def test_context_with_router_failure_and_prior_agent_attempts_is_rendered() -> N
     def capturing_prompt_fn(_name: str) -> tuple[str, int]:
         return "{{customer_message}} | {{context}}", 1
 
-    def capturing_compose_fn(prompt: str) -> EscalationOutput:
+    def capturing_compose_fn(prompt: str, masked_text: str) -> EscalationOutput:
         captured["prompt"] = prompt
-        return _fake_compose(prompt)
+        return _fake_compose(prompt, masked_text)
 
     run_escalation_agent(
         context=context,

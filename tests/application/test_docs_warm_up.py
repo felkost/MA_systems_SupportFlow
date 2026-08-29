@@ -13,7 +13,7 @@ def test_warm_up_retriever_builds_once_and_is_reused(
 ) -> None:
     builds: list[int] = []
 
-    def fake_build(_chunks: Any) -> str:
+    def fake_build(_chunks: Any, k: int) -> str:
         builds.append(1)
         return "retriever"
 

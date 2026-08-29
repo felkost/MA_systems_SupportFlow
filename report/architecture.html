@@ -57,10 +57,11 @@
     <p class="eyebrow">Architecture</p>
     <h1>SupportFlow — system architecture</h1>
     <p class="subtitle">FastAPI and Supervisor are separate code modules, not one file — but FastAPI calls Supervisor as a plain in-process function call, not a network request. Router and Escalation are Supervisor's own internal nodes, not separate services. Docs Agent and Web Search Agent are the only parts that run as their own OS processes, reached over a real A2A network hop.</p>
+    <p style="font-family: Arial, sans-serif; font-size:11px;color:#527C23;margin-bottom:1.5rem;">Model ids per <code>config/models.yaml</code>, snapshot 2026-08-29 — re-check the config before trusting them again.</p>
 
     <svg viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="architecture-title architecture-desc">
       <title id="architecture-title">SupportFlow system architecture</title>
-      <desc id="architecture-desc">Architecture diagram showing the React chat UI calling a FastAPI entry point, which invokes an in-process Supervisor graph. The Supervisor contains two internal nodes, Router and Escalation: Router classifies the request and either lets the Supervisor delegate it over an A2A network call to a separate Docs Agent or Web Search Agent process, or Escalation hands it to a human via Telegram directly, without a network hop. The Docs Agent reads a knowledge-base store and the Silpo retail MCP server, and all three processes export traces to Langfuse.</desc>
+      <desc id="architecture-desc">Architecture diagram showing the React chat UI calling a FastAPI entry point, which invokes an in-process Supervisor graph. The Supervisor contains two internal nodes, Router and Escalation: Router classifies the request and either lets the Supervisor delegate it over an A2A network call to a separate Docs Agent or Web Search Agent process, or Escalation hands it to a human via Telegram directly, without a network hop. The Docs Agent reads a knowledge-base store and the Silpo retail MCP server, and all three processes export traces to Langfuse, which doubles as a live LLM-as-a-judge evaluator on new traces. A separate, dashed-border DeepEval node sits outside the request path entirely — an offline evaluator run manually by script, reading recorded live cases from a file, never invoked during a customer request.</desc>
       <defs>
         <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#000000"/></marker>
         <marker id="arrow-bold" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><polygon points="0 0, 9 3.5, 0 7" fill="#000000"/></marker>
@@ -69,7 +70,7 @@
       <rect width="100%" height="100%" fill="#f5f5f5"/>
 
       <!-- Zone: same process -->
-      <rect x="500" y="144" width="320" height="280" rx="8" fill="rgba(51,58,5,0.03)" stroke="rgba(51,58,5,0.14)" stroke-width="0.8"/>
+      <rect x="500" y="144" width="320" height="294" rx="8" fill="rgba(51,58,5,0.03)" stroke="rgba(51,58,5,0.14)" stroke-width="0.8"/>
       <rect x="520" y="150" width="120" height="14" rx="2" fill="#f5f5f5"/>
       <text x="580" y="160" fill="rgba(51,58,5,0.55)" font-size="11" font-family="Arial, sans-serif" text-anchor="middle" letter-spacing="0.08em">SAME PROCESS</text>
 
@@ -84,15 +85,15 @@
       <!-- A2 FastAPI -> Supervisor (in-process call) -->
       <line x1="660" y1="232" x2="660" y2="272" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)"/>
       <!-- A3 Supervisor -> Docs Agent (A2A) -->
-      <path d="M 590,408 V 456 Q 590,464 582,464 H 308 Q 300,464 300,472 V 488" fill="none" stroke="#000000" stroke-width="1.6" marker-end="url(#arrow-bold)"/>
+      <path d="M 590,422 V 456 Q 590,464 582,464 H 308 Q 300,464 300,472 V 488" fill="none" stroke="#000000" stroke-width="1.6" marker-end="url(#arrow-bold)"/>
       <!-- A4 Supervisor -> Web Search Agent (A2A) -->
-      <path d="M 730,408 V 456 Q 730,464 738,464 H 972 Q 980,464 980,472 V 488" fill="none" stroke="#000000" stroke-width="1.6" marker-end="url(#arrow-bold)"/>
+      <path d="M 730,422 V 456 Q 730,464 738,464 H 972 Q 980,464 980,472 V 488" fill="none" stroke="#000000" stroke-width="1.6" marker-end="url(#arrow-bold)"/>
       <!-- A5 Supervisor -> Telegram (Escalation's own send, in-process) -->
-      <line x1="660" y1="408" x2="660" y2="600" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="660" y1="422" x2="660" y2="600" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)"/>
       <!-- A6 Docs Agent -> Silpo MCP -->
-      <path d="M 267,544 V 576 Q 267,584 259,584 H 178 Q 170,584 170,592 V 600" fill="none" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <path d="M 267,558 V 576 Q 267,584 259,584 H 178 Q 170,584 170,592 V 600" fill="none" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)"/>
       <!-- A7 Docs Agent -> KB Store -->
-      <path d="M 333,544 V 576 Q 333,584 341,584 H 362 Q 370,584 370,592 V 600" fill="none" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <path d="M 333,558 V 576 Q 333,584 341,584 H 362 Q 370,584 370,592 V 600" fill="none" stroke="#000000" stroke-width="1.2" marker-end="url(#arrow)"/>
       <!-- A8 Supervisor -> Langfuse (trace export, dashed) -->
       <line x1="800" y1="314" x2="1100" y2="314" stroke="#000000" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
       <!-- A9 Web Search Agent -> Langfuse (trace export, dashed) -->
@@ -124,36 +125,40 @@
       <text x="660" y="224" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">POST /chat</text>
 
       <!-- Node: Supervisor (focal, composite — contains Router + Escalation) -->
-      <rect x="520" y="272" width="280" height="136" rx="6" fill="#f5f5f5"/>
-      <rect x="520" y="272" width="280" height="136" rx="6" fill="rgba(252,216,99,0.35)" stroke="#FCA600" stroke-width="1.4"/>
+      <rect x="520" y="272" width="280" height="150" rx="6" fill="#f5f5f5"/>
+      <rect x="520" y="272" width="280" height="150" rx="6" fill="rgba(252,216,99,0.35)" stroke="#FCA600" stroke-width="1.4"/>
       <rect x="528" y="280" width="32" height="14" rx="2" fill="transparent" stroke="rgba(252,166,0,0.55)" stroke-width="0.8"/>
       <text x="544" y="290" fill="#FCA600" font-size="11" font-family="Arial, sans-serif" text-anchor="middle" letter-spacing="0.04em">ORCH</text>
       <text x="660" y="292" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">Supervisor</text>
       <text x="660" y="306" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">one LangGraph, in-process</text>
       <!-- Inner node: Router -->
-      <rect x="540" y="344" width="110" height="52" rx="6" fill="#ffffff" stroke="#333A05" stroke-width="1"/>
+      <rect x="540" y="344" width="110" height="66" rx="6" fill="#ffffff" stroke="#333A05" stroke-width="1"/>
       <text x="595" y="366" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">Router</text>
       <text x="595" y="380" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">classify + mask</text>
+      <text x="595" y="394" fill="#333A05" font-size="9" font-family="Arial, sans-serif" text-anchor="middle">gemini-3.5-flash-lite</text>
       <!-- Inner node: Escalation -->
-      <rect x="670" y="344" width="110" height="52" rx="6" fill="#ffffff" stroke="#333A05" stroke-width="1"/>
+      <rect x="670" y="344" width="110" height="66" rx="6" fill="#ffffff" stroke="#333A05" stroke-width="1"/>
       <text x="725" y="366" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">Escalation</text>
       <text x="725" y="380" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">human handoff</text>
+      <text x="725" y="394" fill="#333A05" font-size="9" font-family="Arial, sans-serif" text-anchor="middle">gpt-5.6-luna</text>
 
       <!-- Node: Docs Agent (backend, own process) -->
-      <rect x="200" y="488" width="200" height="56" rx="6" fill="#f5f5f5"/>
-      <rect x="200" y="488" width="200" height="56" rx="6" fill="#ffffff" stroke="#333A05" stroke-width="1"/>
+      <rect x="200" y="488" width="200" height="70" rx="6" fill="#f5f5f5"/>
+      <rect x="200" y="488" width="200" height="70" rx="6" fill="#ffffff" stroke="#333A05" stroke-width="1"/>
       <rect x="208" y="496" width="28" height="14" rx="2" fill="transparent" stroke="rgba(51,58,5,0.40)" stroke-width="0.8"/>
       <text x="222" y="506" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle" letter-spacing="0.04em">A2A</text>
       <text x="300" y="522" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">Docs Agent</text>
       <text x="300" y="536" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">RAG + Silpo MCP</text>
+      <text x="300" y="550" fill="#333A05" font-size="10" font-family="Arial, sans-serif" text-anchor="middle">gpt-5.6-luna</text>
 
       <!-- Node: Web Search Agent (backend, own process) -->
-      <rect x="880" y="488" width="200" height="56" rx="6" fill="#f5f5f5"/>
-      <rect x="880" y="488" width="200" height="56" rx="6" fill="#ffffff" stroke="#333A05" stroke-width="1"/>
+      <rect x="880" y="488" width="200" height="70" rx="6" fill="#f5f5f5"/>
+      <rect x="880" y="488" width="200" height="70" rx="6" fill="#ffffff" stroke="#333A05" stroke-width="1"/>
       <rect x="888" y="496" width="28" height="14" rx="2" fill="transparent" stroke="rgba(51,58,5,0.40)" stroke-width="0.8"/>
       <text x="902" y="506" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle" letter-spacing="0.04em">A2A</text>
       <text x="980" y="522" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">Web Search Agent</text>
       <text x="980" y="536" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">Tavily / DuckDuckGo</text>
+      <text x="980" y="550" fill="#333A05" font-size="10" font-family="Arial, sans-serif" text-anchor="middle">deepseek-v4-flash</text>
 
       <!-- Node: Langfuse (external) -->
       <rect x="1100" y="264" width="120" height="200" rx="6" fill="#f5f5f5"/>
@@ -163,6 +168,18 @@
       <text x="1160" y="352" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">Langfuse</text>
       <text x="1160" y="366" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">traces + cost,</text>
       <text x="1160" y="378" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">every process</text>
+      <text x="1160" y="396" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">+ live judge:</text>
+      <text x="1160" y="408" fill="#333A05" font-size="10" font-family="Arial, sans-serif" text-anchor="middle">claude-haiku-4.5</text>
+
+      <!-- Node: DeepEval (offline judge — never part of a live request) -->
+      <rect x="1100" y="520" width="120" height="100" rx="6" fill="#f5f5f5"/>
+      <rect x="1100" y="520" width="120" height="100" rx="6" fill="rgba(82,124,35,0.06)" stroke="#527C23" stroke-width="1" stroke-dasharray="5,4"/>
+      <rect x="1108" y="528" width="46" height="14" rx="2" fill="transparent" stroke="rgba(82,124,35,0.45)" stroke-width="0.8"/>
+      <text x="1131" y="538" fill="#527C23" font-size="10" font-family="Arial, sans-serif" text-anchor="middle" letter-spacing="0.04em">OFFLINE</text>
+      <text x="1160" y="560" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">DeepEval</text>
+      <text x="1160" y="576" fill="#333A05" font-size="10" font-family="Arial, sans-serif" text-anchor="middle">offline judge,</text>
+      <text x="1160" y="588" fill="#333A05" font-size="10" font-family="Arial, sans-serif" text-anchor="middle">run by script</text>
+      <text x="1160" y="604" fill="#333A05" font-size="9" font-family="Arial, sans-serif" text-anchor="middle">reads live_cases.jsonl</text>
 
       <!-- Node: Silpo MCP (external) -->
       <rect x="80" y="600" width="180" height="56" rx="6" fill="#f5f5f5"/>

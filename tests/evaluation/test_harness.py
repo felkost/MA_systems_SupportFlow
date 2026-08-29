@@ -120,3 +120,11 @@ def test_case_to_metric_mapping_skips_route_correctness_for_reject_case() -> Non
         _test_case(expected_route="reject", actual_route="reject")
     )
     assert not any(isinstance(m, RouteCorrectnessMetric) for m in metrics)
+
+
+def test_judge_model_temperature_is_pinned_not_inherited() -> None:
+    """`config/models.yaml`'s `judge.temperature` must be stated, not left
+    to `OpenRouterModel`'s own default — a future DeepEval upgrade could
+    change that default silently otherwise.
+    """
+    assert harness._judge_model().temperature == 0

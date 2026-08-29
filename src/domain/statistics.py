@@ -7,7 +7,6 @@ No scipy: one dependency for one percentile is not worth carrying.
 """
 
 import random
-from statistics import mean
 
 
 def bootstrap_interval(
@@ -46,14 +45,22 @@ def bootstrap_interval(
     >>> low, high = bootstrap_interval([0.6, 0.8, 1.0])
     >>> low < 0.8 < high
     True
+    >>> bootstrap_interval([0.6, 0.8, 1.0]) == bootstrap_interval([0.6, 0.8, 1.0])
+    True
+
+    Notes
+    -----
+    Resampling via `random.choices` instead of a per-draw `randrange`
+    loop moves the C-level RNG call count around, so a given seed's
+    interval shifts in the third decimal relative to the previous
+    implementation. Reproducibility across calls with the same seed
+    (the actual contract) is unaffected.
     """
     if not values:
         raise ValueError("no values to resample")
 
     rng = random.Random(seed)
     n = len(values)
-    means = sorted(
-        mean([values[rng.randrange(n)] for _ in range(n)]) for _ in range(resamples)
-    )
+    means = sorted(sum(rng.choices(values, k=n)) / n for _ in range(resamples))
     tail = (1.0 - confidence) / 2.0
     return means[int(tail * resamples)], means[int((1.0 - tail) * resamples) - 1]

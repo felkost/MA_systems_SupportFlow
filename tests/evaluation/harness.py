@@ -263,12 +263,21 @@ def _support_resolution_quality_metric(model: OpenRouterModel) -> GEval:
 
 def _judge_model() -> OpenRouterModel:
     """Reuse `config/models.yaml`'s existing `judge` entry — not part of
-    `load_agent_config`'s `AgentRole` set (it has no temperature/timeout/
-    etc. fields), so read directly here.
+    `load_agent_config`'s `AgentRole` set (it has no timeout/port/etc.
+    fields), so read directly here.
+
+    Notes
+    -----
+    `raw["judge"]["temperature"]` — not `.get(..., 0)` — deliberately: the
+    whole point of stating this value in config is that a judge's
+    determinism must stop depending on an unstated library default. A
+    silent fallback here would just rebuild that problem one level up.
     """
     raw = yaml.safe_load(MODELS_CONFIG_PATH.read_text(encoding="utf-8"))
     return OpenRouterModel(
-        model=raw["judge"]["model"], api_key=settings.openrouter_api_key
+        model=raw["judge"]["model"],
+        temperature=raw["judge"]["temperature"],
+        api_key=settings.openrouter_api_key,
     )
 
 

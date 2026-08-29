@@ -52,7 +52,7 @@ async def test_run_docs_agent_combines_kb_and_mcp_sources() -> None:
             "silpo_find_products_batch"
         ]
 
-    def fake_compose(_compiled_prompt: str) -> DocsResponse:
+    def fake_compose(_compiled_prompt: str, _masked_query: str) -> DocsResponse:
         return DocsResponse(answer="Відповідь", sources=[], confidence=0.9)
 
     result = await run_docs_agent(
@@ -88,7 +88,7 @@ async def test_run_docs_agent_degrades_gracefully_when_mcp_search_fails() -> Non
     async def failing_search_products(_query: str) -> list[dict]:
         raise RuntimeError("Silpo MCP unavailable")
 
-    def fake_compose(_compiled_prompt: str) -> DocsResponse:
+    def fake_compose(_compiled_prompt: str, _masked_query: str) -> DocsResponse:
         return DocsResponse(answer="Відповідь з бази знань", sources=[], confidence=0.6)
 
     result = await run_docs_agent(
@@ -125,7 +125,7 @@ async def test_run_docs_agent_propagates_oauth_auth_required_error() -> None:
     async def auth_required_search_products(_query: str) -> list[dict]:
         raise SilpoMcpAuthRequiredError("no cached token, no automated login")
 
-    def fake_compose(_compiled_prompt: str) -> DocsResponse:
+    def fake_compose(_compiled_prompt: str, _masked_query: str) -> DocsResponse:
         return DocsResponse(answer="unused", sources=[], confidence=0.6)
 
     with pytest.raises(SilpoMcpAuthRequiredError):

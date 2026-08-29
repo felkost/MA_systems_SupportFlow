@@ -101,6 +101,7 @@
     <p class="eyebrow">Router · one request</p>
     <h1>Router's own work — one classification call</h1>
     <p class="subtitle">router_node calls run_router, which owns the retry policy: it retries the same call_router attempt once on a timeout or invalid model output, then gives up. If every attempt fails, it returns classification=None and the graph fails closed to Escalation — decide_route() is never reached.</p>
+    <p style="font-size:11px;color:#527C23;margin-top:-1.1rem;margin-bottom:1.5rem;">Model id per <code>config/models.yaml</code>, snapshot 2026-08-29 — re-check the config before trusting it again.</p>
 
     <svg viewBox="0 0 1100 620" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="router-seq-title router-seq-desc">
       <title id="router-seq-title">Router's classification call sequence</title>
@@ -174,7 +175,7 @@
 
       <rect x="870" y="40" width="140" height="40" rx="6" fill="rgba(82,124,35,0.10)" stroke="#527C23" stroke-width="1"/>
       <text x="940" y="58" fill="#333A05" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle">Chat model</text>
-      <text x="940" y="72" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">structured output</text>
+      <text x="940" y="72" fill="#333A05" font-size="11" font-family="Arial, sans-serif" text-anchor="middle">google/gemini-3.5-flash-lite</text>
 
       <!-- Legend -->
       <line x1="40" y1="576" x2="1060" y2="576" stroke="rgba(51,58,5,0.14)" stroke-width="0.8"/>

@@ -112,6 +112,11 @@ class AgentModelConfig(BaseModel):
         Set only for `docs` and `web_search`, the two agents running as
         separate A2A server processes. `None` for every in-process agent
         (Router, Escalation, Supervisor).
+    retriever_k : int or None, default=None
+        Set only for `docs` — how many chunks each of the hybrid
+        retriever's two sub-retrievers (Chroma, BM25) returns before
+        `EnsembleRetriever` merges them. `None` for every other role,
+        which have no retriever at all.
     """
 
     model: str
@@ -121,6 +126,7 @@ class AgentModelConfig(BaseModel):
     confidence_threshold: float | None = Field(default=None, ge=0.0, le=1.0)
     max_retries: int = Field(default=1, ge=0)
     port: int | None = Field(default=None, gt=0, lt=65536)
+    retriever_k: int | None = Field(default=None, gt=0)
 
 
 def load_agent_config(

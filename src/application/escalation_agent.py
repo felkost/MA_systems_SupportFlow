@@ -126,7 +126,9 @@ def _render_context(context: EscalationContext) -> str:
     return "\n".join(lines)
 
 
-def _compose_escalation_output(compiled_prompt: str) -> EscalationOutput:
+def _compose_escalation_output(
+    compiled_prompt: str, masked_text: str
+) -> EscalationOutput:
     model = get_chat_model("escalation")
     structured_model = model.with_structured_output(EscalationOutput, include_raw=True)
     client = get_langfuse_client()
@@ -143,17 +145,28 @@ def _compose_escalation_output(compiled_prompt: str) -> EscalationOutput:
     try:
         with span_cm as generation:
             raw = structured_model.invoke(compiled_prompt)
+            result = raw.get("parsed")
+            # See docs_agent.py's identical fix — validated inside the
+            # `with` so a parse failure is marked `level="ERROR"` instead
+            # of leaving a `level=DEFAULT` span the judge evaluator would
+            # otherwise score.
             if generation is not None:
                 usage = getattr(raw.get("raw"), "usage_metadata", None) or {}
-                # See docs_agent.py's identical fix.
-                generation.update(
+                update_kwargs: dict[str, Any] = dict(
                     usage_details=dict(usage),
                     input=compiled_prompt,
-                    output=str(raw.get("parsed")),
+                    output=str(result),
                 )
+                if isinstance(result, EscalationOutput):
+                    update_kwargs["metadata"] = {
+                        "customer_message": masked_text,
+                        "agent_answer": result.customer_message,
+                    }
+                else:
+                    update_kwargs["level"] = "ERROR"
+                generation.update(**update_kwargs)
     except Exception as exc:  # noqa: BLE001 — provider errors vary
         raise EscalationInvalidOutputError(str(exc)) from exc
-    result = raw.get("parsed")
     if not isinstance(result, EscalationOutput):
         raise EscalationInvalidOutputError(
             f"model returned no valid EscalationOutput: {raw.get('parsing_error')}"
@@ -226,7 +239,7 @@ def run_escalation_agent(
         "{{customer_message}}", context.masked_text
     ).replace("{{context}}", _render_context(context))
 
-    raw_output = compose_fn(compiled_prompt)
+    raw_output = compose_fn(compiled_prompt, context.masked_text)
     output = _mask_output(raw_output)
 
     if not settings.bypass_hitl and not confirm_fn(output):
