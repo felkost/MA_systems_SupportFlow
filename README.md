@@ -63,6 +63,13 @@ sequenceDiagram
     API-->>Browser: ChatResponse {answer, sources, confidence, escalated}
 ```
 
+**Session memory:** `graph.invoke` is keyed by `session_id` against an
+in-memory LangGraph checkpointer, so a follow-up message in the same tab
+carries the last 5 turns into Router/Docs/Web Search's prompts as
+context — click "🗑️ Нова розмова" to start a genuinely new thread.
+In-memory only: a Backend restart clears every session's history
+(`docs/decisions.md` #77).
+
 ## Setup
 
 ```bash
