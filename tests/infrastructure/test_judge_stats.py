@@ -145,6 +145,13 @@ def test_live_deepeval_reports_when_no_batch_has_run(
     }
 
 
+def _write_live_eval(path: Any, cases: list[dict[str, Any]]) -> None:
+    path.write_text(
+        json.dumps({"measured_at": "2026-08-28T12:00:00+00:00", "cases": cases}),
+        encoding="utf-8",
+    )
+
+
 def test_live_deepeval_summarizes_the_last_batch(
     monkeypatch: Any, tmp_path: Any
 ) -> None:
@@ -152,37 +159,132 @@ def test_live_deepeval_summarizes_the_last_batch(
     against each other — the panel's only valid comparison.
     """
     path = tmp_path / "live_eval.json"
-    path.write_text(
-        json.dumps(
+    _write_live_eval(
+        path,
+        [
             {
-                "measured_at": "2026-08-28T12:00:00+00:00",
-                "cases": [
-                    {
-                        "trace_id": "t1",
-                        "route": "docs",
-                        "scores": {"Answer Relevancy": 0.8, "Privacy Safety": 1.0},
-                    },
-                    {
-                        "trace_id": "t2",
-                        "route": "docs",
-                        "scores": {"Answer Relevancy": 1.0},
-                    },
-                ],
-            }
-        ),
-        encoding="utf-8",
+                "trace_id": "t1",
+                "route": "docs",
+                "answer_prompt_version": 9,
+                "scores": {"Answer Relevancy": 0.8, "Privacy Safety": 1.0},
+            },
+            {
+                "trace_id": "t2",
+                "route": "docs",
+                "answer_prompt_version": 9,
+                "scores": {"Answer Relevancy": 1.0},
+            },
+        ],
     )
     monkeypatch.setattr(judge_stats, "LIVE_EVAL_PATH", path)
     monkeypatch.setattr(judge_stats, "read_cases", lambda: [])
+    monkeypatch.setattr(judge_stats, "get_prompt", lambda name: (f"{name} text", 9))
 
     result = judge_stats.live_deepeval()
 
     assert result["judge"] == "DeepEval"
     assert result["n_cases"] == 2
+    assert result["stale_prompt_version"] == 0
     assert result["metrics"]["Answer Relevancy"]["mean"] == 0.9
     assert result["metrics"]["Privacy Safety"]["std_dev"] is None
     assert result["metrics"]["Answer Relevancy"]["covers"] == 2
     assert result["pending"] == 0
+
+
+def test_live_deepeval_drops_cases_from_a_since_replaced_prompt_version(
+    monkeypatch: Any, tmp_path: Any
+) -> None:
+    """A case graded against v8 must not count toward v9's mean, no
+    matter how recently it was scored — the whole point of the filter.
+    """
+    path = tmp_path / "live_eval.json"
+    _write_live_eval(
+        path,
+        [
+            {
+                "trace_id": "old",
+                "route": "docs",
+                "answer_prompt_version": 8,
+                "scores": {"Answer Relevancy": 0.2},
+            },
+            {
+                "trace_id": "new",
+                "route": "docs",
+                "answer_prompt_version": 9,
+                "scores": {"Answer Relevancy": 1.0},
+            },
+            {
+                # Recorded before `answer_prompt_version` existed — must
+                # read as unknown, not coerced into matching by accident.
+                "trace_id": "pre_field",
+                "route": "docs",
+                "scores": {"Answer Relevancy": 0.5},
+            },
+        ],
+    )
+    monkeypatch.setattr(judge_stats, "LIVE_EVAL_PATH", path)
+    monkeypatch.setattr(judge_stats, "read_cases", lambda: [])
+    monkeypatch.setattr(judge_stats, "get_prompt", lambda name: (f"{name} text", 9))
+
+    result = judge_stats.live_deepeval()
+
+    assert result["n_cases"] == 1
+    assert result["stale_prompt_version"] == 2
+    assert result["metrics"]["Answer Relevancy"]["mean"] == 1.0
+
+
+def test_live_deepeval_never_filters_escalation_cases_by_prompt_version(
+    monkeypatch: Any, tmp_path: Any
+) -> None:
+    """Escalation's own prompt version is not tracked — filtering those
+    cases the same way would silently drop every one of them.
+    """
+    path = tmp_path / "live_eval.json"
+    _write_live_eval(
+        path,
+        [
+            {
+                "trace_id": "e1",
+                "route": "escalate",
+                "answer_prompt_version": None,
+                "scores": {"Privacy Safety": 1.0},
+            },
+        ],
+    )
+    monkeypatch.setattr(judge_stats, "LIVE_EVAL_PATH", path)
+    monkeypatch.setattr(judge_stats, "read_cases", lambda: [])
+    monkeypatch.setattr(judge_stats, "get_prompt", lambda name: (f"{name} text", 9))
+
+    result = judge_stats.live_deepeval()
+
+    assert result["n_cases"] == 1
+    assert result["stale_prompt_version"] == 0
+
+
+def test_live_deepeval_fails_closed_when_the_current_version_cannot_be_resolved(
+    monkeypatch: Any, tmp_path: Any
+) -> None:
+    """A cold Langfuse cache must not silently fall back to the
+    unfiltered pool — that is the exact mixed-population defect this
+    filter exists to prevent.
+    """
+    path = tmp_path / "live_eval.json"
+    _write_live_eval(
+        path,
+        [{"trace_id": "t1", "route": "docs", "scores": {"Answer Relevancy": 0.5}}],
+    )
+    monkeypatch.setattr(judge_stats, "LIVE_EVAL_PATH", path)
+    monkeypatch.setattr(judge_stats, "read_cases", lambda: [])
+
+    def _boom(_name: str) -> Any:
+        raise RuntimeError("no cached prompt and Langfuse unreachable")
+
+    monkeypatch.setattr(judge_stats, "get_prompt", _boom)
+
+    assert judge_stats.live_deepeval() == {
+        "available": False,
+        "reason": "prompt_version_unresolved",
+    }
 
 
 def test_golden_baseline_names_its_judge_and_every_metric() -> None:
