@@ -22,6 +22,18 @@ MAX_INPUT_CHARS: int = 4000
 # A developer-picked safety cap, not a task threshold — bounds how many real
 # Telegram sends one process lifetime can make, so a runaway loop or a large
 # automated run cannot spam the test channel unboundedly.
+#
+# Raised 5 -> 100 once already (2026-08-29, docs/decisions.md #82): 5 was
+# sized for a single manual smoke test, not a long-lived dev process, and
+# silently stopped real sends mid-session with no visible reason. That fix
+# also made the cap loud — `capped=True` now logs a WARNING and reaches
+# `ChatResponse.escalation_capped` / the chat UI's badge instead of dying
+# silently — which is precisely what the author then wanted to exercise.
+# Set back to 5, deliberately, to test that visibility path itself: with
+# the cap this tight it is reachable in a normal manual session instead of
+# only after a long automated run. Raise back to 100 (or beyond) once that
+# verification is done — this value is expected to move again, not a
+# settled number either way.
 MAX_ESCALATION_SENDS_PER_PROCESS: int = 5
 
 # Per-session cap, smaller than the process-wide one above — a single

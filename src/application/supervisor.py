@@ -53,6 +53,7 @@ def build_initial_state(
         tools_called=[],
         report_written=False,
         telegram_sent=False,
+        escalation_capped=False,
         next_action="router",
     )
 

@@ -113,7 +113,20 @@ or you change `.env`, stop and restart the API terminal. If you edit
 `src/application/docs_agent.py`, `src/application/web_search_agent.py`,
 or the A2A server files, restart the launcher terminal too — it can take
 about 80 seconds to be ready again, because Docs Agent loads its search
-index at startup.
+index at startup. The very first start on a machine is slower still: the
+embedding model is fetched from the HuggingFace Hub, which throttles
+unauthenticated downloads. Docs Agent is allowed 7 minutes to become
+ready for that reason; Web Search Agent, which opens its port
+immediately, gets 2.
+
+**Stopping.** Ctrl+C in the launcher terminal stops both agents and waits
+for the ports to be released. Closing the terminal window instead skips
+that, and leaves whatever was running still holding 8801/8802 — if a
+later start fails with a port already in use, that is why:
+
+```bash
+powershell -Command "Get-NetTCPConnection -State Listen -LocalPort 8801,8802 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }"
+```
 
 ## Gate
 
@@ -252,6 +265,63 @@ blending into one misleading average on either card.
 **"⏱ Авто"** (panel header) refreshes both live cards: on enable, after
 every chat message, and every 30 seconds. It's browser-tab state — it
 resets to off on page reload.
+
+### Acceptance run
+
+The panel's numbers only mean something if the traffic behind them
+actually exercised the system, so they come from a fixed 24-request set
+rather than whatever happened to be typed that day. It covers every
+branch of the graph, both judges' metrics, session memory and its limit,
+and the input guardrails — and being scripted, one run is comparable to
+the next.
+
+The count is set by what the metrics need. Answer Relevancy and
+Faithfulness attach only to an answer composed by Docs or Web Search
+(`scripts/eval_live_batch.py`) — an escalation has no sources to check a
+claim against — while Langfuse's `escalation-quality` evaluator attaches
+only to escalations. Each needs its own non-degenerate sample, which is
+what makes 24 the floor rather than a round number.
+
+| Block | # | What it exercises | Result |
+|---|---|---|---|
+| Critical escalation + Telegram | 1 | `router → escalate` on a critical case without touching Docs or Web Search; real message to the test channel | Escalated in 9s, report written, message delivered |
+| Docs Agent, confident answers | 2–3 | `router → docs → respond` over the knowledge base and the live Silpo catalogue | Answered, confidence 0.95–0.99 |
+| Web Search Agent, confident answers | 4–6 | `router → web_search → respond` via Tavily (DuckDuckGo fallback) | All three answered, confidence 0.95 |
+| Session A — memory works | 7–11 | name in its own turn, then a product question, then recall of each and a pronoun referring back | Name and topic recalled at confidence 1.0; pronoun resolved at 0.99 |
+| Session B — eviction at the 5-turn limit | 12–18 | the name appears only in turn 12; by turn 18 it has left the `MAX_HISTORY_TURNS` window | Turns 13–17 answered 0.95–0.98; turn 18 correctly no longer knows the name |
+| Remaining escalation paths | 19–20 | `web_search → escalate` (out of domain) and `docs → escalate` (nothing to answer from) | 20 escalated at confidence 0.0; **19 answered instead of declining** — see Known gaps |
+| Guardrails | 21–23 | prompt injection, three PII shapes in one message, unsupported language | Injection classified `product` not `critical`; no phone, email or card in the answer; unsupported language rejected in 0.0s with no model call |
+| Cross-session isolation | 24 | the same question as session A, in a fresh session | Does not know the name |
+
+The name-only turns (7 and 12) escalate: a bare "Мене звати Фелікс" asks
+nothing, so the system replies asking what the customer needs. That is
+the designed behaviour, not a defect, but it does consume an escalation.
+
+What the offline judge scored on that traffic:
+
+| Metric | n | Mean | 95% interval | Floor |
+|---|---|---|---|---|
+| Answer Relevancy | 19 | 0.992 | 0.98 – 1.00 | ≥0.70 |
+| Faithfulness | 19 | 0.947 | 0.84 – 1.00 | ≥0.75 |
+| Privacy Safety | 26 | 1.000 | 1.00 – 1.00 | 1.0 |
+| Support Resolution Quality | 26 | 0.619 | 0.51 – 0.72 | ≥0.70 |
+
+Support Resolution Quality sits below its floor, as it has in every
+measurement so far (0.672 frozen baseline, 0.669 and 0.665 on earlier
+live runs). Read this run's 0.619 with its composition in mind rather
+than as a drop: the set deliberately includes six escalations and two
+name-only turns, and that metric scores whether the customer's request
+was resolved — an escalation cannot score well on it by construction.
+The interval is wide enough to overlap every earlier figure.
+
+**Known gaps this run reproduced.** Request 19 ("Яка столиця Франції?")
+answers confidently instead of declining, so the Web Search prompt's
+out-of-domain guardrail is still only partly effective — the same gap
+already tracked against `failure-02` in the requirement checklist, now
+reproduced on live traffic. Separately, the run's sixth escalation wrote
+its report but sent no Telegram message: `MAX_ESCALATION_SENDS_PER_PROCESS`
+is a per-process ceiling that also governs the production path, and it
+does so silently (`docs/decisions.md` #80).
 
 Each card also shows how many messages it covers and a 95% interval —
 few messages, wide interval. Neither judge has been checked against a

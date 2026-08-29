@@ -302,6 +302,7 @@ def escalate_node(state: SupportFlowState) -> dict[str, Any]:
         "escalation_count": state["escalation_count"] + 1,
         "report_written": result.written,
         "telegram_sent": result.sent,
+        "escalation_capped": result.capped,
         "conversation_history": [
             {
                 "customer": state["original_request_masked"],

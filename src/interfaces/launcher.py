@@ -43,19 +43,12 @@ def _wait_for_ready(
     ----------
     probe : Callable[[], bool]
     timeout : float, default=180.0
-        Widened again 2026-08-27: `docs_a2a_server` now builds its
-        retriever (~72s, measured) before opening its port, so the
-        agent-card probe cannot answer until that finishes — under the
-        previous 60.0s the launcher raised here and killed a Docs Agent
-        that was starting up correctly.
-        Live-confirmed 2026-08-26: the original 20.0s default was too
-        tight under real machine load — `docs_a2a_server`'s own
-        agent-card endpoint (a static response, not dependent on the
-        lazily-loaded retriever) still failed to answer within 20s during
-        a busy session, raising here and crashing `launcher.py` before
-        either subprocess had a chance to be cleaned up. Widened to match
-        this project's own observed real-world startup variance rather
-        than a guess.
+        Callers pass a per-role budget from `_startup_timeout`, which is
+        where the reasoning for each number lives; this default only
+        applies to a direct call. The history behind sizing it at all:
+        20.0s (the original) and 60.0s both proved too tight under real
+        machine load, and 180.0s was then exceeded twice by `docs`, whose
+        port cannot answer until its retriever is built.
     poll_interval : float, default=0.2
 
     Raises
@@ -70,6 +63,27 @@ def _wait_for_ready(
     raise TimeoutError(f"probe did not succeed within {timeout}s")
 
 
+def _startup_timeout(role: AgentRole) -> float:
+    """How long this role is allowed to take before its port answers.
+
+    Per-role rather than one shared number, because the two agents have
+    genuinely different startup work. `web_search` opens its port
+    immediately. `docs_a2a_server` calls `warm_up_retriever()` *before*
+    `uvicorn.run()` on purpose — the port must not answer until the
+    retriever exists — so its probe cannot succeed until the embedding
+    model is loaded and the index built.
+
+    The 180s that covered the measured ~72s build was exceeded twice on
+    real runs (2026-08-27, 2026-08-29). The second time the model weights
+    were being fetched from the HF Hub unauthenticated, which the Hub
+    itself warns is rate-limited; the agent finished and bound its port
+    correctly, just past the deadline. Sizing this to the slow path costs
+    nothing on a warm cache — the probe returns as soon as the port
+    answers, so a fast start still returns fast.
+    """
+    return 420.0 if role == "docs" else 120.0
+
+
 def _agent_card_reachable(port: int) -> bool:
     try:
         response = httpx.get(
@@ -80,7 +94,9 @@ def _agent_card_reachable(port: int) -> bool:
         return False
 
 
-def launch_agent(role: AgentRole) -> LaunchedAgent:
+def launch_agent(
+    role: AgentRole, started_processes: list[subprocess.Popen] | None = None
+) -> LaunchedAgent:
     """Start one agent's A2A server as a subprocess and wait for it to
     answer its own agent-card endpoint.
 
@@ -88,6 +104,15 @@ def launch_agent(role: AgentRole) -> LaunchedAgent:
     ----------
     role : str
         Must have a `port` in `config/models.yaml`.
+    started_processes : list of subprocess.Popen, optional
+        Registry the caller owns, appended to the instant the subprocess
+        exists — before the readiness probe, not after it. Without this
+        the handle lives only in this frame, so an agent whose probe
+        times out is the one process the caller can never clean up:
+        `main`'s handler iterates the `LaunchedAgent`s it collected, and
+        a timed-out agent never became one. Observed live 2026-08-29 — a
+        `docs_a2a_server` orphan held port 8801 after the launcher had
+        already exited, which then blocked the next launch attempt.
 
     Returns
     -------
@@ -102,7 +127,9 @@ def launch_agent(role: AgentRole) -> LaunchedAgent:
     process = subprocess.Popen(
         [sys.executable, "-m", f"src.interfaces.{role}_a2a_server"]
     )
-    _wait_for_ready(lambda: _agent_card_reachable(port))
+    if started_processes is not None:
+        started_processes.append(process)
+    _wait_for_ready(lambda: _agent_card_reachable(port), timeout=_startup_timeout(role))
     startup_seconds = time.monotonic() - started
     peak_memory_mb = psutil.Process(process.pid).memory_info().rss / (1024 * 1024)
 
@@ -125,20 +152,48 @@ def _print_table(agents: list[LaunchedAgent]) -> None:
         )
 
 
+def _terminate_all(processes: list[subprocess.Popen]) -> None:
+    """Stop every subprocess and wait for the OS to actually reap it.
+
+    The `wait` is the point: `terminate()` only requests the stop, so
+    returning straight after it can hand the next launcher run a port
+    that is still held. Each failure is swallowed per process — one
+    already-dead child must not prevent the others from being cleaned up,
+    which is the whole reason this runs.
+    """
+    for process in processes:
+        try:
+            process.terminate()
+        except OSError:
+            continue
+    for process in processes:
+        try:
+            process.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            process.kill()
+        except OSError:
+            continue
+
+
 def main() -> None:
-    # Live-confirmed 2026-08-26: if a later agent's readiness probe times
-    # out, an earlier already-started agent was previously left running as
-    # an orphaned, un-terminated subprocess (observed directly — web_search
-    # stayed up after docs's probe raised and crashed this function before
-    # any cleanup ran). Each partially-started agent is now terminated on
-    # any failure, not just on a clean Ctrl+C.
+    # Every subprocess is registered the moment it is spawned, not once it
+    # is ready. Live-confirmed twice: 2026-08-26 an earlier *successful*
+    # agent was orphaned when a later one's probe raised, and 2026-08-29
+    # the agent whose own probe timed out was orphaned — it kept starting,
+    # bound port 8801 after the launcher had already exited, and blocked
+    # the next attempt. The first was fixed by cleaning up collected
+    # agents; only tracking raw processes fixes the second, because a
+    # timed-out agent never becomes a `LaunchedAgent` at all.
+    processes: list[subprocess.Popen] = []
     agents: list[LaunchedAgent] = []
     try:
         for role in _AGENT_ROLES:
-            agents.append(launch_agent(role))
-    except Exception:
-        for agent in agents:
-            agent.process.terminate()
+            agents.append(launch_agent(role, processes))
+    except BaseException:
+        # BaseException, not Exception: Ctrl+C during a slow startup is
+        # KeyboardInterrupt, and that is exactly when a half-started
+        # agent most needs cleaning up.
+        _terminate_all(processes)
         raise
     _print_table(agents)
     print("Press Ctrl+C to stop all agents.")
@@ -146,8 +201,9 @@ def main() -> None:
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
-        for agent in agents:
-            agent.process.terminate()
+        pass
+    finally:
+        _terminate_all(processes)
 
 
 if __name__ == "__main__":

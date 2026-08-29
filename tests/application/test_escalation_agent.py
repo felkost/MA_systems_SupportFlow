@@ -241,7 +241,9 @@ def test_context_with_router_failure_and_prior_agent_attempts_is_rendered() -> N
     assert "web_search_agent tried, answered: Немає джерел." in captured["prompt"]
 
 
-def test_session_send_cap_is_enforced(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_session_send_cap_is_enforced(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
     monkeypatch.setattr(settings, "allow_real_send", True)
     monkeypatch.setattr(escalation_agent, "MAX_ESCALATION_SENDS_PER_SESSION", 1)
 
@@ -255,9 +257,13 @@ def test_session_send_cap_is_enforced(monkeypatch: pytest.MonkeyPatch) -> None:
         send_fn=lambda text, **kw: sent.append(text),
     )
 
-    first = run_escalation_agent(context=_context("msg1"), **kwargs)
-    second = run_escalation_agent(context=_context("msg2"), **kwargs)
+    with caplog.at_level("WARNING"):
+        first = run_escalation_agent(context=_context("msg1"), **kwargs)
+        second = run_escalation_agent(context=_context("msg2"), **kwargs)
 
     assert first.capped is False
     assert second.capped is True
     assert len(sent) == 1
+    # docs/decisions.md #80: a capped send used to be invisible past this
+    # module — must now log loudly, not just set a field nobody reads.
+    assert "escalation send capped" in caplog.text

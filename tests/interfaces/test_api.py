@@ -95,6 +95,36 @@ def test_escalate_route_returns_customer_message_no_sources(
     assert body["telegram_sent"] is False
 
 
+def test_escalate_route_surfaces_the_send_cap_distinctly_from_telegram_sent(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """docs/decisions.md #80/#82: `telegram_sent=False` alone cannot tell
+    a capped send apart from real sending being switched off or a
+    deduplicated case — `escalation_capped` is the field that can.
+    """
+    state = build_initial_state("Ще одна критична проблема", "r4", "s4", "t4" * 8)
+    state["next_action"] = "escalate"
+    state["escalation_output"] = EscalationOutput(
+        summary="Критичний випадок",
+        category="critical",
+        customer_message="Оператор зв'яжеться з вами найближчим часом.",
+        attempted_resolution="Класифіковано, передано оператору.",
+    )
+    state["answer"] = state["escalation_output"].customer_message
+    state["report_written"] = True
+    state["telegram_sent"] = False
+    state["escalation_capped"] = True
+
+    monkeypatch.setattr(supervisor, "handle_request", lambda *a, **k: state)
+
+    response = client.post("/chat", json={"message": "Ще одна критична проблема"})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["telegram_sent"] is False
+    assert body["escalation_capped"] is True
+
+
 def test_reject_route_returns_fallback_answer_no_crash(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

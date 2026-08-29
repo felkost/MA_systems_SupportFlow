@@ -166,6 +166,12 @@ class SupportFlowState(TypedDict):
         request — never inferred from `next_action` alone, since a
         deduplicated or capped escalation still sets
         `next_action="escalate"` without writing or sending anything.
+    escalation_capped : bool
+        `EscalationAgentResult.capped` — `telegram_sent=False` on its own
+        does not say *why*: a deduplicated case, a disabled
+        `ALLOW_REAL_SEND`, and a capped send cap all look identical
+        without this field (docs/decisions.md #80/#82). `False` on every
+        non-escalated request, same rule as `report_written`.
     next_action : NextAction
     """
 
@@ -189,6 +195,7 @@ class SupportFlowState(TypedDict):
     tools_called: list[str]
     report_written: bool
     telegram_sent: bool
+    escalation_capped: bool
     next_action: NextAction
 
 
