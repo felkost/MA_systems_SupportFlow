@@ -297,7 +297,7 @@
         <text x="140" y="196" fill="#333A05" font-size="13" font-weight="700" font-family="Arial, sans-serif">Goals</text>
         <text x="864" y="196" fill="#4f5d75" font-size="10" font-family="Arial, sans-serif" text-anchor="end">a report an operator can act on immediately</text>
 
-        <!-- Constraints (focal, 4 rules — the 4th added 2026-08-29, decision #82) -->
+        <!-- Constraints (focal, 4 rules — the 4th added 2026-08-29) -->
         <rect x="90" y="228" width="780" height="160" fill="rgba(252,216,99,0.20)" stroke="#FCA600" stroke-width="1.4"/>
         <text x="106" y="250" fill="#FCA600" font-size="9" font-family="Arial, sans-serif" letter-spacing="0.1em">04</text>
         <text x="140" y="252" fill="#333A05" font-size="13" font-weight="700" font-family="Arial, sans-serif">Constraints</text>
@@ -419,7 +419,7 @@
         <strong>n=8 and n=12 detect only large effects.</strong> Neither result should be read as "few-shot doesn't help" in general — it means these two prompts, already carrying explicit zero-shot instructions that had already been tuned once against a measured baseline (Docs v9's own "concrete next step" requirement, promoted after an earlier ≈0.61 → 0.817 measured gain), had little headroom left for a few-shot layer to add to at this sample size. Both candidates stay seeded under the <code>candidate</code> label in Langfuse, unpromoted, for anyone who wants to re-run the comparison on a larger set.
       </div>
 
-      <p style="margin-top: 1rem;"><strong>Re-checked live 2026-08-29:</strong> all four prompts have moved past the versions these two experiments ran against — Router v8→v14, Docs v9→v16, Web Search →v13, Escalation →v10, mostly for session-memory (decision #77) and the handover fix above (decision #82), not for technique. Fetched the current <code>production</code> text of all four directly from Langfuse and searched for anything resembling a worked input/output pair: none found — the zero-shot classification above still holds, it was not just true when these experiments ran.</p>
+      <p style="margin-top: 1rem;"><strong>Re-checked live 2026-08-29:</strong> all four prompts have moved past the versions these two experiments ran against — Router v8→v14, Docs v9→v16, Web Search →v13, Escalation →v10, mostly for session memory and the handover fix above, not for technique. Fetched the current <code>production</code> text of all four directly from Langfuse and searched for anything resembling a worked input/output pair: none found — the zero-shot classification above still holds, it was not just true when these experiments ran.</p>
     </div>
   </div>
 </body>

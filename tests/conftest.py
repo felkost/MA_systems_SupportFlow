@@ -69,7 +69,7 @@ def _live_case_log_redirected_to_tmp(
 @pytest.fixture(autouse=True)
 def _checkpointer_reset_between_tests() -> None:
     """`graph_nodes._checkpointer` is a module-level, process-lifetime
-    `InMemorySaver` (docs/decisions.md #77) — without this, every test
+    `InMemorySaver` — without this, every test
     that calls `supervisor.handle_request` with the same literal
     `session_id` (most of `tests/application/test_supervisor.py` uses
     `"s1"`) would share one checkpointed thread's `errors`/

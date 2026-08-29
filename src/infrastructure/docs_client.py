@@ -68,8 +68,7 @@ def call_docs_agent(
     httpx_client : httpx.AsyncClient, optional
         Injected for testing against an in-process ASGI app.
     conversation_history : str, default=""
-        Forwarded to `send_a2a_message` unchanged — see its own docstring
-        (`docs/decisions.md` #77).
+        Forwarded to `send_a2a_message` unchanged — see its own docstring.
 
     Returns
     -------

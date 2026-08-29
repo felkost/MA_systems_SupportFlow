@@ -22,8 +22,8 @@ this file (`scripts/meta_prompt_docs.py` seeds a `candidate`, the author
 promotes it by hand), and this script has no way to tell "still the
 baseline" from "changed back to it on purpose". Blindly re-seeding once
 silently replaced `supportflow/docs`'s live prompt with this file's own
-stale text, dropping a rules block the live prompt had gained since —
-see `docs/decisions.md` #74. **To update an existing prompt on purpose**,
+stale text, dropping a rules block the live prompt had gained since.
+**To update an existing prompt on purpose**,
 either promote a `meta_prompt_docs.py` candidate by hand, or call
 `Langfuse.create_prompt(...)` directly for that one name — never by
 loosening the guard in `main()` below.

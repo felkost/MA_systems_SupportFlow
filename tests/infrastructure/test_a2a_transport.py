@@ -113,9 +113,9 @@ def test_send_a2a_message_omits_parent_span_id_when_not_given() -> None:
 
 
 def test_send_a2a_message_carries_conversation_history_when_given() -> None:
-    """docs/decisions.md #77: session memory reaching Docs/Web Search
-    depends on this metadata key surviving the A2A hop, same as
-    `parent_span_id` already does above.
+    """Session memory reaching Docs/Web Search depends on this metadata
+    key surviving the A2A hop, same as `parent_span_id` already does
+    above.
     """
     agent_card = build_agent_card("echo", "test agent", "http://testserver")
     app = build_server_app(_EchoExecutor(), agent_card)

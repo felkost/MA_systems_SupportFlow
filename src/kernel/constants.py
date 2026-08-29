@@ -23,7 +23,7 @@ MAX_INPUT_CHARS: int = 4000
 # Telegram sends one process lifetime can make, so a runaway loop or a large
 # automated run cannot spam the test channel unboundedly.
 #
-# Raised 5 -> 100 once already (2026-08-29, docs/decisions.md #82): 5 was
+# Raised 5 -> 100 once already (2026-08-29): 5 was
 # sized for a single manual smoke test, not a long-lived dev process, and
 # silently stopped real sends mid-session with no visible reason. That fix
 # also made the cap loud — `capped=True` now logs a WARNING and reaches
@@ -47,5 +47,5 @@ TELEGRAM_MAX_MESSAGE_CHARS: int = 4096
 
 # A developer-picked cap on session memory, not a task threshold — bounds
 # how many prior turns' worth of tokens ride along on every Router/Docs/
-# Web Search prompt in a long-running session (docs/decisions.md #77).
+# Web Search prompt in a long-running session.
 MAX_HISTORY_TURNS: int = 5

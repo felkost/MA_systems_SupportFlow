@@ -91,8 +91,7 @@ def test_actual_route_reports_docs_on_a_confident_docs_answer() -> None:
 def test_state_to_test_case_carries_the_answering_prompt_version() -> None:
     """`scripts/run_golden_dataset_baseline.py` needs this on every case
     it writes, so the frozen baseline can name which prompt version
-    produced it instead of that being an unrecorded inference
-    (`docs/decisions.md` #75).
+    produced it instead of that being an unrecorded inference.
     """
     from src.domain.schemas import DocsResponse
 

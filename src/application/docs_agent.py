@@ -190,8 +190,8 @@ def _compose_docs_response(compiled_prompt: str, masked_query: str) -> DocsRespo
                 if isinstance(result, DocsResponse):
                     # Alongside `input`/`output` above, not replacing them
                     # — those stay the full compiled prompt/repr for
-                    # debugging (docs/decisions.md 991-1013); this is the
-                    # clean signal a judge evaluator maps to instead.
+                    # debugging; this is the clean signal a judge
+                    # evaluator maps to instead.
                     update_kwargs["metadata"] = {
                         "customer_message": masked_query,
                         "agent_answer": result.answer,
@@ -229,7 +229,7 @@ async def run_docs_agent(
         `src.domain.state.format_conversation_history`, received from
         `DocsExecutor` over the A2A hop's metadata — empty for a
         session's first turn or against a live prompt seeded before this
-        parameter existed (`docs/decisions.md` #77).
+        parameter existed.
     retriever : Any, optional
         Injected for testing; defaults to the lazily-built hybrid
         retriever.

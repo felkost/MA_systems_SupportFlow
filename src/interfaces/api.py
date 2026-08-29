@@ -52,7 +52,7 @@ _REJECTION_MESSAGES: dict[ErrorType, str] = {
     "empty_input": "Будь ласка, напишіть ваше запитання.",
     "input_too_long": "Повідомлення занадто довге — скоротіть його, будь ласка.",
     "unsupported_language": (
-        "Наразі ми відповідаємо українською, російською та англійською мовами."
+        "Наразі ми відповідаємо лише українською та англійською мовами."
     ),
     "out_of_domain": "Це питання виходить за межі того, з чим ми можемо допомогти.",
     "forbidden_content": (
@@ -85,7 +85,7 @@ class ChatResponse(BaseModel):
     telegram_sent: bool = False
     # Distinguishes "not sent because the send cap was reached" from every
     # other reason telegram_sent can be False (real sending is off,
-    # duplicate escalation) — docs/decisions.md #80/#82.
+    # duplicate escalation).
     escalation_capped: bool = False
     elapsed_ms: int
     session_id: str

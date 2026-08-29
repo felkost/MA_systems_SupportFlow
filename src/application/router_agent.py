@@ -57,7 +57,7 @@ def run_router(
         anything else.
     conversation_history : str, default=""
         Forwarded to `call_router` unchanged on every retry — see its own
-        docstring (`docs/decisions.md` #77).
+        docstring.
 
     Returns
     -------

@@ -67,8 +67,7 @@ sequenceDiagram
 in-memory LangGraph checkpointer, so a follow-up message in the same tab
 carries the last 5 turns into Router/Docs/Web Search's prompts as
 context — click "🗑️ Нова розмова" to start a genuinely new thread.
-In-memory only: a Backend restart clears every session's history
-(`docs/decisions.md` #77).
+In-memory only: a Backend restart clears every session's history.
 
 ## Setup
 
@@ -197,7 +196,7 @@ check the script's own message about cost before you type "yes".
 |---|---|
 | `silpo_mcp_login.py` | Logs in to the real Silpo MCP service. Needs a phone and a one-time code, so you do this by hand. |
 | `silpo_mcp_healthcheck.py` | Checks that the saved Silpo MCP login still works. |
-| `probe_silpo_mcp.py` | Lists the tools Silpo MCP offers right now. Used to build `docs/silpo_mcp_allowlist.md`. |
+| `probe_silpo_mcp.py` | Lists the tools Silpo MCP offers right now. Used to derive Docs Agent's read-only tool allowlist. |
 | `telegram_bot_setup_check.py` | Checks that your Telegram bot and chat settings are correct. |
 | `seed_prompts.py` | Uploads the four agent prompts plus Docs Agent's internal translation prompt (five total) to Langfuse, under the "production" label. |
 | `configure_langfuse_evaluator.py` | Sets up two automatic quality checks in Langfuse: one for Docs/Web Search answers, one for Escalation handoffs. |
@@ -321,7 +320,7 @@ already tracked against `failure-02` in the requirement checklist, now
 reproduced on live traffic. Separately, the run's sixth escalation wrote
 its report but sent no Telegram message: `MAX_ESCALATION_SENDS_PER_PROCESS`
 is a per-process ceiling that also governs the production path, and it
-does so silently (`docs/decisions.md` #80).
+does so silently.
 
 Each card also shows how many messages it covers and a 95% interval —
 few messages, wide interval. Neither judge has been checked against a

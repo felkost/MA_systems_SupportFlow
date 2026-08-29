@@ -208,7 +208,7 @@
 
       <h3>Sequence, step by step</h3>
       <ol class="steps">
-        <li><strong>Supervisor → RouterAgent: <code>run_router(masked_text)</code></strong> — <code>router_node</code> hands over the already-masked customer message plus <code>request_id</code>/<code>session_id</code>/<code>trace_id</code>, and (since decision #77) the session's prior turns, formatted from the checkpointer's own state — see <code>supervisor-graph.html</code> and <code>session-memory-sequence.html</code> for where that comes from; nothing about routing has happened yet.</li>
+        <li><strong>Supervisor → RouterAgent: <code>run_router(masked_text)</code></strong> — <code>router_node</code> hands over the already-masked customer message plus <code>request_id</code>/<code>session_id</code>/<code>trace_id</code>, and the session's prior turns, formatted from the checkpointer's own state — see <code>supervisor-graph.html</code> and <code>session-memory-sequence.html</code> for where that comes from; nothing about routing has happened yet.</li>
         <li><strong><code>LOOP [attempt ≤ max_retries, stop on success]</code></strong> — everything below runs at most twice (<code>max_retries=1</code> by default: one first try, one retry):
           <ul>
             <li><strong>RouterAgent → call_router: <code>call_router(envelope)</code></strong> — builds an <code>AcpEnvelope</code> for this one attempt, with its own deadline.</li>

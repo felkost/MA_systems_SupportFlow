@@ -34,8 +34,8 @@ docs:
     # (Chroma, BM25) returns this many chunks before they're merged.
     # Unreviewed default carried over from the retriever's own original
     # implementation — moved here so it is at least visible and
-    # reviewable; lowering it needs a measured golden-dataset re-run
-    # (docs/decisions.md), not a guess.
+    # reviewable; lowering it needs a measured golden-dataset re-run,
+    # not a guess.
 
 web_search:
   model: "deepseek/deepseek-v4-flash"

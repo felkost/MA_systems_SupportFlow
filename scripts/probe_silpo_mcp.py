@@ -15,8 +15,9 @@ no MCP client library — Streamable HTTP JSON-RPC is a small enough surface
 that hand-rolling it here removes a whole class of "which SDK version"
 risk for a script that runs exactly once.
 
-Writes the exact tools/list result to docs/silpo_mcp_tools.json. Nothing
-in this project may hardcode a Silpo tool name until that file exists.
+Writes the exact tools/list result to a local file for later reference.
+Nothing in this project may hardcode a Silpo tool name until that file
+exists.
 """
 
 import base64

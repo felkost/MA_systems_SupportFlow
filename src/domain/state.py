@@ -49,9 +49,9 @@ ErrorType = Literal[
 # never resets anything once a checkpointer is attached. This marker,
 # passed only by `build_initial_state`, is how `_errors_reducer` tells
 # "a new turn is starting" apart from a node's own legitimate (possibly
-# empty) error list — see `docs/decisions.md` #77. Must be JSON/msgpack
-# serializable (a custom sentinel object is not — `InMemorySaver` persists
-# every pending write, not just the reduced result, and rejected one live).
+# empty) error list. Must be JSON/msgpack serializable (a custom sentinel
+# object is not — `InMemorySaver` persists every pending write, not just
+# the reduced result, and rejected one live).
 RESET_ERRORS_MARKER: list[str] = ["__reset_turn__"]
 
 
@@ -121,8 +121,8 @@ class SupportFlowState(TypedDict):
     conversation_history : list[ConversationTurn]
         The session's last `MAX_HISTORY_TURNS` resolved turns, read by
         Router/Docs/Web Search's prompts as context for a follow-up
-        message — see `docs/decisions.md` #77. `Annotated` with
-        `_keep_last_n_turns`: `docs_node`/`web_search_node`/`escalate_node`
+        message. `Annotated` with `_keep_last_n_turns`:
+        `docs_node`/`web_search_node`/`escalate_node`
         each append their own turn's `{customer, answer}` pair;
         `router_node` never does (it does not resolve the case). Empty on
         `build_initial_state`'s own seed so the reducer only ever adds to
@@ -170,8 +170,8 @@ class SupportFlowState(TypedDict):
         `EscalationAgentResult.capped` — `telegram_sent=False` on its own
         does not say *why*: a deduplicated case, a disabled
         `ALLOW_REAL_SEND`, and a capped send cap all look identical
-        without this field (docs/decisions.md #80/#82). `False` on every
-        non-escalated request, same rule as `report_written`.
+        without this field. `False` on every non-escalated request, same
+        rule as `report_written`.
     next_action : NextAction
     """
 

@@ -2,9 +2,9 @@
 `scripts/promote_conversation_history_prompts.py` — the piece that does
 not need live Langfuse credentials to verify.
 
-**Regression origin (2026-08-29, `docs/decisions.md` #78):** the first
-version of this script anchored on the bare `<customer_message>` opening
-tag and inserted before its *first* occurrence. All three real prompts
+**Regression origin (2026-08-29):** the first version of this script
+anchored on the bare `<customer_message>` opening tag and inserted
+before its *first* occurrence. All three real prompts
 mention that tag in their own Goals/Constraints prose before the actual
 input section, so the block landed mid-sentence and corrupted every live
 prompt. The original tests here passed anyway, because their fixtures

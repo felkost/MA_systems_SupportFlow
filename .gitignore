@@ -6,7 +6,7 @@ CONTRIBUTING.md
 
 # Working process documentation (decisions log, requirement checklist,
 # task spec, setup notes) — not the deliverable. The final, curated
-# result lives in report/, produced at the end of the project (Stage 5).
+# result lives in report/.
 docs/
 
 # Local-only session-continuity files, per project convention: they may

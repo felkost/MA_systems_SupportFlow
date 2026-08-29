@@ -86,8 +86,7 @@ def _state_to_test_case(case: dict[str, Any], state: SupportFlowState) -> LLMTes
             # So a baseline run can record which prompt version answered
             # each case instead of that being an unrecorded inference —
             # `None` for a route with no prompt version (reject, or
-            # Escalation, whose own prompt version is not yet tracked;
-            # see `docs/decisions.md` #75).
+            # Escalation, whose own prompt version is not yet tracked).
             "answer_prompt_version": state["answer_prompt_version"],
         },
     )
@@ -209,9 +208,9 @@ def warm_up() -> None:
                 # trace_id — `new_trace_id()`'s own docstring documents
                 # the 32-hex-char requirement; a literal string there
                 # crashed silently through this same except before this
-                # was understood. Distinct `session_id` per query
-                # (docs/decisions.md #77): the checkpointer now keys
-                # conversation history by session_id, and these two
+                # was understood. Distinct `session_id` per query: the
+                # checkpointer now keys conversation history by
+                # session_id, and these two
                 # throwaway queries are unrelated turns, not a
                 # conversation with each other.
                 supervisor.handle_request(

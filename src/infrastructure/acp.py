@@ -80,7 +80,7 @@ def call_router(
         Prior turns in this session, pre-formatted by
         `src.domain.state.format_conversation_history` — empty for a
         session's first turn, or against a live prompt seeded before this
-        parameter existed (`docs/decisions.md` #77). Not part of
+        parameter existed. Not part of
         `AcpEnvelope`: it is prompt content, not delegation metadata the
         envelope's own contract (request id, task, deadline, trace ids)
         is about.

@@ -264,6 +264,6 @@ def test_session_send_cap_is_enforced(
     assert first.capped is False
     assert second.capped is True
     assert len(sent) == 1
-    # docs/decisions.md #80: a capped send used to be invisible past this
-    # module — must now log loudly, not just set a field nobody reads.
+    # A capped send used to be invisible past this module — must now log
+    # loudly, not just set a field nobody reads.
     assert "escalation send capped" in caplog.text

@@ -243,7 +243,7 @@ def test_live_deepeval_drops_cases_from_a_different_experiment(
     not count toward it, even under the current prompt version — the
     same reasoning as the prompt-version filter, on a second axis. This
     is why the Langfuse and DeepEval cards used to count from different
-    starting points (docs/decisions.md #75).
+    starting points.
     """
     path = tmp_path / "live_eval.json"
     _write_live_eval(

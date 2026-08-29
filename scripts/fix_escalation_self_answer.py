@@ -1,17 +1,18 @@
 """One-off: `supportflow/escalation` never forbade the model from just
 answering the customer's underlying question itself. Live-confirmed
-2026-08-29 (docs/decisions.md #82): given a web_search decline
-(confidence=0.0, "this doesn't relate to Silpo support") for "Яка
-столиця Англії?", the Escalation LLM composed `customer_message="Столиця
-Англії — Лондон. Дякуємо за звернення!"` — an ungrounded fact from its
-own training data, defeating the entire point of escalating: Docs/Web
-Search are the only agents allowed to answer, and only from retrieved
-content. Adds one Constraints bullet forbidding this.
+2026-08-29: given a web_search decline (confidence=0.0, "this doesn't
+relate to Silpo support") for "Яка столиця Англії?", the Escalation LLM
+composed `customer_message="Столиця Англії — Лондон. Дякуємо за
+звернення!"` — an ungrounded fact from its own training data, defeating
+the entire point of escalating: Docs/Web Search are the only agents
+allowed to answer, and only from retrieved content. Adds one Constraints
+bullet forbidding this.
 
 Fetches the *live* production text first (never a hardcoded baseline —
-the exact mistake decision #74 is about), anchors on the last existing
-Constraints bullet (must match exactly once), and refuses to publish
-unless the insertion round-trips losslessly.
+seeding a stale baseline once silently reverted a live prompt to an
+older text), anchors on the last existing Constraints bullet (must match
+exactly once), and refuses to publish unless the insertion round-trips
+losslessly.
 
 Already run once, 2026-08-29 — published as v10. Kept for the record and
 because re-running is safe (it skips if the constraint is already

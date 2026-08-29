@@ -56,14 +56,14 @@ def append_case(
         The resolved Langfuse version of whichever prompt composed
         `answer` — `SupportFlowState.answer_prompt_version`, `None` for
         an escalated case. `judge_stats.live_deepeval()` filters its pool
-        by this field (`docs/decisions.md` #72).
+        by this field.
     experiment : str or None
         `settings.experiment` at answer time, `None` when unset. Second,
         independent filter axis `live_deepeval()` checks alongside
         `answer_prompt_version` — a case can be under the current prompt
         version but recorded before the current `EXPERIMENT` tag existed,
         which is exactly why the Langfuse and DeepEval cards used to
-        count from different starting points (`docs/decisions.md` #75).
+        count from different starting points.
 
     Returns
     -------
