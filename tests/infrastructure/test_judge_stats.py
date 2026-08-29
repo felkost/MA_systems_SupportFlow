@@ -179,6 +179,7 @@ def test_live_deepeval_summarizes_the_last_batch(
     monkeypatch.setattr(judge_stats, "LIVE_EVAL_PATH", path)
     monkeypatch.setattr(judge_stats, "read_cases", lambda: [])
     monkeypatch.setattr(judge_stats, "get_prompt", lambda name: (f"{name} text", 9))
+    monkeypatch.setattr(judge_stats.settings, "experiment", "")
 
     result = judge_stats.live_deepeval()
 
@@ -225,6 +226,7 @@ def test_live_deepeval_drops_cases_from_a_since_replaced_prompt_version(
     monkeypatch.setattr(judge_stats, "LIVE_EVAL_PATH", path)
     monkeypatch.setattr(judge_stats, "read_cases", lambda: [])
     monkeypatch.setattr(judge_stats, "get_prompt", lambda name: (f"{name} text", 9))
+    monkeypatch.setattr(judge_stats.settings, "experiment", "")
 
     result = judge_stats.live_deepeval()
 
@@ -232,6 +234,90 @@ def test_live_deepeval_drops_cases_from_a_since_replaced_prompt_version(
     assert result["stale_prompt_version"] == 2
     assert result["metrics"]["Answer Relevancy"]["mean"] == 1.0
     assert result["prompt_versions"]["docs"] == 9
+
+
+def test_live_deepeval_drops_cases_from_a_different_experiment(
+    monkeypatch: Any, tmp_path: Any
+) -> None:
+    """A case recorded before the current `EXPERIMENT` tag existed must
+    not count toward it, even under the current prompt version — the
+    same reasoning as the prompt-version filter, on a second axis. This
+    is why the Langfuse and DeepEval cards used to count from different
+    starting points (docs/decisions.md #75).
+    """
+    path = tmp_path / "live_eval.json"
+    _write_live_eval(
+        path,
+        [
+            {
+                "trace_id": "old_experiment",
+                "route": "docs",
+                "answer_prompt_version": 9,
+                "experiment": "baseline-v3",
+                "scores": {"Answer Relevancy": 0.2},
+            },
+            {
+                "trace_id": "current_experiment",
+                "route": "docs",
+                "answer_prompt_version": 9,
+                "experiment": "baseline-v4",
+                "scores": {"Answer Relevancy": 1.0},
+            },
+            {
+                # Recorded before `experiment` existed — must read as
+                # unknown, not coerced into matching by accident.
+                "trace_id": "pre_field",
+                "route": "docs",
+                "answer_prompt_version": 9,
+                "scores": {"Answer Relevancy": 0.5},
+            },
+        ],
+    )
+    monkeypatch.setattr(judge_stats, "LIVE_EVAL_PATH", path)
+    monkeypatch.setattr(judge_stats, "read_cases", lambda: [])
+    monkeypatch.setattr(judge_stats, "get_prompt", lambda name: (f"{name} text", 9))
+    monkeypatch.setattr(judge_stats.settings, "experiment", "baseline-v4")
+
+    result = judge_stats.live_deepeval()
+
+    assert result["n_cases"] == 1
+    assert result["metrics"]["Answer Relevancy"]["mean"] == 1.0
+
+
+def test_live_deepeval_does_not_filter_by_experiment_when_none_is_configured(
+    monkeypatch: Any, tmp_path: Any
+) -> None:
+    """`EXPERIMENT` blank means no population break is in effect on that
+    axis — every current-prompt-version case still counts, the same as
+    before this filter existed.
+    """
+    path = tmp_path / "live_eval.json"
+    _write_live_eval(
+        path,
+        [
+            {
+                "trace_id": "a",
+                "route": "docs",
+                "answer_prompt_version": 9,
+                "experiment": "baseline-v3",
+                "scores": {"Answer Relevancy": 0.2},
+            },
+            {
+                "trace_id": "b",
+                "route": "docs",
+                "answer_prompt_version": 9,
+                "scores": {"Answer Relevancy": 1.0},
+            },
+        ],
+    )
+    monkeypatch.setattr(judge_stats, "LIVE_EVAL_PATH", path)
+    monkeypatch.setattr(judge_stats, "read_cases", lambda: [])
+    monkeypatch.setattr(judge_stats, "get_prompt", lambda name: (f"{name} text", 9))
+    monkeypatch.setattr(judge_stats.settings, "experiment", "")
+
+    result = judge_stats.live_deepeval()
+
+    assert result["n_cases"] == 2
 
 
 def test_live_deepeval_never_filters_escalation_cases_by_prompt_version(
@@ -255,6 +341,7 @@ def test_live_deepeval_never_filters_escalation_cases_by_prompt_version(
     monkeypatch.setattr(judge_stats, "LIVE_EVAL_PATH", path)
     monkeypatch.setattr(judge_stats, "read_cases", lambda: [])
     monkeypatch.setattr(judge_stats, "get_prompt", lambda name: (f"{name} text", 9))
+    monkeypatch.setattr(judge_stats.settings, "experiment", "")
 
     result = judge_stats.live_deepeval()
 

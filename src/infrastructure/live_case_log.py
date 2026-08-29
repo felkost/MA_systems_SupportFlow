@@ -35,6 +35,7 @@ def append_case(
     route: str,
     trace_id: str,
     answer_prompt_version: int | None,
+    experiment: str | None,
 ) -> bool:
     """Record one answered request.
 
@@ -54,13 +55,15 @@ def append_case(
     answer_prompt_version : int or None
         The resolved Langfuse version of whichever prompt composed
         `answer` — `SupportFlowState.answer_prompt_version`, `None` for
-        an escalated case. Recorded so a future batch score can be
-        attributed to the prompt version that actually produced it,
-        rather than pooling every version's answers into one running
-        mean with no way to separate them after a prompt changes —
-        `judge_stats.live_deepeval()` does not yet filter by this field,
-        the same way `live_quality()` filters by experiment tag; it only
-        records the fact for now.
+        an escalated case. `judge_stats.live_deepeval()` filters its pool
+        by this field (`docs/decisions.md` #72).
+    experiment : str or None
+        `settings.experiment` at answer time, `None` when unset. Second,
+        independent filter axis `live_deepeval()` checks alongside
+        `answer_prompt_version` — a case can be under the current prompt
+        version but recorded before the current `EXPERIMENT` tag existed,
+        which is exactly why the Langfuse and DeepEval cards used to
+        count from different starting points (`docs/decisions.md` #75).
 
     Returns
     -------
@@ -78,6 +81,7 @@ def append_case(
             "route": route,
             "trace_id": trace_id,
             "answer_prompt_version": answer_prompt_version,
+            "experiment": experiment,
         }
         with LIVE_CASES_PATH.open("a", encoding="utf-8") as handle:
             handle.write(json.dumps(record, ensure_ascii=False) + "\n")

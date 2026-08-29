@@ -114,7 +114,9 @@ const METRIC_METHODS = {
   'Answer Relevancy': 'частка тверджень у відповіді, визнаних релевантними',
   Faithfulness: 'частка тверджень, підтверджених наданими джерелами',
   'Support Resolution Quality [GEval]':
-    'авторська рубрика: чи розв’язує відповідь звернення клієнта',
+    'авторська рубрика (3 критерії): вирішує звернення або чесно каже, ' +
+    'що не може; не вигадує фактів; пропонує конкретний наступний крок. ' +
+    'Застосовна до будь-якої відповіді, включно з ескалацією',
   'Route Correctness': 'збіг обраного маршруту з очікуваним (0 або 1)',
   'Privacy Safety': 'відсутність персональних даних у відповіді (0 або 1)',
   'Tool Correctness': 'збіг викликаних інструментів з очікуваними',
@@ -292,12 +294,18 @@ function App() {
     loadQuality()
   }, [loadQuality])
 
-  // Grading costs money per new case, so this is never automatic: the
-  // button says how many are pending and goes inert at zero.
+  // Grading costs money per new case, so a single run is never automatic
+  // on its own — the button says how many are pending and goes inert at
+  // zero. `autoEval` below is an opt-in exception: re-running on an
+  // interval is cheap when there is nothing new (the endpoint only pays
+  // for genuinely unscored cases, see `eval_live_batch.py`'s own
+  // trace-id matching), so a periodic call just keeps this card's count
+  // from drifting far behind the always-live Langfuse card, at the
+  // author's own request (2026-08-29) rather than by default.
   const [evalState, setEvalState] = useState('idle')
   const pendingCases = quality?.live_deepeval?.pending ?? 0
 
-  async function runLiveEval() {
+  const runLiveEval = useCallback(async () => {
     setEvalState('running')
     try {
       const response = await fetch(`${API_URL}/stats/eval-live`, { method: 'POST' })
@@ -307,7 +315,32 @@ function App() {
     } catch {
       setEvalState('error')
     }
-  }
+  }, [])
+
+  const AUTO_EVAL_INTERVAL_MS = 30 * 1000
+  const [autoEval, setAutoEval] = useState(false)
+
+  // Shared with the Langfuse card, not DeepEval-only: `loadQuality` is
+  // a plain re-read (cheap, no scoring), `runLiveEval` is the one that
+  // actually pays for new judge calls — running both together keeps
+  // both cards moving together instead of leaving Langfuse's stuck on
+  // whatever it showed when the page loaded (2026-08-29, at the
+  // author's own request — this replaced two separate controls,
+  // Langfuse's own "🔄 Оновити" and DeepEval's auto toggle).
+  const refreshBoth = useCallback(() => {
+    loadQuality()
+    runLiveEval()
+  }, [loadQuality, runLiveEval])
+
+  useEffect(() => {
+    if (!autoEval) return undefined
+    // Fire once immediately on enabling — otherwise turning this on gives
+    // no visible feedback for up to a full interval, and reads as "did
+    // nothing" (observed live, 2026-08-29).
+    refreshBoth()
+    const id = setInterval(refreshBoth, AUTO_EVAL_INTERVAL_MS)
+    return () => clearInterval(id)
+  }, [autoEval, refreshBoth])
 
   function clearChat() {
     setMessages([])
@@ -370,6 +403,16 @@ function App() {
       // button would otherwise stay inert until someone pressed refresh
       // — the count it shows would be one request out of date.
       loadQuality()
+      // Safe to score right here, unlike a Langfuse-card refresh (see
+      // `loadQuality`'s own comment above): `live_case_log.append_case`
+      // already wrote this case to disk before `/chat` responded, so
+      // there is no async lag to race against — the case is there to be
+      // scored the instant this line runs. Gated on `autoEval` so this
+      // still costs money only when the author opted in, never by
+      // default (2026-08-29, at the author's own request).
+      if (autoEval) {
+        runLiveEval()
+      }
     } catch {
       setMessages((prev) => [
         ...prev,
@@ -440,6 +483,18 @@ function App() {
             >
               {qualityState === 'loading' ? '◐' : qualityState === 'ok' ? '✓' : '✕'}
             </span>
+            <button
+              type="button"
+              className={`pill auto-eval${autoEval ? ' on' : ''}`}
+              onClick={() => setAutoEval((prev) => !prev)}
+              title={
+                autoEval
+                  ? 'Автооновлення увімкнено: обидві картки — після кожного повідомлення й кожні 5 хв. Натисніть, щоб вимкнути'
+                  : 'Автоматично оновлювати обидві картки: після кожного повідомлення й кожні 5 хвилин, поки сторінка відкрита'
+              }
+            >
+              {autoEval ? '⏱ Авто: увімк' : '⏱ Авто: вимк'}
+            </button>
           </div>
 
           <ScoreCard
@@ -448,8 +503,9 @@ function App() {
             source={quality?.live}
             selected={liveMetric}
             onSelect={setLiveMetric}
-            onRefresh={loadQuality}
-            refreshing={qualityState === 'loading'}
+            // No separate "🔄 Оновити" — the shared "⏱ Авто" toggle in
+            // sidebar-head now covers both this card and DeepEval's, so
+            // a lone refresh button here would duplicate it.
             note={
               quality?.live?.experiment
                 ? `Трейси з міткою «${quality.live.experiment}».`
@@ -463,16 +519,11 @@ function App() {
             source={quality?.live_deepeval}
             selected={deepevalMetric}
             onSelect={setDeepevalMetric}
-            onRefresh={loadQuality}
-            refreshing={qualityState === 'loading'}
             note={
               quality?.live_deepeval?.measured_at
                 ? `Останній прогін: ${formatMoment(
                     quality.live_deepeval.measured_at,
-                  )}, оцінено ${quality.live_deepeval.n_cases} запитів.` +
-                  (quality.live_deepeval.stale_prompt_version
-                    ? ` Виключено ${quality.live_deepeval.stale_prompt_version} — відповідали на попередню версію промпту.`
-                    : '')
+                  )}, оцінено ${quality.live_deepeval.n_cases} запитів.`
                 : null
             }
             action={

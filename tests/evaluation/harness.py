@@ -83,6 +83,12 @@ def _state_to_test_case(case: dict[str, Any], state: SupportFlowState) -> LLMTes
             "expected_route": case["expected_route"],
             "actual_route": _actual_route(state),
             "trace_id": state["trace_id"],
+            # So a baseline run can record which prompt version answered
+            # each case instead of that being an unrecorded inference —
+            # `None` for a route with no prompt version (reject, or
+            # Escalation, whose own prompt version is not yet tracked;
+            # see `docs/decisions.md` #75).
+            "answer_prompt_version": state["answer_prompt_version"],
         },
     )
 

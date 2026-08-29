@@ -226,6 +226,7 @@ def chat(payload: ChatRequest) -> ChatResponse:
             ),
             trace_id=trace_id,
             answer_prompt_version=state["answer_prompt_version"],
+            experiment=settings.experiment or None,
         )
 
     return ChatResponse(
