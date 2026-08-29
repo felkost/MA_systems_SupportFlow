@@ -207,79 +207,41 @@ except two files:
 
 ## Quality panel
 
-The chat page has a panel on the left with three cards. Each one says
-which measure it shows and which judge produced it, because the numbers
-are **not** all on the same scale.
+Left sidebar, three cards. Each names its own judge — the numbers are
+**not** interchangeable across cards.
 
-| Card | Who scores it | When it updates |
+| Card | Judge | Updates |
 |---|---|---|
-| Real requests — Langfuse | An AI judge inside Langfuse, on every new message | By itself, a few seconds after each message |
-| Real requests — DeepEval | DeepEval, the same checks used on the test set | When you press its button |
-| Reference set — DeepEval | DeepEval, on the fixed 18-case test set | Never — it is a frozen result |
+| Real requests — Langfuse | Langfuse's built-in judge | Live, async on Langfuse's own server (few-second lag) |
+| Real requests — DeepEval | DeepEval | "▶ Оцінити" button, or the "⏱ Авто" toggle |
+| Reference set — DeepEval | DeepEval, frozen 18-case set | Never — fixed baseline |
 
-**Only the two lower cards may be compared with each other.** They use
-the same checks in the same way, on two different groups of messages, so
-a difference between them says something about the messages. The top card
-uses a different judge with a different way of counting, so a difference
-between it and the others says nothing about quality — only that the two
-were measured differently. Two measures can even share a name and still
-work differently: the top card asks one AI model for a single 0–1 score,
-while `Answer Relevancy` below splits the answer into separate statements
-and counts how many are on topic. A third, independent reason: DeepEval's
-judge model has its sampling pinned to `temperature: 0`
-(`config/models.yaml`), so scoring the same answer twice returns the same
-number — the top card's Langfuse judge has no such setting available in
-its API, so when its score moves, that could mean the answers changed or
-just that the judge re-rolled, and nothing here can tell the two apart.
+**Only compare the two DeepEval cards with each other** — same judge,
+same check, two samples (live traffic vs. the frozen set). The Langfuse
+card uses a different judge on a different scale, so comparing it to the
+others says nothing about answer quality.
 
-**The middle card only counts an answer while its prompt is still live.**
-Each real message is stamped, when it is answered, with the exact
-Docs/Web Search prompt version that wrote it. If you promote a new prompt
-version afterward, that old message stops counting toward the middle
-card's mean — it describes the prompt that is live *right now*, not
-every answer ever given. This is separate from, and does not need,
-`EXPERIMENT` below; it happens automatically, keyed off which prompt
-version is actually live in Langfuse. `Answer Relevancy` and
-`Faithfulness` only ever apply to Docs/Web Search messages (never to an
-escalation), so right after a promotion — before any fresh Docs/Web
-Search message has been asked and scored — those two can vanish from the
-dropdown entirely, while `Privacy Safety` and `Support Resolution
-Quality` still show (escalations count toward those). Ask a new
-question, press the card's own scoring button, and they come back. This
-also happens once, the moment this filter itself first shipped: every
-message scored before that point has no recorded prompt version at all,
-so it is excluded the same way, permanently — `eval_live_batch.py` never
-re-scores an already-graded message.
+Example, `Answer Relevancy = 0.83`:
+- **DeepEval card:** 83% of the answer's individual statements were
+  judged on-topic — a compositional check.
+- **Langfuse card, same metric name:** one holistic 0–1 score from a
+  single LLM call — a different instrument that happens to share a name.
 
-**The middle card is one continuous series, not an accumulating total —
-a prompt promotion deliberately starts it over.** The API's
-`/stats/quality` response carries a `prompt_versions` field naming the
-exact Docs/Web Search prompt version(s) the shown numbers are measured
-against, so a small `n` right after a promotion can be told apart from
-"the history disappeared" by anyone reading the raw response, even
-though the panel itself does not render it. Cases from a replaced
-version are not merged in on any assumed equivalence between old and new
-text, even when the promotion fixed a regression back to something close
-to the prior text — only cases answered under the current version count.
+Both live cards filter to the *current* Docs/Web Search prompt version
+and the current `EXPERIMENT` tag (`.env`) — promoting a prompt or
+bumping `EXPERIMENT` starts the count over on purpose, so old and new
+answers never blend into one misleading average. Bump `EXPERIMENT`
+whenever a prompt itself changes, not only when the judge rule does —
+missing that once made the two cards' totals diverge for a reason that
+had nothing to do with either judge.
 
-Each card shows how many messages the number covers ("6 of 10"), because
-a check that needs sources cannot be applied to a message that has none.
-It also shows a 95% interval: with few messages, two numbers that look
-different often are not. Neither judge has been checked against human
-scores, so treat every number as a guide, not a verdict.
+**"⏱ Авто"** (panel header) refreshes both live cards: on enable, after
+every chat message, and every 30 seconds. It's browser-tab state — it
+resets to off on page reload.
 
-**What `EXPERIMENT` in `.env` means.** It is a label you invent for one
-measurement setup, not a version of the code. When set, every new trace
-gets tagged with it, and the "Live answers" card only ever reads traces
-carrying the *current* label — that is what keeps old and new scores from
-mixing into one misleading average. Give it a new value (and bump
-`EXPERIMENT_STARTED_AT`) whenever *how* something is measured changes —
-a new judge rule, a different metric, a changed agent prompt — then
-restart the API so the new label takes effect. Do not change it just
-because time passed or new messages arrived; that is normal growth under
-the same label. Leaving it blank (the default) means traces are not
-tagged at all, and the card reports "not configured" instead of silently
-folding ordinary traffic into some experiment.
+Each card also shows how many messages it covers and a 95% interval —
+few messages, wide interval. Neither judge has been checked against a
+human, so read every number as a guide, not a verdict.
 
 ## Diagrams
 
