@@ -119,6 +119,10 @@
   font-size: 0.95rem;
   font-weight: 800;
   letter-spacing: -0.01em;
+  /* Pushes the status dot and the auto-refresh toggle together on the
+     right, instead of `justify-content: space-between` spreading all
+     three children evenly and stranding the dot alone in the middle. */
+  margin-right: auto;
 }
 
 .status-dot {
@@ -158,6 +162,13 @@
   margin-top: 9px;
   font-size: 0.74rem;
   padding: 7px 10px;
+}
+
+.pill.auto-eval {
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-size: 0.68rem;
+  padding: 5px 9px;
 }
 
 .pill.refresh {
@@ -288,7 +299,6 @@ ul.sidebar-note {
   flex: 1;
   min-width: 0;
   width: 100%;
-  max-width: 760px;
   margin: 0 auto;
   padding: 20px;
   display: flex;
@@ -324,7 +334,7 @@ ul.sidebar-note {
 }
 
 .message {
-  max-width: 86%;
+  max-width: 91%;
   padding: 14px 18px;
   border-radius: var(--radius);
   box-shadow: var(--shadow);

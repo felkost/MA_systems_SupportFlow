@@ -88,6 +88,26 @@ def test_actual_route_reports_docs_on_a_confident_docs_answer() -> None:
     assert harness._actual_route(state) == "docs"
 
 
+def test_state_to_test_case_carries_the_answering_prompt_version() -> None:
+    """`scripts/run_golden_dataset_baseline.py` needs this on every case
+    it writes, so the frozen baseline can name which prompt version
+    produced it instead of that being an unrecorded inference
+    (`docs/decisions.md` #75).
+    """
+    from src.domain.schemas import DocsResponse
+
+    state = build_initial_state("текст", "r1", "s1", "t1")
+    state["docs_response"] = DocsResponse(answer="a", sources=[], confidence=0.9)
+    state["answer"] = "a"
+    state["answer_prompt_version"] = 12
+
+    test_case = harness._state_to_test_case(
+        {"input": "текст", "expected_route": "docs"}, state
+    )
+
+    assert test_case.metadata["answer_prompt_version"] == 12
+
+
 def _test_case(expected_route: str, actual_route: str):
     from deepeval.test_case import LLMTestCase
 

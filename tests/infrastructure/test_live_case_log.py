@@ -27,12 +27,14 @@ def test_append_then_read_round_trips_one_case(
         route="docs",
         trace_id="abc",
         answer_prompt_version=9,
+        experiment="baseline-v4",
     )
 
     cases = live_case_log.read_cases()
     assert len(cases) == 1
     assert cases[0]["masked_text"] == "де мій заказ"
     assert cases[0]["route"] == "docs"
+    assert cases[0]["experiment"] == "baseline-v4"
 
 
 def test_read_cases_keeps_only_the_last_n(monkeypatch: Any, tmp_path: Path) -> None:
@@ -46,6 +48,7 @@ def test_read_cases_keeps_only_the_last_n(monkeypatch: Any, tmp_path: Path) -> N
             route="docs",
             trace_id="t",
             answer_prompt_version=9,
+            experiment=None,
         )
 
     assert [c["masked_text"] for c in live_case_log.read_cases(limit=2)] == ["q3", "q4"]
@@ -62,6 +65,7 @@ def test_read_cases_skips_a_malformed_line(monkeypatch: Any, tmp_path: Path) -> 
         route="docs",
         trace_id="t",
         answer_prompt_version=9,
+        experiment=None,
     )
     with path.open("a", encoding="utf-8") as handle:
         handle.write("{ not json\n")
@@ -99,6 +103,7 @@ def test_append_reports_failure_instead_of_raising(
             route="docs",
             trace_id="t",
             answer_prompt_version=9,
+            experiment=None,
         )
         is False
     )

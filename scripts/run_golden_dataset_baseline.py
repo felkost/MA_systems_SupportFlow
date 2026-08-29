@@ -70,6 +70,15 @@ def _score_case(case: dict, run_tag: str) -> dict:
         "actual_route": (test_case.metadata or {}).get("actual_route"),
         "actual_output": test_case.actual_output,
         "trace_id": trace_id,
+        # Which prompt version actually answered this case — recorded so
+        # the frozen baseline's comparability with a later live measure
+        # is a fact this file states, not an inference someone has to
+        # redo by hand from commit/prompt timestamps (docs/decisions.md
+        # #75). `None` for Escalation (own version not yet tracked) or a
+        # rejected case.
+        "answer_prompt_version": (test_case.metadata or {}).get(
+            "answer_prompt_version"
+        ),
         "duration_seconds": None,
         "metrics": {},
     }

@@ -231,18 +231,29 @@ def live_deepeval() -> dict[str, Any]:
     vacuous claims, and dropping cases to match the smallest metric would
     throw away real measurements.
 
-    A docs/web_search case is dropped from every metric, not levelled
-    either, when its `answer_prompt_version` does not match that route's
-    *current* `production` version — same reasoning as the module
-    docstring's own experiment-tag filter, applied here because a prompt
-    edit is exactly the kind of change that invalidates old answers for
-    describing current quality, and `eval_live_batch.py` never re-scores
-    an already-graded case. `stale_prompt_version` counts what this
-    dropped, so a sudden drop in `n_cases` right after a promotion reads
-    as "waiting for fresh traffic", not as a silent shrink. Escalation
-    cases are never dropped this way — Escalation's own prompt version is
-    not yet recorded (`SupportFlowState.answer_prompt_version` is `None`
-    for that route by design), so there is nothing to check them against.
+    A case is dropped from every metric, not levelled either, when it
+    fails either of two independent checks (`_is_current`):
+
+    1. A docs/web_search case whose `answer_prompt_version` does not
+       match that route's *current* `production` version — a prompt edit
+       is exactly the kind of change that invalidates old answers for
+       describing current quality, and `eval_live_batch.py` never
+       re-scores an already-graded case. Escalation cases are exempt —
+       Escalation's own prompt version is not yet recorded
+       (`SupportFlowState.answer_prompt_version` is `None` for that
+       route by design), so there is nothing to check them against.
+    2. Any case (including Escalation) whose `experiment` does not match
+       `settings.experiment`, checked only when one is actually
+       configured — the same "blank means no population break" rule
+       `live_quality`'s own tag filter follows. Added 2026-08-29
+       (`docs/decisions.md` #75) after this card and the Langfuse-scored
+       one above were found counting from two different starting
+       points: this filter used to only ever apply to *that* card.
+
+    `stale_prompt_version` counts every case dropped by either check
+    combined, so a sudden drop in `n_cases` right after a promotion or an
+    `EXPERIMENT` bump reads as "waiting for fresh traffic", not as a
+    silent shrink.
     """
     cases = _scored_cases()
     if not cases:
@@ -260,10 +271,18 @@ def live_deepeval() -> dict[str, Any]:
         return {"available": False, "reason": "prompt_version_unresolved"}
 
     def _is_current(case: dict[str, Any]) -> bool:
+        # Two independent axes, both must match. Prompt version is
+        # per-route (Escalation has none to check); experiment is
+        # global — checked only when one is actually configured, the
+        # same "blank means no population break" rule `live_quality`'s
+        # own tag filter follows (docs/decisions.md #75).
         route = case.get("route")
-        if route not in _ROUTE_PROMPT_NAME:
-            return True
-        return case.get("answer_prompt_version") == current_versions[route]
+        if route in _ROUTE_PROMPT_NAME:
+            if case.get("answer_prompt_version") != current_versions[route]:
+                return False
+        if settings.experiment and case.get("experiment") != settings.experiment:
+            return False
+        return True
 
     current_cases = [case for case in cases if _is_current(case)]
     stale_prompt_version = len(cases) - len(current_cases)
