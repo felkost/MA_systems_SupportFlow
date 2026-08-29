@@ -336,16 +336,25 @@ explanation, for pasting into a slide or a printed report).
 
 | File | Type | What it shows |
 |---|---|---|
-| `architecture.html` | Block diagram | The whole system in one picture: browser → API → Supervisor → Docs/Web Search agents (or straight to Escalation). |
-| `supervisor-graph.html` | Flow diagram | The steps inside the Supervisor's LangGraph — every node and every conditional edge. |
-| `router-sequence.html` | Sequence diagram | How Router classifies one message, and what happens if it fails. |
+| `architecture.html` | Block diagram | The whole system in one picture: browser → API → Supervisor → Docs/Web Search agents (or straight to Escalation). Notes session memory as a Supervisor-process property, not a box of its own. |
+| `supervisor-graph.html` | Flow diagram | The steps inside the Supervisor's LangGraph — every node and every conditional edge, plus the checkpointer's read-in/write-back around the graph. |
+| `router-sequence.html` | Sequence diagram | How Router classifies one message, what happens if it fails, and how `conversation_history` rides along on the call. |
 | `escalation-sequence.html` | Sequence diagram | Escalation's steps: write the report, hide private data, ask for confirmation, send it, save the file. |
-| `docs-agent-sequence.html` | Sequence diagram | How Docs Agent searches the knowledge base and the Silpo catalog. |
+| `docs-agent-sequence.html` | Sequence diagram | How Docs Agent searches the knowledge base and the Silpo catalog, and how `conversation_history` arrives over the A2A hop's metadata, unmasked. |
 | `web-search-agent-sequence.html` | Sequence diagram | How Web Search Agent tries Tavily first, then DuckDuckGo if that fails. |
 | `langfuse-observability.html` | Sequence diagram | What SupportFlow sends to Langfuse, and how one chat message becomes one trace across three processes. |
 | `quality-metrics-sequence.html` | Sequence diagram | How the backend produces the numbers in the quality panel: what it records, what it reads, and why the paid scoring step runs in its own process. |
 | `quality-results.html` | Results report | The measured scores, what each metric means for each judge, and which numbers may be compared with which. |
-| `prompt-architecture.html` (+ `prompt-*.svg`) | Structure diagram | The four agent prompts, their structure, and the two prompt experiments run against them (both came back "inconclusive" — no prompt was changed because of them). |
+| `prompt-architecture.html` (+ `prompt-*.svg`) | Structure diagram | The four agent prompts, their structure, and the two prompt experiments run against them (both came back "inconclusive" — no prompt was changed because of them). Shows the `{{conversation_history}}` slot on Router/Docs/Web Search and Escalation's constraint against resolving a case itself. |
+
+**Known gap:** `router-sequence.html` and `supervisor-graph.html` both
+point to a `session-memory-sequence.html` for "where the checkpointer's
+history comes from" — that dedicated diagram was approved but never
+built; the file does not exist. Until it does, the checkpointer's own
+mechanics are only in `supervisor-graph.html`'s subtitle/legend, not a
+sequence of their own. `web-search-agent-sequence.html` was also never
+updated to show the masked `conversation_history` it now receives over
+its own A2A hop.
 
 ### Opening a diagram
 
